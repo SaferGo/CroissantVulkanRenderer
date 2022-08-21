@@ -1,0 +1,18 @@
+[submodule "libs/glm"]
+	path = libs/glm
+	url = git@github.com:g-truc/glm.git
+[submodule "libs/glfw"]
+	path = libs/glfw
+	url = https://github.com/glfw/glfw
+[submodule "libs/Vulkan-Tools"]
+	path = libs/Vulkan-Tools
+	url = https://github.com/KhronosGroup/Vulkan-Tools
+[submodule "libs/Vulkan-Loader"]
+	path = libs/Vulkan-Loader
+	url = git@github.com:KhronosGroup/Vulkan-Loader.git
+[submodule "libs/SPIRV-Tools"]
+	path = libs/SPIRV-Tools
+	url = git@github.com:KhronosGroup/SPIRV-Tools.git
+[submodule "libs/Vulkan-ValidationLayers"]
+	path = libs/Vulkan-ValidationLayers
+	url = git@github.com:KhronosGroup/Vulkan-ValidationLayers.git

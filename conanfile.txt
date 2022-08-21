@@ -1,0 +1,5 @@
+[requires]
+robin-hood-hashing/3.11.5
+
+[generators]
+cmake
