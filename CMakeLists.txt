@@ -12,9 +12,14 @@ set(PROJECT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 set(PROJECT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(PROJECT_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/libs")
 
-#####################################Libs######################################
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+   set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
+   #else ()
+   #   set(CMAKE_CXX_FLAGS_RELEASE_INIT "-Wall")
+endif ()
 
-# - Vulkan
+#####################################Libs######################################
+#- Vulkan
 find_package(Vulkan REQUIRED FATAL_ERROR)
 
 # - Vulkan Tools
@@ -41,6 +46,8 @@ find_package(Threads REQUIRED)
 
 add_executable(${PROJECT_NAME} 
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/main.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/HelloTriangleApp.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayersManager/vlManager.cpp"
 )
 
 target_include_directories(
