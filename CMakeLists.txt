@@ -46,8 +46,12 @@ find_package(Threads REQUIRED)
 
 add_executable(${PROJECT_NAME} 
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/main.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/HelloTriangleApp.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayersManager/vlManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Renderer.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/WindowManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayers/vlManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/qfUtils.cpp"
 )
 
 target_include_directories(

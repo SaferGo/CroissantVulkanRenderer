@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include <VulkanToyRenderer/HelloTriangleApp.h>
+#include <VulkanToyRenderer/Renderer.h>
 
 int main()
 {
