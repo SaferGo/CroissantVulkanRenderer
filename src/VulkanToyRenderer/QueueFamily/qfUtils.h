@@ -11,11 +11,11 @@ namespace qfUtils
    bool isPresentQueueSupported(
          const int qfSupportedIndex,
          const VkSurfaceKHR& surface,
-         const VkPhysicalDevice& device
+         const VkPhysicalDevice& physicalDevice
    );
 
    void getSupportedQueueFamilies(
-      const VkPhysicalDevice& device,
+      const VkPhysicalDevice& physicalDevice,
       std::vector<VkQueueFamilyProperties>& qfSupported
    );
 };

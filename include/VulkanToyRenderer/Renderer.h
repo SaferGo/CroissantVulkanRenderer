@@ -1,20 +1,19 @@
 #pragma once
 
 #include <vector>
-#include <optional>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-
 #include <VulkanToyRenderer/Window/WindowManager.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
+#include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
 
 struct Device
 {
-   VkDevice logicalDevice;
    VkPhysicalDevice physicalDevice;
+   VkDevice logicalDevice;
 
    const std::vector<const char*> requiredExtensions = {
          VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -29,7 +28,6 @@ public:
 
 private:
 
-   void initWindow();
    void initVK();
    void mainLoop();
    void cleanup();
@@ -49,5 +47,6 @@ private:
    Device m_device;
    QueueFamilyIndices m_qfIndices;
    QueueFamilyHandles m_qfHandles;
+   SwapchainManager m_swapchainM;
    VkDebugUtilsMessengerEXT m_debugMessenger;
 };

@@ -52,6 +52,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/qfUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/SwapchainManager.cpp"
 )
 
 target_include_directories(

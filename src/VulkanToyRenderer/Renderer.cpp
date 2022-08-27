@@ -4,6 +4,8 @@
 #include <vector>
 #include <set>
 #include <cstring>
+#include <limits>
+#include <algorithm>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -14,23 +16,20 @@
 #include <VulkanToyRenderer/ValidationLayers/vlManager.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
+#include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
+
 
 
 void HelloTriangleApp::run()
-{
-   initWindow();
-   initVK();
-   mainLoop();
-   cleanup();
-}
-
-void HelloTriangleApp::initWindow()
-{
+{  
    m_windowM.createWindow(
          config::RESOLUTION_W,
          config::RESOLUTION_H,
          config::TITLE
    );
+   initVK();
+   mainLoop();
+   cleanup();
 }
 
 std::vector<const char*> HelloTriangleApp::getRequiredExtensions()
@@ -165,11 +164,13 @@ bool HelloTriangleApp::areAllExtensionsSupported(
    return true;
 }
 
-bool HelloTriangleApp::isDeviceSuitable(const VkPhysicalDevice& device)
+bool HelloTriangleApp::isDeviceSuitable(const VkPhysicalDevice& physicalDevice)
 {
    // - Queue-Families
    // Verifies if the device has the Queue families that we need.
-   m_qfIndices.getIndicesOfRequiredQueueFamilies(device, m_windowM.getSurface());
+   m_qfIndices.getIndicesOfRequiredQueueFamilies(
+         physicalDevice, m_windowM.getSurface()
+   );
 
    if (m_qfIndices.areAllQueueFamiliesSupported() == false)
       return false;
@@ -179,16 +180,16 @@ bool HelloTriangleApp::isDeviceSuitable(const VkPhysicalDevice& device)
    VkPhysicalDeviceProperties deviceProperties;
    // Gives us basic device properties like the name, type and supported
    // Vulkan version.
-   vkGetPhysicalDeviceProperties(device, &deviceProperties);
+   vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
    // - Device Features
    // Verifies if the device has the features we want.
    VkPhysicalDeviceFeatures deviceFeatures;
    // Tells us if features like texture compression, 64 bit floats, multi
    // vieport renderending and so on, are compatbile with this device.
-   vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+   vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
 
-   // Here we can score the gpu(so later select the best one to use) or 
+   // Here we can score the gpu(so later select the best one to use) or just
    // verify if it has the features that we need.
 
    // For now, we will just return the dedicated one.
@@ -196,8 +197,16 @@ bool HelloTriangleApp::isDeviceSuitable(const VkPhysicalDevice& device)
       return false;
 
    // - Device Extensions
-   if (areAllExtensionsSupported(device) == false)
+   if (areAllExtensionsSupported(physicalDevice) == false)
       return false;
+
+   // - Swapchain support
+   if (m_swapchainM.isSwapchainAdequated(
+            physicalDevice, m_windowM.getSurface()
+      ) == false
+   ) {
+      return false;
+   }
 
    return true;
 }
@@ -298,6 +307,8 @@ void HelloTriangleApp::createLogicalDevice()
 
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to create logical device!");
+
+   m_qfHandles.setQueueHandles(m_device.logicalDevice, m_qfIndices);
 }
 
 void HelloTriangleApp::initVK()
@@ -310,10 +321,12 @@ void HelloTriangleApp::initVK()
    pickPhysicalDevice();
    createLogicalDevice();
 
-   m_qfHandles.setQueueHandles(
+   m_swapchainM.createSwapchain(
+         m_device.physicalDevice,
          m_device.logicalDevice,
-         m_qfIndices
+         m_windowM
    );
+
 }
 void HelloTriangleApp::mainLoop()
 {
@@ -325,6 +338,9 @@ void HelloTriangleApp::mainLoop()
 
 void HelloTriangleApp::cleanup()
 {
+   // Swapchain
+   m_swapchainM.destroySwapchain(m_device.logicalDevice);
+
    // Logical Device
    vkDestroyDevice(m_device.logicalDevice, nullptr);
 
