@@ -11,14 +11,12 @@
 #include <GLFW/glfw3.h>
 
 #include <VulkanToyRenderer/Settings/config.h>
-#include <VulkanToyRenderer/Window/WindowManager.h>
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
+#include <VulkanToyRenderer/Window/WindowManager.h>
 #include <VulkanToyRenderer/ValidationLayers/vlManager.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
-
-
 
 void HelloTriangleApp::run()
 {  
@@ -311,6 +309,11 @@ void HelloTriangleApp::createLogicalDevice()
    m_qfHandles.setQueueHandles(m_device.logicalDevice, m_qfIndices);
 }
 
+void createGraphicsPipeline()
+{
+
+}
+
 void HelloTriangleApp::initVK()
 {
    createVkInstance();
@@ -327,6 +330,9 @@ void HelloTriangleApp::initVK()
          m_windowM
    );
 
+   m_swapchainM.createImageViews(m_device.logicalDevice);
+
+   createGraphicsPipeline();
 }
 void HelloTriangleApp::mainLoop()
 {
@@ -340,6 +346,9 @@ void HelloTriangleApp::cleanup()
 {
    // Swapchain
    m_swapchainM.destroySwapchain(m_device.logicalDevice);
+
+   // ViewImages of the images from the Swapchain
+   m_swapchainM.destroyImageViews(m_device.logicalDevice);
 
    // Logical Device
    vkDestroyDevice(m_device.logicalDevice, nullptr);

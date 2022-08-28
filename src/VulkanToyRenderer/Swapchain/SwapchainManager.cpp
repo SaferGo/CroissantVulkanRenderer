@@ -155,6 +155,53 @@ void SwapchainManager::destroySwapchain(const VkDevice& logicalDevice)
    vkDestroySwapchainKHR(logicalDevice, m_swapchain, nullptr);
 }
 
+void SwapchainManager::destroyImageViews(const VkDevice& logicalDevice)
+{
+   for (auto& imageView : m_imageViews)
+      vkDestroyImageView(logicalDevice, imageView, nullptr);
+}
+
+void SwapchainManager::createImageViews(const VkDevice& logicalDevice)
+{
+  m_imageViews.resize(m_images.size());
+
+  for (size_t i = 0; i < m_images.size(); i++)
+   {
+      VkImageViewCreateInfo createInfo{};
+      createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+      createInfo.image = m_images[i];
+      // Specifies how to treat images, as 1D textures, 2D textures, 3D
+      // textures and cube maps.
+      createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+      createInfo.format = m_imageFormat;
+      // Specifies how we want to map all the color channels of the images
+      // (E.g: map all of the channels to the red channel for a monochrome
+      // texture)
+      createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+      createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+      // Specifies what the image's purpose is and which part of the image
+      // should be accessed.
+      // (E.g: with mipmapping leves or multiple layers)
+      createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      createInfo.subresourceRange.baseMipLevel = 0;
+      createInfo.subresourceRange.levelCount = 1;
+      createInfo.subresourceRange.baseArrayLayer = 0;
+      createInfo.subresourceRange.layerCount = 1;
+
+      const auto status = vkCreateImageView(
+            logicalDevice,
+            &createInfo,
+            nullptr,
+            &m_imageViews[i]
+      );
+
+      if (status != VK_SUCCESS)
+         throw std::runtime_error("Failed to create image views!");
+   }
+}
+
 /*
  * Gets all the supported properties of the swapchain depending of the logical
  * device and the window's surface.

@@ -34,7 +34,9 @@ public:
       const VkDevice& logicalDevice,
       const WindowManager& windowM
    );
+   void createImageViews(const VkDevice& logicalDevice);
    void destroySwapchain(const VkDevice& logicalDevice);
+   void destroyImageViews(const VkDevice& logicalDevice);
 
    SwapchainSupportedProperties getSupportedProperties(
       const VkPhysicalDevice& physicalDevice,
@@ -73,6 +75,9 @@ private:
 
    VkSwapchainKHR m_swapchain;
    std::vector<VkImage> m_images;
+   // Describes how to access the images and which part of the images to
+   // access.
+   std::vector<VkImageView> m_imageViews;
    // This object is "optional" beacuse we may need it before the creation
    // of the swapchain to check if the device is suitable.
    std::optional<SwapchainSupportedProperties> m_supportedProperties;

@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.9.1)
 
 project(ToyRenderer)
@@ -7,8 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../bin")
+set(PROJECT_OUTPUT_DIR "${CMAKE_BINARY_DIR}/../bin")
+set(PROJECT_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(PROJECT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
+set(SHADERS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/shaders")
 set(PROJECT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(PROJECT_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/libs")
 
@@ -41,6 +43,11 @@ add_subdirectory(${GLM_DIR} EXCLUDE_FROM_ALL)
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+##################################Shaders######################################
+
+# - Compilation of shaders
+add_subdirectory(${SHADERS_SOURCE_DIR})
 
 #################################Executable####################################
 
