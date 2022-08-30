@@ -11,6 +11,7 @@ set(PROJECT_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
 set(PROJECT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 set(SHADERS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/shaders")
+set(SHADERS_BINARY_DIR "${PROJECT_BIN_DIR}/shaders")
 set(PROJECT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(PROJECT_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/libs")
 
@@ -48,6 +49,8 @@ find_package(Threads REQUIRED)
 
 # - Compilation of shaders
 add_subdirectory(${SHADERS_SOURCE_DIR})
+# To get the full path of the compiled shaders in the c++ code.
+add_definitions(-DSHADERS_BINARY_DIR="${SHADERS_BINARY_DIR}")
 
 #################################Executable####################################
 
@@ -60,6 +63,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/qfUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/SwapchainManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ShaderManager/shaderManager.cpp"
 )
 
 target_include_directories(

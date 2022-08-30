@@ -48,5 +48,6 @@ private:
    QueueFamilyIndices m_qfIndices;
    QueueFamilyHandles m_qfHandles;
    SwapchainManager m_swapchainM;
+   VkRenderPass m_renderPass;
    VkDebugUtilsMessengerEXT m_debugMessenger;
 };
