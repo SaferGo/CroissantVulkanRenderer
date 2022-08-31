@@ -1,6 +1,12 @@
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.cpp>
+#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
 
-#include <vulkan/vulkan.h>
+#include <vector>
+#include <iostream>
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+#include <VulkanToyRenderer/ShaderManager/shaderManager.h>
 
 GraphicsPipelineManager::GraphicsPipelineManager() {}
 
@@ -10,9 +16,9 @@ GraphicsPipelineManager::~GraphicsPipelineManager() {}
 // param. with a vector containing the ShadrModules to create)
 void GraphicsPipelineManager::createShaderModules(
       VkShaderModule& vertexShaderModule,
-      VkShaderModule& fragmentShaderModule
-      logicalDevice
-{
+      VkShaderModule& fragmentShaderModule,
+      const VkDevice& logicalDevice
+) {
    const std::vector<char> vertexShaderCode = (
          shaderManager::getBinaryDataFromFile("vert")
    );
@@ -22,11 +28,11 @@ void GraphicsPipelineManager::createShaderModules(
 
    vertexShaderModule = shaderManager::createShaderModule(
          vertexShaderCode,
-         m_device.logicalDevice
+         logicalDevice
    );
    fragmentShaderModule = shaderManager::createShaderModule(
          fragmentShaderCode,
-         m_device.logicalDevice
+         logicalDevice
    );
 
 }
@@ -35,7 +41,7 @@ void GraphicsPipelineManager::createShaderModules(
 void GraphicsPipelineManager::createShaderStagesInfos(
       const VkShaderModule& vertexShaderModule,
       const VkShaderModule& fragmentShaderModule,
-      VkPipelineShader& shaderStages
+      VkPipelineShaderStageCreateInfo (&shaderStagesInfos)[2]
 ) {
    // - Vertex Shader
    VkPipelineShaderStageCreateInfo vertexShaderStageInfo{};
@@ -51,35 +57,29 @@ void GraphicsPipelineManager::createShaderStagesInfos(
    // ..
 
    // - Fragment Shader
-   VkPipelineShaderStageCreateInfo fragmentShaderInfo{};
+   VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{};
    fragmentShaderStageInfo.sType = (
-         VK_STRCUTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO
+         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO
    );
    fragmentShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
    fragmentShaderStageInfo.module = fragmentShaderModule;
    fragmentShaderStageInfo.pName = "main";
 
-   shadersStages [] = {
-      vertexShaderStageInfo,
-      fragmentShaderStageInfo
-   };
+   shaderStagesInfos[0] = vertexShaderStageInfo;
+   shaderStagesInfos[1] = fragmentShaderStageInfo;
 }
 
-void GraphicsPipelineManager::createDynamicStates(
-      VkPipelineDynamicStateCreateInfo& dynamicState
+void GraphicsPipelineManager::createDynamicStatesInfo(
+      const std::vector<VkDynamicState>& dynamicStates,
+      VkPipelineDynamicStateCreateInfo& dynamicStatesInfo
 ) {
-   // Here we define which states we want to modify dynamically during
-   // runtime.
-   std::vector<VkDynamicState> dynamicStates [] = {
-      VK_DYNAMIC_STATE_VIEWPORT,
-      VK_DYNAMIC_STATE_SCISSOR
-   };
-
-   dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-   dynamicState.dynameicStateCount = static_cast<uint32_t>(
+   dynamicStatesInfo.sType = (
+         VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO
+   );
+   dynamicStatesInfo.dynamicStateCount = static_cast<uint32_t>(
          dynamicStates.size()
    );
-   dynamicState.pDynamicStates = dynamicStates.data();
+   dynamicStatesInfo.pDynamicStates = dynamicStates.data();
 }
 
 // Describes the format of the vertex data that will be passed to the
@@ -107,110 +107,110 @@ void GraphicsPipelineManager::createVertexShaderInputInfo(
    // assembly using the subsequent indices, but only assembling the immediatly
    // following element through the end of the originally specified elements.
 void GraphicsPipelineManager::createInputAssemblyInfo(
-      VkPipelineInputAssemblyStateCreateInfo& inputAssembly
+      VkPipelineInputAssemblyStateCreateInfo& inputAssemblyInfo
 ) {
-   inputAssembly.sType = (
+   inputAssemblyInfo.sType = (
          VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
    );
-   inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-   inputAssembly.primitiveRestartEnable = VK_FALSE;
+   inputAssemblyInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+   inputAssemblyInfo.primitiveRestartEnable = VK_FALSE;
 }
 
 // Describes the region of the framebuffer that the output
 // will be renderer to. This is almost always (0,0) to (width, height).
-void GraphicsPipelineManager::createViewport(VkViewport& viewport)
-{
+void GraphicsPipelineManager::createViewport(
+      VkViewport& viewport,
+      const VkExtent2D& extent
+) {
    viewport.x = 0.0f;
    viewport.y = 0.0f;
-   viewport.width = (float) m_swapchainM.m_extent.width;
-   viewport.height = (float) m_swapchainM.m_extent.height;
+   viewport.width = (float) extent.width;
+   viewport.height = (float) extent.height;
    // Depth values(these are the standard values)
    viewport.minDepth = 0.0f;
    viewport.maxDepth = 1.0f;
 }
 
-void GraphicsPipelineManager::createScissor(VkRect2D& scissor)
-{
+void GraphicsPipelineManager::createScissor(
+      VkRect2D& scissor,
+      const VkExtent2D& extent
+) {
    // In this case we want to draw the entire framebuffer
    scissor.offset = {0, 0};
-   scissor.extent = m_swapchainM.m_extent;
+   scissor.extent = extent;
 }
 
 // In the case that we turned viewport and scissor as dinamically, we need to
 // specify their count at pipeline creation time.
 void GraphicsPipelineManager::createViewportStateInfo(
-         VkPipelineViewportStateCreateInfo& viewportState
+         VkPipelineViewportStateCreateInfo& viewportStateInfo
 ) {
-   viewportState.sType = (
+   viewportStateInfo.sType = (
          VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO
    );
-   viewportState.viewportCount = 1;
-   viewportState.scissorCount = 1;
+   viewportStateInfo.viewportCount = 1;
+   viewportStateInfo.scissorCount = 1;
 }
 
 void GraphicsPipelineManager::createRasterizerInfo(
-      VkPipelineRasterizationStateCreateInfo& rasterizer
+      VkPipelineRasterizationStateCreateInfo& rasterizerInfo
 ) {
-   rasterizer.sType = (
+   rasterizerInfo.sType = (
          VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO
    );
    // If depthClampEnable is set to true, then fragments that are beyond the
    // near and far planes are clamped to them as opposed to discarding them.
    // This is useful in some special cases like SHADOW MAPS.
-   rasterizer.depthClampEnable = VK_FALSE;
+   rasterizerInfo.depthClampEnable = VK_FALSE;
    // If rasterizerDiscardEnable is seto to true, then geometry never passes
    // through the rasterizer stage. This basically diables any output to the
    // framebuffer.
-   rasterizer.rasterizerDiscardEnable = VK_FALSE;
+   rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
    // Determines how fragments are generated for geometry:
    //    -VK_POLYGON_MODE_FILL: fills the area of the polygon with fragments.
    //    -VK_POLYGON_MODE_LINE: polygon edges are drawn as lines.
    //    -VK_POLYGON_MODE_POINT: polygon vertices are drawn as points.
-   rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-   rasterizer.lineWidth = 1.0f;
+   rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
+   rasterizerInfo.lineWidth = 1.0f;
    // Determines the type of face culling to use.
-   rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-   rasterizer.frontFace = VK_FRONT_FACE_COUNTERCLOCKWISE;
+   rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+   rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
    // Alters the depth values by adding a constant value or biasing them based
    // on a fragment's slope. Used sometimes for shadow mapping. We won't be
    // using it yet.
-   rasterizer.depthBiasEnable = VK_FALSE;
+   rasterizerInfo.depthBiasEnable = VK_FALSE;
    // Optional
-   rasterizer.depthBiasConstantFactor = 0.0f;
+   rasterizerInfo.depthBiasConstantFactor = 0.0f;
    // Optional
-   rasterizer.depthBiasClamp = 0.0f;
+   rasterizerInfo.depthBiasClamp = 0.0f;
    // Optional
-   rasterizer.depthBiasSlopeFactor = 0.0f;
+   rasterizerInfo.depthBiasSlopeFactor = 0.0f;
 }
 
 void GraphicsPipelineManager::createMultisamplingInfo(
-      VkPipelineMultisampleStateCreateInfo& multisampling
+      VkPipelineMultisampleStateCreateInfo& multisamplingInfo
 ) {
-   multisampling.sType = (
+   multisamplingInfo.sType = (
          VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO
    );
-   multisampling.sampleShadingEnable = VK_FALSE;
-   multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+   multisamplingInfo.sampleShadingEnable = VK_FALSE;
+   multisamplingInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
    // Optional
-   multisampling.minSampleShading = 1.0f;
+   multisamplingInfo.minSampleShading = 1.0f;
    // Optional
-   multisampling.pSampleMask = nullptr;
+   multisamplingInfo.pSampleMask = nullptr;
    // Optional
-   multisampling.alphaToCoverageEnable = VK_FALSE;
+   multisamplingInfo.alphaToCoverageEnable = VK_FALSE;
    // Optional
-   multisampling.alphaToOneEnable = VK_FALSE;
+   multisamplingInfo.alphaToOneEnable = VK_FALSE;
 }
 
-void GraphicsPipelineManager::createColorBlendingGlobalInfo(
-      VkPipelineColorBlendStateCreateInfo& colorBlending
+// Contains the the configuration per attached framebuffer.
+// (For now, we won't use both config.)
+void GraphicsPipelineManager::createColorBlendingAttachment(
+      VkPipelineColorBlendAttachmentState& colorBlendAttachment
 ) {
-   // Color blending(attachment)
-   
-   // Contains the the configuration per attached framebuffer.
-   // (For now, we won't use both config.)
-   VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-
    colorBlendAttachment.colorWriteMask = (
          VK_COLOR_COMPONENT_R_BIT |
          VK_COLOR_COMPONENT_G_BIT |
@@ -218,33 +218,32 @@ void GraphicsPipelineManager::createColorBlendingGlobalInfo(
          VK_COLOR_COMPONENT_A_BIT
    );
    colorBlendAttachment.blendEnable = VK_FALSE;
-   colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
-   colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-   colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD; // Optional
-   colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;   // Optional
-   colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
-   colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD; // Optional
-   
-   // Color blending(global)
-   colorBlending.sType = (
+}
+
+
+void GraphicsPipelineManager::createColorBlendingGlobalInfo(
+      const VkPipelineColorBlendAttachmentState& colorBlendAttachment,
+      VkPipelineColorBlendStateCreateInfo& colorBlendingInfo
+) {
+   colorBlendingInfo.sType = (
          VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
    );
-   colorBlending.logicOpEnable = VK_FALSE;
-   colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
-   colorBlending.attachmentCount = 1;
-   colorBlending.pAttachments = &colorBlendAttachment;
-   colorBlending.blendConstants[0] = 0.0f; // Optional
-   colorBlending.blendConstants[1] = 0.0f; // Optional
-   colorBlending.blendConstants[2] = 0.0f; // Optional
-   colorBlending.blendConstants[3] = 0.0f; // Optional
+   colorBlendingInfo.logicOpEnable = VK_FALSE;
+   colorBlendingInfo.logicOp = VK_LOGIC_OP_COPY; // Optional
+   colorBlendingInfo.attachmentCount = 1;
+   colorBlendingInfo.pAttachments = &colorBlendAttachment;
+   colorBlendingInfo.blendConstants[0] = 0.0f; // Optional
+   colorBlendingInfo.blendConstants[1] = 0.0f; // Optional
+   colorBlendingInfo.blendConstants[2] = 0.0f; // Optional
+   colorBlendingInfo.blendConstants[3] = 0.0f; // Optional
 }
 
 // Interface that creates and allows us to communicate with the uniform
 // values and push constants in the shaders.
 void GraphicsPipelineManager::createPipelineLayout(
-         logicalDevice,
-         m_pipeline
+   const VkDevice& logicalDevice
 ) {
+   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
    // Optional
    pipelineLayoutInfo.setLayoutCount= 0;
@@ -253,10 +252,10 @@ void GraphicsPipelineManager::createPipelineLayout(
    // Optional
    pipelineLayoutInfo.pushConstantRangeCount = 0;
    // Optional
-   pipelineLayoutInfo.pPushContantRanges = nullptr;
+   pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
    auto status = vkCreatePipelineLayout(
-         m_logicalDevice,
+         logicalDevice,
          &pipelineLayoutInfo,
          nullptr,
          &m_pipelineLayout
@@ -266,79 +265,94 @@ void GraphicsPipelineManager::createPipelineLayout(
       throw std::runtime_error("Failed to create pipeline layout!");
 }
 
-void GraphicsPipelineManager::createGraphicsPipeline()
-{
+void GraphicsPipelineManager::createGraphicsPipeline(
+      const VkDevice& logicalDevice,
+      const VkExtent2D& extent,
+      const VkRenderPass& renderPass
+) {
    // -------------------Shader Modules--------------------
+
    VkShaderModule vertexShaderModule;
    VkShaderModule fragmentShaderModule;
-   createShaderModules(vertexShaderModule, fragmentShaderModule);
+   createShaderModules(vertexShaderModule, fragmentShaderModule, logicalDevice);
 
    // -------------------Shader Stages--------------------
-   VkPipelineShader shaderStages;
+
+   VkPipelineShaderStageCreateInfo shaderStagesInfos[2];
    createShaderStagesInfos(
          vertexShaderModule,
          fragmentShaderModule,
-         shaderStages
+         shaderStagesInfos
    );
 
    // -------------------Fixed Functions------------------
 
+   // Here we define which states we want to modify dynamically during
+   // runtime.
+   std::vector<VkDynamicState> dynamicStates = {
+      VK_DYNAMIC_STATE_VIEWPORT,
+      VK_DYNAMIC_STATE_SCISSOR
+   };
    // Dynamic states
-   VkPipelineDynamicStateCreateInfo dynamicState{};
-   createDynamicStatesInfo(dynamicState);
+   VkPipelineDynamicStateCreateInfo dynamicStatesInfo{};
+   createDynamicStatesInfo(dynamicStates, dynamicStatesInfo);
    
    // Viewport
    VkViewport viewport{};
-   createViewport(viewport);
+   createViewport(viewport, extent);
 
    // Scissor
    VkRect2D scissor{};
-   createScissor(scissor);
+   createScissor(scissor, extent);
 
    // Viewport state info
-   VkPipelineViewportStateCreateInfo viewportState{};
-   createViewportStateInfo(viewportState);
+   VkPipelineViewportStateCreateInfo viewportStateInfo{};
+   createViewportStateInfo(viewportStateInfo);
 
    // Vertex input
    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
    createVertexShaderInputInfo(vertexInputInfo);
 
    // Input assembly
-   VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-   createInputAssemblyInfo(inputAssembly);
+   VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
+   createInputAssemblyInfo(inputAssemblyInfo);
 
    // Rasterizer
-   VkPipelineRasterizationStateCreateInfo rasterizer{};
-   createRasterizerInfo(rasterizer);
+   VkPipelineRasterizationStateCreateInfo rasterizerInfo{};
+   createRasterizerInfo(rasterizerInfo);
    
    // Multisampling (disabled for now..)
-   VkPipelineMultisampleStateCreateInfo multisampling{};
-   createMultisamplingInfo(multisampling);
+   VkPipelineMultisampleStateCreateInfo multisamplingInfo{};
+   createMultisamplingInfo(multisamplingInfo);
+
+   // Color blending(attachment)
+   VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+   createColorBlendingAttachment(colorBlendAttachment);
 
    // Color blending(global)
-   VkPipelineColorBlendStateCreateInfo colorBlending{};
-   createColorBlendingGlobalInfo(colorBlending);
+   VkPipelineColorBlendStateCreateInfo colorBlendingInfo{};
+   createColorBlendingGlobalInfo(colorBlendAttachment, colorBlendingInfo);
    
    // Pipeline layout
-   createPipelineLayout();
+   createPipelineLayout(logicalDevice);
 
    // --------------Graphics pipeline creation------------
 
    VkGraphicsPipelineCreateInfo pipelineInfo{};
    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
    pipelineInfo.stageCount = 2;
-   pipelineInfo.pStages = shaderStages;
+   pipelineInfo.pStages = shaderStagesInfos;
    // Reference to all the structures describing the fixed-function stage
    pipelineInfo.pVertexInputState = &vertexInputInfo;
-   pipelineInfo.pInputAssemblyState = &inputAssembly;
-   pipelineInfo.pViewportState = &viewportState;
-   pipelineInfo.pRasterizationState = &rasterizer;
-   pipelineInfo.pMultisampleState = &multisampling;
+   pipelineInfo.pInputAssemblyState = &inputAssemblyInfo;
+   pipelineInfo.pViewportState = &viewportStateInfo;
+   pipelineInfo.pRasterizationState = &rasterizerInfo;
+   pipelineInfo.pMultisampleState = &multisamplingInfo;
    pipelineInfo.pDepthStencilState = nullptr;
-   pipelineInfo.pColorBlendState = &colorBlending;
-   pipelineInfo.pDynamicState = &dynamicState;
+   pipelineInfo.pColorBlendState = &colorBlendingInfo;
+   pipelineInfo.pDynamicState = &dynamicStatesInfo;
    // Pipeline Layout
-   pipelineInfo.layout = pipelineLayout;
+   pipelineInfo.layout = m_pipelineLayout;
    // Render pass and the index of the sub pass where this graphics
    // pipeline will be used.
    pipelineInfo.renderPass = renderPass;
@@ -353,11 +367,12 @@ void GraphicsPipelineManager::createGraphicsPipeline()
    pipelineInfo.basePipelineIndex = -1;
    
    auto status = vkCreateGraphicsPipelines(
-         m_device.logicalDevice,
+         logicalDevice,
          VK_NULL_HANDLE,
          1,
          &pipelineInfo,
-         nullptr
+         nullptr,
+         &m_graphicsPipeline
    );
 
    if (status != VK_SUCCESS)
@@ -367,20 +382,22 @@ void GraphicsPipelineManager::createGraphicsPipeline()
    // already linked, we won't need the shader modules anymore.
    shaderManager::destroyShaderModule(
          vertexShaderModule,
-         m_device.logicalDevice
+         logicalDevice
    );
    shaderManager::destroyShaderModule(
          fragmentShaderModule,
-         m_device.logicalDevice
+         logicalDevice
    );
 }
 
-void GraphicsPipelineManager::destroyGraphicsPipeline(pipeline)
-{
-   vkDestroyPipeline(m_device.logicalDevice, m_graphicsPipeline, nullptr);
+void GraphicsPipelineManager::destroyGraphicsPipeline(
+      const VkDevice& logicalDevice
+) {
+   vkDestroyPipeline(logicalDevice, m_graphicsPipeline, nullptr);
 }
 
-void GraphicsPipelineManager::destroyPipelineLayout(playout)
-{
-   vkDestroyPipelineLayout(m_device.logicalDevice, m_pipelineLayout, nullptr);
+void GraphicsPipelineManager::destroyPipelineLayout(
+      const VkDevice& logicalDevice
+) {
+   vkDestroyPipelineLayout(logicalDevice, m_pipelineLayout, nullptr);
 }

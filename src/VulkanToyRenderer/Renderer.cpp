@@ -18,6 +18,8 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
 #include <VulkanToyRenderer/ShaderManager/shaderManager.h>
+#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
+#include <VulkanToyRenderer/Commands/CommandManager.h>
 
 void HelloTriangleApp::run()
 {  
@@ -309,80 +311,6 @@ void HelloTriangleApp::createLogicalDevice()
    m_qfHandles.setQueueHandles(m_device.logicalDevice, m_qfIndices);
 }
 
-void createRenderPasss()
-{
-   VkAttachmentDescription colorAttachment{};
-   colorAttachment.format = m_imageFormat;
-   // We won't configure the multisample yet.
-   colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-   // Determines what to do with the data in the attachment before rendering.
-   //    - VK_ATTACHMENT_LOAD_OP_CLEAR: Specifies that the contents within the
-   //    renderer area will be cleared to a uniform value, which is specified
-   //    when a render pass instance is begun.
-   colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-   // Determines what to do with the data in the attachment after rendering.
-   //    -VK_ATTACHMENT_STORE_OP_STORE: Rendered content will be stored in
-   //    memory and can be read later.
-   colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-   // Image Layouts configuration
-   // (anotar mejor su funcionamiento y para que estan)
-   //
-   // Specifies which layout the image will have before the render pass begins.
-   //    - VK_IMAGE_LAYOUT_UNDEFINED: It means that we don't care what previous
-   //    layout the image was in. The contents of the image aren't guaranteed
-   //    to be preserved.
-   //    (in this case we're going to clear the image anyway, so we don't
-   //    care to preserve the image).
-   colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-   // Specifies the layout to automatically transition to when the render
-   // pass finishes.
-   //    - VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: Images to be presented in the
-   //    swapchain.
-   //    (we want the image to be ready for presentation using the swapchain
-   //    after rendering)
-   colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-   // Attachment references
-   VkAttachmentReference colorAttachmentRef{};
-
-   // Specifies which attachment to reference by its index in the attachment
-   // descriptions array.
-   // (In this case our array consists of a single VkAttachmentDescription,
-   // so its index is 0)
-   colorAttachmentRef.attachment = 0;
-   // Specifies which layout we would like the attachment to have during a
-   // subpass that uses this reference. Vulkan will automatically transition
-   // the attachment to this layout when the subpass is started.
-   // (In this case we intend to use the attachment to function as a color
-   // buffer so the VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL will give us
-   // the best performance)
-   colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-   // Subpasses
-   VkSubpassDescription subpass{};
-   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-   subpass.colorAttachmentCount = 1;
-   subpass.pColorAttachments = &colorAttachmentRef;
-
-   // Finally...we create the render pass
-   VkRenderPassCreateInfo renderPassInfo{};
-   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-   renderPassInfo.attachmentCount = 1;
-   renderPassInfo.pAttachments = &colorAttachment;
-   renderPassInfo.subpassCount = 1;
-   renderPassInfo.pSubpasses = &subpass;
-   
-   auto status = vkCreateRenderPass(
-         m_device.logicalDevice,
-         &renderPassInfo,
-         nullptr,
-         &m_renderPass
-   );
-
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to create render pass!");
-}
-
 void HelloTriangleApp::initVK()
 {
    createVkInstance();
@@ -401,9 +329,31 @@ void HelloTriangleApp::initVK()
 
    m_swapchainM.createImageViews(m_device.logicalDevice);
 
-   createRenderPass();
+   m_renderPassM.createRenderPass(
+         m_device.logicalDevice,
+         m_swapchainM.getImageFormat()
+   );
 
-   m_graphicsPipelineM::createGraphicsPipeline();
+   m_graphicsPipelineM.createGraphicsPipeline(
+         m_device.logicalDevice,
+         m_swapchainM.getExtent(),
+         m_renderPassM.getRenderPass()
+   );
+
+   m_swapchainM.createFramebuffers(
+         m_device.logicalDevice,
+         m_renderPassM.getRenderPass()
+   );
+
+   m_commandM.createCommandPool(
+         m_device.logicalDevice,
+         m_qfIndices
+   );
+
+   m_commandM.createCommandBuffer(
+         m_device.logicalDevice
+   );
+
 }
 void HelloTriangleApp::mainLoop()
 {
@@ -415,14 +365,20 @@ void HelloTriangleApp::mainLoop()
 
 void HelloTriangleApp::cleanup()
 {
+   // Command Pool
+   m_commandM.destroyCommandPool(m_device.logicalDevice);
+
    // Graphics Pipeline
-   m_graphicsPipelineM::destoryGraphicsPipeline(m_graphicsPipeline);
+   m_graphicsPipelineM.destroyGraphicsPipeline(m_device.logicalDevice);
 
    // Pipeline Layout
-   m_graphicsPipelineM::destoryPipelineLayout(m_wsdsad);
+   m_graphicsPipelineM.destroyPipelineLayout(m_device.logicalDevice);
+
+   // Framebuffers
+   m_swapchainM.destroyFramebuffers(m_device.logicalDevice);
 
    // Render pass
-   vkDestroyRenderPass(m_device.logicalDevice, m_renderPass, nullptr);
+   m_renderPassM.destroyRenderPass(m_device.logicalDevice);
 
    // Swapchain
    m_swapchainM.destroySwapchain(m_device.logicalDevice);

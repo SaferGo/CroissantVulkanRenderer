@@ -64,6 +64,9 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/qfUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/SwapchainManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ShaderManager/shaderManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPassManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/CommandManager.cpp"
 )
 
 target_include_directories(

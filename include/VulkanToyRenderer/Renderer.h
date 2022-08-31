@@ -9,6 +9,9 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
+#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
+#include <VulkanToyRenderer/RenderPass/RenderPassManager.h>
+#include <VulkanToyRenderer/Commands/CommandManager.h>
 
 struct Device
 {
@@ -42,12 +45,14 @@ private:
    bool isDeviceSuitable(const VkPhysicalDevice& device);
    bool areAllExtensionsSupported(const VkPhysicalDevice& device);
 
-   WindowManager m_windowM;
-   VkInstance m_vkInstance;
-   Device m_device;
-   QueueFamilyIndices m_qfIndices;
-   QueueFamilyHandles m_qfHandles;
-   SwapchainManager m_swapchainM;
-   VkRenderPass m_renderPass;
+   WindowManager            m_windowM;
+   VkInstance               m_vkInstance;
+   Device                   m_device;
+   QueueFamilyIndices       m_qfIndices;
+   QueueFamilyHandles       m_qfHandles;
+   SwapchainManager         m_swapchainM;
+   RenderPassManager        m_renderPassM;
+   GraphicsPipelineManager  m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT m_debugMessenger;
+   CommandManager           m_commandM;
 };
