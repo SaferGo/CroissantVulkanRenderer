@@ -24,7 +24,9 @@ public:
       const VkExtent2D& extent,
       const VkPipeline& graphicsPipeline
    );
+   void resetCommandBuffer();
    void destroyCommandPool(const VkDevice& logicalDevice);
+   VkCommandBuffer& getCommandBuffer();
 
 private:
 

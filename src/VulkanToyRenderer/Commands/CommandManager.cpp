@@ -55,6 +55,11 @@ void CommandManager::createCommandBuffer(
       throw std::runtime_error("Failed to allocate command buffers!");
 }
 
+void CommandManager::resetCommandBuffer()
+{
+   vkResetCommandBuffer(m_commandBuffer, 0);
+}
+
 void CommandManager::writeCommandIntoCommandBuffer(
       const VkFramebuffer& framebuffer,
       const VkRenderPass& renderPass,
@@ -160,6 +165,11 @@ void CommandManager::writeCommandIntoCommandBuffer(
    status = vkEndCommandBuffer(m_commandBuffer);
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to record command buffer!");
+}
+
+VkCommandBuffer& CommandManager::getCommandBuffer()
+{
+   return m_commandBuffer;
 }
 
 void CommandManager::destroyCommandPool(const VkDevice& logicalDevice)

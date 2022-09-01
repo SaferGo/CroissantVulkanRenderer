@@ -174,7 +174,7 @@ void GraphicsPipelineManager::createRasterizerInfo(
    rasterizerInfo.lineWidth = 1.0f;
    // Determines the type of face culling to use.
    rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-   rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+   rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
    // Alters the depth values by adding a constant value or biasing them based
    // on a fragment's slope. Used sometimes for shadow mapping. We won't be
@@ -388,6 +388,11 @@ void GraphicsPipelineManager::createGraphicsPipeline(
          fragmentShaderModule,
          logicalDevice
    );
+}
+
+const VkPipeline& GraphicsPipelineManager::getGraphicsPipeline() const
+{
+   return m_graphicsPipeline;
 }
 
 void GraphicsPipelineManager::destroyGraphicsPipeline(

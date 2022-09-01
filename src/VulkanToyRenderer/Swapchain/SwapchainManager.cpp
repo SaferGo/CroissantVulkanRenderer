@@ -422,9 +422,19 @@ const VkExtent2D& SwapchainManager::getExtent() const
    return m_extent;
 }
 
+VkFramebuffer& SwapchainManager::getFramebuffer(const uint32_t imageIndex)
+{
+   return m_framebuffers[imageIndex];
+}
+
 const VkFormat& SwapchainManager::getImageFormat() const
 {
    return m_imageFormat;
+}
+
+VkSwapchainKHR& SwapchainManager::getSwapchain()
+{
+   return m_swapchain;
 }
 
 /*

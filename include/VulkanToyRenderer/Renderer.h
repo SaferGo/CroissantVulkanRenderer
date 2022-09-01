@@ -34,9 +34,11 @@ private:
    void initVK();
    void mainLoop();
    void cleanup();
+   void drawFrame();
 
    void createVkInstance();
    void createLogicalDevice();
+   void createSyncObjects();
 
    std::vector<const char*> getRequiredExtensions();
 
@@ -44,6 +46,8 @@ private:
 
    bool isDeviceSuitable(const VkPhysicalDevice& device);
    bool areAllExtensionsSupported(const VkPhysicalDevice& device);
+
+   void destroySyncObjects();
 
    WindowManager            m_windowM;
    VkInstance               m_vkInstance;
@@ -55,4 +59,9 @@ private:
    GraphicsPipelineManager  m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT m_debugMessenger;
    CommandManager           m_commandM;
+
+   // Sync objects
+   VkSemaphore m_imageAvailableSemaphore;
+   VkSemaphore m_renderFinishedSemaphore;
+   VkFence m_inFlightFence;
 };

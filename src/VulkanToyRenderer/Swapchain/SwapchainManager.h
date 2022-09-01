@@ -49,6 +49,7 @@ public:
       const VkSurfaceKHR& surface
    );
 
+
    VkSurfaceFormatKHR chooseBestSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR>& availableFormats
    );
@@ -69,6 +70,8 @@ public:
 
    const VkExtent2D& getExtent() const;
    const VkFormat& getImageFormat() const;
+   VkFramebuffer& getFramebuffer(const uint32_t imageIndex);
+   VkSwapchainKHR& getSwapchain();
 
    // Used in isDeviceSuitable function.
    bool isSwapchainAdequated(
