@@ -10,13 +10,12 @@ class CommandPool
 {
 public:
 
-   CommandPool();
-   ~CommandPool();
-
-   void createCommandPool(
+   CommandPool(
       const VkDevice& logicalDevice,
       QueueFamilyIndices& queueFamilyIndices
    );
+   ~CommandPool();
+
    void destroyCommandPool();
 
    void createCommandBufferAllocInfo(VkCommandBufferAllocateInfo& allocInfo);

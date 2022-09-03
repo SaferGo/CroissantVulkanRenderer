@@ -6,9 +6,7 @@
 
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 
-CommandPool::CommandPool() {}
-
-void CommandPool::createCommandPool(
+CommandPool::CommandPool(
       const VkDevice& logicalDevice,
       QueueFamilyIndices& queueFamilyIndices
 ) {

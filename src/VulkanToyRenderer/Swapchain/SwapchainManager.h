@@ -44,22 +44,21 @@ public:
    void destroySwapchain(const VkDevice& logicalDevice);
    void destroyImageViews(const VkDevice& logicalDevice);
 
-   SwapchainSupportedProperties getSupportedProperties(
+     
+   const VkExtent2D& getExtent() const;
+   const VkFormat& getImageFormat() const;
+   VkFramebuffer& getFramebuffer(const uint32_t imageIndex);
+   VkSwapchainKHR& getSwapchain();
+
+   // Used in isPhysicalDeviceSuitable function.
+   bool isSwapchainAdequated(
       const VkPhysicalDevice& physicalDevice,
       const VkSurfaceKHR& surface
    );
 
 
-   VkSurfaceFormatKHR chooseBestSurfaceFormat(
-      const std::vector<VkSurfaceFormatKHR>& availableFormats
-   );
-   VkPresentModeKHR chooseBestPresentMode(
-      const std::vector<VkPresentModeKHR>& availablePresentModes
-   );
-   VkExtent2D chooseBestExtent(
-         const VkSurfaceCapabilitiesKHR& capabilities,
-         const WindowManager& windowM
-   );
+private:
+
    void chooseBestSettings(
       const VkPhysicalDevice& physicalDevice,
       const WindowManager& windowM,
@@ -67,14 +66,22 @@ public:
       VkPresentModeKHR& presentMode,
       VkExtent2D& extent
    );
+   
+   VkSurfaceFormatKHR chooseBestSurfaceFormat(
+      const std::vector<VkSurfaceFormatKHR>& availableFormats
+   );
+    
 
-   const VkExtent2D& getExtent() const;
-   const VkFormat& getImageFormat() const;
-   VkFramebuffer& getFramebuffer(const uint32_t imageIndex);
-   VkSwapchainKHR& getSwapchain();
+   VkPresentModeKHR chooseBestPresentMode(
+      const std::vector<VkPresentModeKHR>& availablePresentModes
+   );
 
-   // Used in isDeviceSuitable function.
-   bool isSwapchainAdequated(
+   VkExtent2D chooseBestExtent(
+         const VkSurfaceCapabilitiesKHR& capabilities,
+         const WindowManager& windowM
+   );
+
+   SwapchainSupportedProperties getSupportedProperties(
       const VkPhysicalDevice& physicalDevice,
       const VkSurfaceKHR& surface
    );
@@ -82,8 +89,6 @@ public:
    bool existsMaxNumberOfSupportedImages(
          const VkSurfaceCapabilitiesKHR& capabilities
    );
-
-private:
 
    VkSwapchainKHR m_swapchain;
    std::vector<VkImage> m_images;

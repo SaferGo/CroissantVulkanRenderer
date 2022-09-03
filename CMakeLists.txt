@@ -67,6 +67,8 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPassManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/CommandPool.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Device/Device.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Extensions/extensionsUtils.cpp"
 )
 
 target_include_directories(

@@ -6,14 +6,6 @@
 
 #include <VulkanToyRenderer/QueueFamily/qfUtils.h>
 
-bool QueueFamilyIndices::areAllQueueFamiliesSupported()
-{
-   return (
-            graphicsFamily.has_value() &&
-            presentFamily.has_value()
-      );
-}
-
 /*
  * Checks if the queue families required are:
  * - Supported by the device.
@@ -38,5 +30,11 @@ void QueueFamilyIndices::getIndicesOfRequiredQueueFamilies(
 
       i++;
    }
+
+   // Verifies if all the QF required are supported.
+   areAllQueueFamiliesSupported = (
+         graphicsFamily.has_value() &&
+         presentFamily.has_value()
+   );
 }
 

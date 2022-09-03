@@ -12,16 +12,7 @@
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
 #include <VulkanToyRenderer/RenderPass/RenderPassManager.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-
-struct Device
-{
-   VkPhysicalDevice physicalDevice;
-   VkDevice logicalDevice;
-
-   const std::vector<const char*> requiredExtensions = {
-         VK_KHR_SWAPCHAIN_EXTENSION_NAME
-   };
-};
+#include <VulkanToyRenderer/Device/Device.h>
 
 class HelloTriangleApp
 {
@@ -37,15 +28,7 @@ private:
    void drawFrame();
 
    void createVkInstance();
-   void createLogicalDevice();
    void createSyncObjects();
-
-   std::vector<const char*> getRequiredExtensions();
-
-   void pickPhysicalDevice();
-
-   bool isDeviceSuitable(const VkPhysicalDevice& device);
-   bool areAllExtensionsSupported(const VkPhysicalDevice& device);
 
    void destroySyncObjects();
 
@@ -58,7 +41,7 @@ private:
    RenderPassManager        m_renderPassM;
    GraphicsPipelineManager  m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT m_debugMessenger;
-   CommandPool              m_commandPool;
+   std::vector<CommandPool> m_commandPools;
 
    // Sync objects
    VkSemaphore m_imageAvailableSemaphore;
