@@ -67,8 +67,13 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPassManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/CommandPool.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/commandUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Device/Device.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Extensions/extensionsUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/MeshLoader/Vertex.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorPool.cpp"
 )
 
 target_include_directories(

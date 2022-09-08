@@ -7,7 +7,7 @@
 
 int main()
 {
-   HelloTriangleApp app;
+   Renderer app;
 
    try
    {

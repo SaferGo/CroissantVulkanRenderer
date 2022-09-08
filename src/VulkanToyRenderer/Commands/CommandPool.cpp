@@ -4,6 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 
 CommandPool::CommandPool(
@@ -12,6 +13,7 @@ CommandPool::CommandPool(
 ) {
    m_logicalDevice = logicalDevice;
    m_queueFamilyIndices = queueFamilyIndices;
+   m_commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
 
    VkCommandPoolCreateInfo poolInfo{};
    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -36,24 +38,44 @@ void CommandPool::destroyCommandPool()
    vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 }
 
-void CommandPool::allocCommandBuffer(
-      const VkCommandBufferAllocateInfo& allocInfo
-) {
-   VkCommandBuffer newCommandBuffer;
+void CommandPool::allocCommandBuffer(VkCommandBuffer& commandBuffer)
+{
+   VkCommandBufferAllocateInfo allocInfo{};
+   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+   allocInfo.commandPool = m_commandPool;
+   allocInfo.commandBufferCount = 1;
+
+   vkAllocateCommandBuffers(m_logicalDevice, &allocInfo, &commandBuffer);
+}
+
+/*
+ * Allocates all the commands buffers saved in m_commandBuffers.
+*/
+void CommandPool::allocAllCommandBuffers()
+{
+   if (m_commandBuffers.size() == 0)
+      throw std::runtime_error("Allocating empty CMD Buffers to the CMD Pool!");
+
+   VkCommandBufferAllocateInfo allocInfo {};
+   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+   allocInfo.commandPool = m_commandPool;
+   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+   allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
+
    auto status = vkAllocateCommandBuffers(
          m_logicalDevice,
          &allocInfo,
-         &newCommandBuffer
+         m_commandBuffers.data()
    );
 
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to allocate command buffers!");
-
-   m_commandBuffers.push_back(std::move(newCommandBuffer));
 }
 
-const VkCommandBuffer& CommandPool::getCommandBuffer(const uint32_t index)
-{
+const VkCommandBuffer& CommandPool::getCommandBuffer(
+      const uint32_t index
+) {
    return m_commandBuffers[index];
 }
 
@@ -62,11 +84,169 @@ void CommandPool::recordCommandBuffer(
       const VkRenderPass& renderPass,
       const VkExtent2D& extent,
       const VkPipeline& graphicsPipeline,
-      const uint32_t commandBufferIndex
+      const uint32_t index,
+      const VkBuffer& vertexBuffer,
+      const VkBuffer& indexBuffer,
+      const size_t vertexCount,
+      VkPipelineLayout& pipelineLayout,
+      const std::vector<VkDescriptorSet>& descriptorSets
 ) {
    // Specifies some details about the usage of this specific command
    // buffer.
    VkCommandBufferBeginInfo beginInfo{};
+   createCommandBufferBeginInfo(m_commandBuffers[index], beginInfo);
+   
+
+   VkRenderPassBeginInfo renderPassInfo{};
+   createRenderPassBeginInfo(renderPass, framebuffer, extent, renderPassInfo);
+   
+   //--------------------------------RenderPass--------------------------------
+
+   // The final parameter controls how the drawing commands between the render
+   // pass will be provided:
+   //    -VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded
+   //    in the primary command buffer itself and no secondary command buffers
+   //    will be executed.
+   //    -VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS: The render pass
+   //    commands will be executed from secondary command buffers.
+   vkCmdBeginRenderPass(
+         m_commandBuffers[index],
+         &renderPassInfo,
+         VK_SUBPASS_CONTENTS_INLINE
+   );
+
+   vkCmdBindPipeline(
+         m_commandBuffers[index],
+         // this or compute pipeline
+         VK_PIPELINE_BIND_POINT_GRAPHICS,
+         graphicsPipeline
+   );
+
+   bindVertexBuffers(vertexBuffer, m_commandBuffers[index]);
+   bindIndexBuffer(indexBuffer, m_commandBuffers[index]);
+   // Set Dynamic States
+   setViewport(extent, m_commandBuffers[index]);
+   setScissor(extent, m_commandBuffers[index]);
+
+   // Binds the right descriptor set to the descriptors in the shader.
+   vkCmdBindDescriptorSets(
+         m_commandBuffers[index],
+         VK_PIPELINE_BIND_POINT_GRAPHICS,
+         pipelineLayout,
+         // Index of the first descriptor set.
+         0,
+         // The number of sets to bind.
+         1,
+         &descriptorSets[index],
+         // Array of offsets that are used for dynamic descriptors.
+         0,
+         nullptr
+   );
+   
+   // Creates the draw command.
+   //    - 3 param. -> InstanceCount.
+   //    - 4 param. -> Offset(in the index buffer).
+   //    - 5 param. -> Vertex offset.
+   //    - 6 param. -> Instance offset.
+   vkCmdDrawIndexed(
+         m_commandBuffers[index],
+         vertexCount,
+         1,
+         0,
+         0,
+         0
+   );
+
+   vkCmdEndRenderPass(m_commandBuffers[index]);
+
+   auto status = vkEndCommandBuffer(m_commandBuffers[index]);
+   if (status != VK_SUCCESS)
+      throw std::runtime_error("Failed to record command buffer!");
+}
+
+void CommandPool::createRenderPassBeginInfo(
+      const VkRenderPass& renderPass,
+      const VkFramebuffer& framebuffer,
+      const VkExtent2D& extent,
+      VkRenderPassBeginInfo& renderPassInfo
+) {
+   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+   renderPassInfo.renderPass = renderPass;
+   // Binds the framebuffer for the swapchain image we want to draw to.
+   renderPassInfo.framebuffer = framebuffer;
+   // These two param. define the size of the render area. The render area
+   // defines where shader loads and stores will take place. The pixels
+   // outside this region will have undefined values. It should match
+   // the size of the attachments for best performance.
+   renderPassInfo.renderArea.offset = {0, 0};
+   renderPassInfo.renderArea.extent = extent;
+   // These two param. define the clear values to use for
+   // VK_ATTACHMENT_LOAD_OP_CLEAR, which we used as load operation for the
+   // color attachment.
+   renderPassInfo.clearValueCount = 1;
+   renderPassInfo.pClearValues = &config::CLEAR_COLOR;
+}
+
+void CommandPool::bindVertexBuffers(
+      const VkBuffer& vertexBuffer,
+      VkCommandBuffer& commandBuffer
+) {
+   VkBuffer vertexBuffers[] = {vertexBuffer};
+   VkDeviceSize offsets[] = {0};
+
+   vkCmdBindVertexBuffers(
+         commandBuffer,
+         // Offset
+         0,
+         // Number of bindings.
+         1,
+         vertexBuffers,
+         // Data offset
+         offsets
+   );
+}
+
+void CommandPool::bindIndexBuffer(
+      const VkBuffer& indexBuffer,
+      VkCommandBuffer& commandBuffer
+) {
+   vkCmdBindIndexBuffer(
+         commandBuffer,
+         indexBuffer,
+         0,
+         VK_INDEX_TYPE_UINT16
+   );
+}
+
+
+void CommandPool::setViewport(
+      const VkExtent2D& extent,
+      VkCommandBuffer& commandBuffer
+) {
+   VkViewport viewport{};
+   viewport.x = 0.0f;
+   viewport.y = 0.0f;
+   viewport.width = static_cast<float>(extent.width);
+   viewport.height = static_cast<float>(extent.height);
+   viewport.minDepth = 0.0f;
+   viewport.maxDepth = 1.0f;
+   vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+}
+
+void CommandPool::setScissor(
+      const VkExtent2D& extent,
+      VkCommandBuffer& commandBuffer
+) {
+   VkRect2D scissor{};
+   scissor.offset = {0, 0};
+   scissor.extent = extent;
+   vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+}
+
+void CommandPool::createCommandBufferBeginInfo(
+      VkCommandBuffer& commandBuffer,
+      VkCommandBufferBeginInfo &beginInfo
+) {
    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
    // Optional
    // Specifies how we're goint to use the command buffer:
@@ -87,107 +267,27 @@ void CommandPool::recordCommandBuffer(
    // to vkBeginCommandBuffer will implicity reset it. It's not possible
    // to append commands to a buffer at a later time.
    auto status = vkBeginCommandBuffer(
-         m_commandBuffers[commandBufferIndex],
+         commandBuffer,
          &beginInfo
    );
 
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to begin recording command buffer!");
-
-   VkRenderPassBeginInfo renderPassInfo{};
-   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-   renderPassInfo.renderPass = renderPass;
-   // Binds the framebuffer for the swapchain image we want to draw to.
-   renderPassInfo.framebuffer = framebuffer;
-   // These two param. define the size of the render area. The render area
-   // defines where shader loads and stores will take place. The pixels
-   // outside this region will have undefined values. It should match
-   // the size of the attachments for best performance.
-   renderPassInfo.renderArea.offset = {0, 0};
-   renderPassInfo.renderArea.extent = extent;
-   // These two param. define the clear values to use for
-   // VK_ATTACHMENT_LOAD_OP_CLEAR, which we used as load operation for the
-   // color attachment.
-   VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-   renderPassInfo.clearValueCount = 1;
-   renderPassInfo.pClearValues = &clearColor;
-
-   // It returns void, so there will be no error handling until we've finished
-   // recording/writing.
-   // The final parameter controls how the drawing commands withiin the render
-   // pass will be provided:
-   //    -VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded
-   //    in the primary command buffer itself and no secondary command buffers
-   //    will be executed.
-   //    -VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS: The render pass
-   //    commands will be executed from secondary command buffers.
-
-   //--------------------------------RenderPass--------------------------------
-   vkCmdBeginRenderPass(
-         m_commandBuffers[commandBufferIndex],
-         &renderPassInfo,
-         VK_SUBPASS_CONTENTS_INLINE
-   );
-
-   vkCmdBindPipeline(
-         m_commandBuffers[commandBufferIndex],
-         // this or compute pipeline
-         VK_PIPELINE_BIND_POINT_GRAPHICS,
-         graphicsPipeline
-   );
-
-   // Set dynamic states
-   VkViewport viewport{};
-   viewport.x = 0.0f;
-   viewport.y = 0.0f;
-   viewport.width = static_cast<float>(extent.width);
-   viewport.height = static_cast<float>(extent.height);
-   viewport.minDepth = 0.0f;
-   viewport.maxDepth = 1.0f;
-   vkCmdSetViewport(m_commandBuffers[commandBufferIndex], 0, 1, &viewport);
-
-   VkRect2D scissor{};
-   scissor.offset = {0, 0};
-   scissor.extent = extent;
-   vkCmdSetScissor(m_commandBuffers[commandBufferIndex], 0, 1, &scissor);
-
-   // Creates the draw command.
-   //    - 1 param. -> VertexCount: vertices to draw.
-   //    - 2 param. -> InstanceCount: For intance rendering, use 1 if we're not
-   //    doint that.
-   //    - 3 param. -> firstVertex: Used as an offset into the vertex buffer,
-   //    defines the lowest value of gl_VertexIndex.
-   //    - 4 param. -> firstIntance: Used as an offset for instanced rendering,
-   //    defines the lowest value of gl_InstanceIndex.
-   vkCmdDraw(m_commandBuffers[commandBufferIndex], 3, 1, 0, 0);
-
-   vkCmdEndRenderPass(m_commandBuffers[commandBufferIndex]);
-
-   status = vkEndCommandBuffer(m_commandBuffers[commandBufferIndex]);
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to record command buffer!");
 }
 
-void CommandPool::resetCommandBuffer(const uint32_t commandBufferIndex)
+void CommandPool::resetCommandBuffer(const uint32_t index)
 {
-   vkResetCommandBuffer(m_commandBuffers[commandBufferIndex], 0);
+   vkResetCommandBuffer(m_commandBuffers[index], 0);
 }
 
-void CommandPool::createCommandBufferAllocInfo(
-      VkCommandBufferAllocateInfo& allocInfo
-) {
-   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-   allocInfo.commandPool = m_commandPool;
-   // Specifies if the allocated command buffers are primary or secondary
-   // buffers:
-   //    - Primary: Can be submitted to a queue for execution, but
-   //    cannot be called from other command buffers.
-   //    - Secondary: Cannot be submitted directly, but can be called from
-   //    primary command buffers. Helpful to reuse common operations from
-   //    primary command buffers.
-   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-   // Since we are only allocation one command buffer...
-   allocInfo.commandBufferCount = 1;
+void CommandPool::resetCommandBuffer(VkCommandBuffer& commandBuffer)
+{
+   vkResetCommandBuffer(commandBuffer, 0);
+}
+
+void CommandPool::freeCommandBuffer(VkCommandBuffer& commandBuffer)
+{
+   vkFreeCommandBuffers(m_logicalDevice, m_commandPool, 1, &commandBuffer);
 }
 
 CommandPool::~CommandPool() {}

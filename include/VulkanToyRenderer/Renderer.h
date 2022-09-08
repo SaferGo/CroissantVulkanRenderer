@@ -13,9 +13,12 @@
 #include <VulkanToyRenderer/RenderPass/RenderPassManager.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Device/Device.h>
+#include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 
-class HelloTriangleApp
+class Renderer
 {
+
 public:
 
    void run();
@@ -25,7 +28,7 @@ private:
    void initVK();
    void mainLoop();
    void cleanup();
-   void drawFrame();
+   void drawFrame(uint8_t& currentFrame);
 
    void createVkInstance();
    void createSyncObjects();
@@ -42,9 +45,19 @@ private:
    GraphicsPipelineManager  m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT m_debugMessenger;
    std::vector<CommandPool> m_commandPools;
+   DescriptorPool           m_descriptorPool;
+   // Future improv.
+   //CommandPool              m_commandPoolMemoryAlloc;
 
-   // Sync objects
-   VkSemaphore m_imageAvailableSemaphore;
-   VkSemaphore m_renderFinishedSemaphore;
-   VkFence m_inFlightFence;
+   // Sync objects(for each frame)
+   std::vector<VkSemaphore> m_imageAvailableSemaphores;
+   std::vector<VkSemaphore> m_renderFinishedSemaphores;
+   std::vector<VkFence>     m_inFlightFences;
+
+   // Buffers with their memories
+   VkBuffer m_vertexBuffer;
+   VkDeviceMemory m_memory1;
+
+   VkBuffer m_indexBuffer;
+   VkDeviceMemory m_memory2;
 };

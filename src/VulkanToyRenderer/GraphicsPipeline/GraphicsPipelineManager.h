@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 
 #include <vulkan/vulkan.h>
 
@@ -14,9 +15,12 @@ public:
    void createGraphicsPipeline(
          const VkDevice& logicalDevice,
          const VkExtent2D& extent,
-         const VkRenderPass& renderPass
+         const VkRenderPass& renderPass,
+         const VkDescriptorSetLayout& descriptorSetLayout
    );
    const VkPipeline& getGraphicsPipeline() const;
+
+   VkPipelineLayout& getPipelineLayout();
    void destroyGraphicsPipeline(const VkDevice& logicalDevice);
    void destroyPipelineLayout(const VkDevice& logicalDevice);
 
@@ -38,6 +42,9 @@ private:
       VkPipelineDynamicStateCreateInfo& dynamicStatesInfo
    );
    void createVertexShaderInputInfo(
+         const VkVertexInputBindingDescription& bindingDescription,
+         const std::array<VkVertexInputAttributeDescription, 2>&
+            attribDescriptions,
          VkPipelineVertexInputStateCreateInfo& vertexInputInfo
    );
    void createInputAssemblyInfo(
@@ -62,7 +69,10 @@ private:
       const VkPipelineColorBlendAttachmentState& colorBlendAttachment,
       VkPipelineColorBlendStateCreateInfo& colorBlendingInfo
    );
-   void createPipelineLayout(const VkDevice& logicalDevice);
+   void createPipelineLayout(
+         const VkDevice& logicalDevice,
+   const VkDescriptorSetLayout& descriptorSetLayout
+   );
 
 
    VkPipeline m_graphicsPipeline;

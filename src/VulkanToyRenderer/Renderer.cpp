@@ -21,8 +21,25 @@
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Extensions/extensionsUtils.h>
+#include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/MeshLoader/Vertex.h>
+#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
+#include <VulkanToyRenderer/Descriptors/UniformBufferObject.h>
 
-void HelloTriangleApp::run()
+// Contains the pos and the color.
+const std::vector<Vertex> data = {
+   {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+   {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint16_t> indices = {
+   0, 1, 2, 2, 3, 0
+};
+
+
+void Renderer::run()
 {  
    m_windowM.createWindow(
          config::RESOLUTION_W,
@@ -34,8 +51,14 @@ void HelloTriangleApp::run()
    cleanup();
 }
 
-void HelloTriangleApp::createSyncObjects()
+void Renderer::createSyncObjects()
 {
+   m_imageAvailableSemaphores.resize(config::MAX_FRAMES_IN_FLIGHT);
+   m_renderFinishedSemaphores.resize(config::MAX_FRAMES_IN_FLIGHT);
+   m_inFlightFences.resize(config::MAX_FRAMES_IN_FLIGHT);
+
+   //---------------------------Sync. Objects Info-----------------------------
+
    VkSemaphoreCreateInfo semaphoreInfo{};
    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -45,38 +68,43 @@ void HelloTriangleApp::createSyncObjects()
    // vkWaitForFences() returns immediately since the fence is already signaled.
    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-   auto status = vkCreateSemaphore(
+   //---------------------Creation of Sync. Objects----------------------------
+
+   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
+   {
+      auto status = vkCreateSemaphore(
+            m_device.getLogicalDevice(),
+            &semaphoreInfo,
+            nullptr,
+            &m_imageAvailableSemaphores[i]
+      );
+
+      if (status != VK_SUCCESS)
+         throw std::runtime_error("Failed to create semaphore!");
+
+      status = vkCreateSemaphore(
          m_device.getLogicalDevice(),
          &semaphoreInfo,
          nullptr,
-         &m_imageAvailableSemaphore
-   );
+         &m_renderFinishedSemaphores[i]
+      );
 
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to create semaphore!");
+      if (status != VK_SUCCESS)
+         throw std::runtime_error("Failed to create semaphore!");
 
-   status = vkCreateSemaphore(
-      m_device.getLogicalDevice(),
-      &semaphoreInfo,
-      nullptr,
-      &m_renderFinishedSemaphore
-   );
+      status = vkCreateFence(
+            m_device.getLogicalDevice(),
+            &fenceInfo,
+            nullptr,
+            &m_inFlightFences[i]
+      );
 
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to create semaphore!");
-
-   status = vkCreateFence(
-         m_device.getLogicalDevice(),
-         &fenceInfo,
-         nullptr,
-         &m_inFlightFence
-   );
-
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to create fence!");
+      if (status != VK_SUCCESS)
+         throw std::runtime_error("Failed to create fence!");
+   }
 }
 
-void HelloTriangleApp::createVkInstance()
+void Renderer::createVkInstance()
 {
    if (vLayersConfig::ARE_VALIDATION_LAYERS_ENABLED &&
        !vlManager::areAllRequestedLayersAvailable()
@@ -148,7 +176,8 @@ void HelloTriangleApp::createVkInstance()
       throw std::runtime_error("Failed to create Vulkan's instance!");
 }
 
-void HelloTriangleApp::initVK()
+
+void Renderer::initVK()
 {
    createVkInstance();
 
@@ -179,10 +208,13 @@ void HelloTriangleApp::initVK()
          m_swapchainM.getImageFormat()
    );
 
+   m_descriptorPool.createDescriptorSetLayout(m_device.getLogicalDevice());
+
    m_graphicsPipelineM.createGraphicsPipeline(
          m_device.getLogicalDevice(),
          m_swapchainM.getExtent(),
-         m_renderPassM.getRenderPass()
+         m_renderPassM.getRenderPass(),
+         m_descriptorPool.getDescriptorSetLayout()
    );
 
    m_swapchainM.createFramebuffers(
@@ -190,20 +222,61 @@ void HelloTriangleApp::initVK()
          m_renderPassM.getRenderPass()
    );
 
+   // Command Pool #1
+   const uint32_t cmdPoolIndex = 0;
    CommandPool newCommandPool(m_device.getLogicalDevice(), m_qfIndices);
    m_commandPools.push_back(newCommandPool);
 
+   // Vertex Buffer(with staging buffer)
+
+   bufferManager::createBufferAndTransferToDevice(
+         m_commandPools[cmdPoolIndex],
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         data,
+         m_qfHandles.graphicsQueue,
+         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+         m_memory1,
+         m_vertexBuffer
+   );
+
+   // Index Buffer(with staging buffer)
+   bufferManager::createBufferAndTransferToDevice(
+         m_commandPools[cmdPoolIndex],
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         indices,
+         m_qfHandles.graphicsQueue,
+         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+         m_memory2,
+         m_indexBuffer
+   );
+
+   // Uniform Buffers
+   m_descriptorPool.createUniformBuffers(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         config::MAX_FRAMES_IN_FLIGHT
+   );
+
+   // Descriptor Pool
+   m_descriptorPool.createDescriptorPool(
+         m_device.getLogicalDevice(),
+         config::MAX_FRAMES_IN_FLIGHT,
+         config::MAX_FRAMES_IN_FLIGHT
+   );
+  
+   // Descriptor Sets
+   m_descriptorPool.createDescriptorSets(m_device.getLogicalDevice());
+
    
-   // Command Buffer #1
-   VkCommandBufferAllocateInfo allocInfo1{};
-   m_commandPools[0].createCommandBufferAllocInfo(allocInfo1);
-   m_commandPools[0].allocCommandBuffer(allocInfo1);
+   // Allocates all the command buffers in the command Pool #1
+   m_commandPools[cmdPoolIndex].allocAllCommandBuffers();
 
    createSyncObjects();
-
 }
 
-void HelloTriangleApp::drawFrame()
+void Renderer::drawFrame(uint8_t& currentFrame)
 {
    // Waits until the previous frame has finished.
    //    - 2 param. -> FenceCount.
@@ -212,16 +285,25 @@ void HelloTriangleApp::drawFrame()
    vkWaitForFences(
          m_device.getLogicalDevice(),
          1,
-         &m_inFlightFence,
+         &m_inFlightFences[currentFrame],
          VK_TRUE,
          UINT64_MAX
    );
 
    // After waiting, we need to manually reset the fence.
-   vkResetFences(m_device.getLogicalDevice(), 1, &m_inFlightFence);
+   vkResetFences(
+         m_device.getLogicalDevice(),
+         1,
+         &m_inFlightFences[currentFrame]
+   );
 
+   //------------------------Updates uniform buffer----------------------------
+   m_descriptorPool.updateUniformBuffer(
+         m_device.getLogicalDevice(),
+         currentFrame,
+         m_swapchainM.getExtent()
+   );
 
-   const uint32_t cmdBufferIndex = 0;
    //--------------------Acquires an image from the swapchain------------------
    uint32_t imageIndex;
    vkAcquireNextImageKHR(
@@ -230,28 +312,35 @@ void HelloTriangleApp::drawFrame()
          UINT64_MAX,
          // Specifies synchr. objects that have to be signaled when the
          // presentation engine is finished using the image.
-         m_imageAvailableSemaphore,
+         m_imageAvailableSemaphores[currentFrame],
          VK_NULL_HANDLE,
          &imageIndex
    );
 
-   //------------------------Records command buffer 1--------------------------
+   //------------------------Records command buffer----------------------------
 
    // Resets the command buffer to be able to be recorded.
-   m_commandPools[0].resetCommandBuffer(cmdBufferIndex);
+   m_commandPools[0].resetCommandBuffer(currentFrame);
    m_commandPools[0].recordCommandBuffer(
          m_swapchainM.getFramebuffer(imageIndex),
          m_renderPassM.getRenderPass(),
          m_swapchainM.getExtent(),
          m_graphicsPipelineM.getGraphicsPipeline(),
-         cmdBufferIndex
+         currentFrame,
+         m_vertexBuffer,
+         m_indexBuffer,
+         indices.size(),
+         m_graphicsPipelineM.getPipelineLayout(),
+         m_descriptorPool.getDescriptorSets()
    );
 
-   //----------------------Submits the command buffer 1------------------------
+   //----------------------Submits the command buffer--------------------------
 
    VkSubmitInfo submitInfo{};
    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-   VkSemaphore waitSemaphores[] = {m_imageAvailableSemaphore};
+   VkSemaphore waitSemaphores[] = {
+      m_imageAvailableSemaphores[currentFrame]
+   };
    VkPipelineStageFlags waitStages [] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
    };
@@ -264,11 +353,11 @@ void HelloTriangleApp::drawFrame()
    // execution.
    submitInfo.commandBufferCount = 1;
    submitInfo.pCommandBuffers = &(
-         m_commandPools[0].getCommandBuffer(cmdBufferIndex)
+         m_commandPools[0].getCommandBuffer(currentFrame)
    );
    // Specifies which semaphores to signal once the command buffer/s have
    // finished execution.
-   VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphore};
+   VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[currentFrame]};
    submitInfo.signalSemaphoreCount = 1;
    submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -276,7 +365,7 @@ void HelloTriangleApp::drawFrame()
          m_qfHandles.graphicsQueue,
          1,
          &submitInfo,
-         m_inFlightFence
+         m_inFlightFences[currentFrame]
    );
 
    if (status != VK_SUCCESS)
@@ -301,34 +390,85 @@ void HelloTriangleApp::drawFrame()
    presentInfo.pResults = nullptr;
 
    vkQueuePresentKHR(m_qfHandles.presentQueue, &presentInfo);
+
+   // Updates the frame
+   currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
 }
 
-void HelloTriangleApp::mainLoop()
+void Renderer::mainLoop()
 {
+   // Tells us in which frame we are,
+   // between 1 <= frame <= MAX_FRAMES_IN_FLIGHT
+   uint8_t currentFrame = 0;
    while (m_windowM.isWindowClosed() == false)
    {
       m_windowM.pollEvents();
-      drawFrame();
+      drawFrame(currentFrame);
+   }
+   vkDeviceWaitIdle(m_device.getLogicalDevice());
+}
+
+void Renderer::destroySyncObjects()
+{
+   for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
+   {
+      vkDestroySemaphore(
+            m_device.getLogicalDevice(),
+            m_imageAvailableSemaphores[i],
+            nullptr
+      );
+      vkDestroySemaphore(
+            m_device.getLogicalDevice(),
+            m_renderFinishedSemaphores[i],
+            nullptr
+      );
+      vkDestroyFence(
+            m_device.getLogicalDevice(),
+            m_inFlightFences[i],
+            nullptr
+      );
    }
 }
 
-void HelloTriangleApp::destroySyncObjects()
+void Renderer::cleanup()
 {
-   vkDestroySemaphore(
-         m_device.getLogicalDevice(),
-         m_imageAvailableSemaphore,
-         nullptr
-   );
-   vkDestroySemaphore(
-         m_device.getLogicalDevice(),
-         m_renderFinishedSemaphore,
-         nullptr
-   );
-   vkDestroyFence(m_device.getLogicalDevice(), m_inFlightFence, nullptr);
-}
+   // Framebuffers
+   m_swapchainM.destroyFramebuffers(m_device.getLogicalDevice());
 
-void HelloTriangleApp::cleanup()
-{
+   // ViewImages of the images from the Swapchain
+   m_swapchainM.destroyImageViews(m_device.getLogicalDevice());
+
+   // Swapchain
+   m_swapchainM.destroySwapchain(m_device.getLogicalDevice());
+
+   // Uniform Buffer and Memory
+   m_descriptorPool.destroyUniformBuffersAndMemories(
+         m_device.getLogicalDevice()
+   );
+   
+   // Descriptor Pool
+   m_descriptorPool.destroyDescriptorPool(m_device.getLogicalDevice());
+
+   // Descriptor Set Layout
+   m_descriptorPool.destroyDescriptorSetLayout(m_device.getLogicalDevice());
+
+   // Graphics Pipeline
+   m_graphicsPipelineM.destroyGraphicsPipeline(m_device.getLogicalDevice());
+
+   // Graphics Pipeline Layout
+   m_graphicsPipelineM.destroyPipelineLayout(m_device.getLogicalDevice());
+
+   // Render pass
+   m_renderPassM.destroyRenderPass(m_device.getLogicalDevice());
+
+   // Buffers
+   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_vertexBuffer);
+   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_indexBuffer);
+   
+   // Buffer Memories
+   bufferManager::freeMemory(m_device.getLogicalDevice(), m_memory1);
+   bufferManager::freeMemory(m_device.getLogicalDevice(), m_memory2);
+
    // Sync objects
    destroySyncObjects();
 
@@ -336,27 +476,9 @@ void HelloTriangleApp::cleanup()
    for (auto& commandPool : m_commandPools)
       commandPool.destroyCommandPool();
 
-   // Graphics Pipeline
-   m_graphicsPipelineM.destroyGraphicsPipeline(m_device.getLogicalDevice());
-
-   // Pipeline Layout
-   m_graphicsPipelineM.destroyPipelineLayout(m_device.getLogicalDevice());
-
-   // Framebuffers
-   m_swapchainM.destroyFramebuffers(m_device.getLogicalDevice());
-
-   // Render pass
-   m_renderPassM.destroyRenderPass(m_device.getLogicalDevice());
-
-   // Swapchain
-   m_swapchainM.destroySwapchain(m_device.getLogicalDevice());
-
-   // ViewImages of the images from the Swapchain
-   m_swapchainM.destroyImageViews(m_device.getLogicalDevice());
-
    // Logical Device
    vkDestroyDevice(m_device.getLogicalDevice(), nullptr);
-
+   
    // Validation Layers
    if (vLayersConfig::ARE_VALIDATION_LAYERS_ENABLED)
    {
@@ -369,7 +491,7 @@ void HelloTriangleApp::cleanup()
 
    // Window Surface
    m_windowM.destroySurface(m_vkInstance);
-
+   
    // Vulkan's instance
    vkDestroyInstance(m_vkInstance, nullptr);
 

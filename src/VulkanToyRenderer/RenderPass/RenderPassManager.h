@@ -15,6 +15,17 @@ public:
          const VkFormat& imageFormat
    );
 
+   void createSubPass(
+         const VkAttachmentReference& colorAttachmentRef,
+         VkSubpassDescription& subpassDescript
+   );
+
+   const VkRenderPass& getRenderPass() const;
+
+   void destroyRenderPass(const VkDevice& logicalDevice);
+
+private:
+   
    void createColorAttachment(
          const VkFormat& imageFormat,
          VkAttachmentDescription& colorAttachment
@@ -23,16 +34,6 @@ public:
          VkAttachmentReference& colorAttachmentRef
    );
 
-   void createSubPass(
-         const VkAttachmentReference& colorAttachmentRef,
-         VkSubpassDescription& subpass
-   );
-
-   const VkRenderPass& getRenderPass() const;
-
-   void destroyRenderPass(const VkDevice& logicalDevice);
-
-private:
 
    VkRenderPass m_renderPass;
 

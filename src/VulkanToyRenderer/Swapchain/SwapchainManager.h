@@ -99,6 +99,7 @@ private:
    // of the swapchain to check if the device is suitable.
    std::optional<SwapchainSupportedProperties> m_supportedProperties;
    VkFormat m_imageFormat;
+   // Size of the swapchain color images.
    VkExtent2D m_extent;
 
    std::vector<VkFramebuffer> m_framebuffers;
