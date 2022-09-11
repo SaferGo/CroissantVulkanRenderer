@@ -1,17 +1,19 @@
-#include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
+#include <VulkanToyRenderer/Swapchain/Swapchain.h>
 
 #include <algorithm>
 
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Images/imageManager.h>
+#include <VulkanToyRenderer/Window/Window.h>
 
-SwapchainManager::SwapchainManager() {}
+Swapchain::Swapchain() {}
 
-void SwapchainManager::createSwapchain(
+void Swapchain::createSwapchain(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const WindowManager& windowM
+      const Window& window
 ) {
 
    VkSurfaceFormatKHR surfaceFormat;
@@ -20,7 +22,7 @@ void SwapchainManager::createSwapchain(
 
    chooseBestSettings(
          physicalDevice,
-         windowM,
+         window,
          surfaceFormat,
          presentMode,
          extent
@@ -49,7 +51,7 @@ void SwapchainManager::createSwapchain(
 
    VkSwapchainCreateInfoKHR createInfo{};
    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-   createInfo.surface = windowM.getSurface();
+   createInfo.surface = window.getSurface();
    createInfo.minImageCount = imageCount;
    createInfo.imageFormat = surfaceFormat.format;
    createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -82,7 +84,7 @@ void SwapchainManager::createSwapchain(
    QueueFamilyIndices indices;
    indices.getIndicesOfRequiredQueueFamilies(
          physicalDevice,
-         windowM.getSurface()
+         window.getSurface()
    );
    uint32_t queueFamilyIndices[] = {
       indices.graphicsFamily.value(),
@@ -150,65 +152,39 @@ void SwapchainManager::createSwapchain(
    );
 }
 
-void SwapchainManager::destroyFramebuffers(const VkDevice& logicalDevice)
+void Swapchain::destroyFramebuffers(const VkDevice& logicalDevice)
 {
    for (auto& framebuffer : m_framebuffers)
       vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
 }
 
-void SwapchainManager::destroySwapchain(const VkDevice& logicalDevice)
+void Swapchain::destroySwapchain(const VkDevice& logicalDevice)
 {
    vkDestroySwapchainKHR(logicalDevice, m_swapchain, nullptr);
 }
 
-void SwapchainManager::destroyImageViews(const VkDevice& logicalDevice)
+void Swapchain::destroyImageViews(const VkDevice& logicalDevice)
 {
    for (auto& imageView : m_imageViews)
       vkDestroyImageView(logicalDevice, imageView, nullptr);
 }
 
-void SwapchainManager::createImageViews(const VkDevice& logicalDevice)
+void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
 {
   m_imageViews.resize(m_images.size());
 
   for (size_t i = 0; i < m_images.size(); i++)
    {
-      VkImageViewCreateInfo createInfo{};
-      createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-      createInfo.image = m_images[i];
-      // Specifies how to treat images, as 1D textures, 2D textures, 3D
-      // textures and cube maps.
-      createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-      createInfo.format = m_imageFormat;
-      // Specifies how we want to map all the color channels of the images
-      // (E.g: map all of the channels to the red channel for a monochrome
-      // texture)
-      createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-      createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-      createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-      createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-      // Specifies what the image's purpose is and which part of the image
-      // should be accessed.
-      // (E.g: with mipmapping leves or multiple layers)
-      createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-      createInfo.subresourceRange.baseMipLevel = 0;
-      createInfo.subresourceRange.levelCount = 1;
-      createInfo.subresourceRange.baseArrayLayer = 0;
-      createInfo.subresourceRange.layerCount = 1;
-
-      const auto status = vkCreateImageView(
+      imageManager::createImageView(
             logicalDevice,
-            &createInfo,
-            nullptr,
-            &m_imageViews[i]
+            m_imageFormat,
+            m_images[i],
+            m_imageViews[i]
       );
-
-      if (status != VK_SUCCESS)
-         throw std::runtime_error("Failed to create image views!");
    }
 }
 
-void SwapchainManager::createFramebuffers(
+void Swapchain::createFramebuffers(
       const VkDevice& logicalDevice,
       const VkRenderPass& renderPass
 ) {
@@ -246,7 +222,7 @@ void SwapchainManager::createFramebuffers(
  * Gets all the supported properties of the swapchain depending of the logical
  * device and the window's surface.
  */
-SwapchainSupportedProperties SwapchainManager::getSupportedProperties(
+SwapchainSupportedProperties Swapchain::getSupportedProperties(
       const VkPhysicalDevice& physicalDevice,
       const VkSurfaceKHR& surface
 ) {
@@ -304,9 +280,9 @@ SwapchainSupportedProperties SwapchainManager::getSupportedProperties(
 
 
 // Verificar si el order esta bien
-void SwapchainManager::chooseBestSettings(
+void Swapchain::chooseBestSettings(
       const VkPhysicalDevice& physicalDevice,
-      const WindowManager& windowM,
+      const Window& window,
       VkSurfaceFormatKHR& surfaceFormat,
       VkPresentModeKHR& presentMode,
       VkExtent2D& extent
@@ -316,7 +292,7 @@ void SwapchainManager::chooseBestSettings(
    {
       m_supportedProperties = getSupportedProperties(
             physicalDevice,
-            windowM.getSurface()
+            window.getSurface()
       );
    }
 
@@ -330,7 +306,7 @@ void SwapchainManager::chooseBestSettings(
 
    extent = chooseBestExtent(
          m_supportedProperties.value().capabilities,
-         windowM
+         window
    );
 }
 
@@ -338,7 +314,7 @@ void SwapchainManager::chooseBestSettings(
  * Chooses the surface format that we want(if it's available), if
  * it's not available, then any other option is chosen.
  */
-VkSurfaceFormatKHR SwapchainManager::chooseBestSurfaceFormat(
+VkSurfaceFormatKHR Swapchain::chooseBestSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR>& availableFormats
 ) {
    for (const auto& availableFormat : availableFormats)
@@ -371,7 +347,7 @@ VkSurfaceFormatKHR SwapchainManager::chooseBestSurfaceFormat(
  * - VK_PRESENT_MODE_FIFO_KHR    -> This present mode is guaranteed to be 
  *       always available.
  */
-VkPresentModeKHR SwapchainManager::chooseBestPresentMode(
+VkPresentModeKHR Swapchain::chooseBestPresentMode(
       const std::vector<VkPresentModeKHR>& availablePresentModes
 ) {
    for (const auto& availablePresentMode : availablePresentModes)
@@ -386,15 +362,15 @@ VkPresentModeKHR SwapchainManager::chooseBestPresentMode(
 /*
  * Chooses the best resolution that more matches the one of the window surface.
  */
-VkExtent2D SwapchainManager::chooseBestExtent(
+VkExtent2D Swapchain::chooseBestExtent(
       const VkSurfaceCapabilitiesKHR& capabilities,
-      const WindowManager& windowM
+      const Window& window
 ) {
-   if (windowM.isAllowedToModifyTheResolution(capabilities) == false)
+   if (window.isAllowedToModifyTheResolution(capabilities) == false)
       return capabilities.currentExtent;
 
    int width, height;
-   windowM.getResolutionInPixels(width,height);
+   window.getResolutionInPixels(width,height);
 
    VkExtent2D actualExtent =
    {
@@ -417,22 +393,22 @@ VkExtent2D SwapchainManager::chooseBestExtent(
    return actualExtent;
 }
 
-const VkExtent2D& SwapchainManager::getExtent() const
+const VkExtent2D& Swapchain::getExtent() const
 {
    return m_extent;
 }
 
-VkFramebuffer& SwapchainManager::getFramebuffer(const uint32_t imageIndex)
+VkFramebuffer& Swapchain::getFramebuffer(const uint32_t imageIndex)
 {
    return m_framebuffers[imageIndex];
 }
 
-const VkFormat& SwapchainManager::getImageFormat() const
+const VkFormat& Swapchain::getImageFormat() const
 {
    return m_imageFormat;
 }
 
-VkSwapchainKHR& SwapchainManager::getSwapchain()
+VkSwapchainKHR& Swapchain::getSwapchain()
 {
    return m_swapchain;
 }
@@ -440,7 +416,7 @@ VkSwapchainKHR& SwapchainManager::getSwapchain()
 /*
  * Verifies if the device is compatible with the swapchain.
 */
-bool SwapchainManager::isSwapchainAdequated(
+bool Swapchain::isSwapchainAdequated(
       const VkPhysicalDevice& physicalDevice,
       const VkSurfaceKHR& surface
 ) {
@@ -456,10 +432,10 @@ bool SwapchainManager::isSwapchainAdequated(
 /*
  * If the maxImageCount is equal to 0, it means that there is no maximum.
  */
-bool SwapchainManager::existsMaxNumberOfSupportedImages(
+bool Swapchain::existsMaxNumberOfSupportedImages(
       const VkSurfaceCapabilitiesKHR& capabilities
 ) {
    return (capabilities.maxImageCount != 0);
 }
 
-SwapchainManager::~SwapchainManager() {}
+Swapchain::~Swapchain() {}

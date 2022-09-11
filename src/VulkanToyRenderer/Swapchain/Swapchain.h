@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Window/WindowManager.h>
+#include <VulkanToyRenderer/Window/Window.h>
 
 struct SwapchainSupportedProperties
 {
@@ -23,18 +23,18 @@ struct SwapchainSupportedProperties
 
 };
 
-class SwapchainManager
+class Swapchain
 {
 public:
 
-   SwapchainManager();
-   ~SwapchainManager();
+   Swapchain();
+   ~Swapchain();
    void createSwapchain(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const WindowManager& windowM
+      const Window& window
    );
-   void createImageViews(const VkDevice& logicalDevice);
+   void createAllImageViews(const VkDevice& logicalDevice);
    void createFramebuffers(
          const VkDevice& logicalDevice,
          const VkRenderPass& renderPass
@@ -61,7 +61,7 @@ private:
 
    void chooseBestSettings(
       const VkPhysicalDevice& physicalDevice,
-      const WindowManager& windowM,
+      const Window& window,
       VkSurfaceFormatKHR& surfaceFormat,
       VkPresentModeKHR& presentMode,
       VkExtent2D& extent
@@ -78,7 +78,7 @@ private:
 
    VkExtent2D chooseBestExtent(
          const VkSurfaceCapabilitiesKHR& capabilities,
-         const WindowManager& windowM
+         const Window& window
    );
 
    SwapchainSupportedProperties getSupportedProperties(

@@ -5,16 +5,17 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <VulkanToyRenderer/Window/WindowManager.h>
+#include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
-#include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
+#include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
-#include <VulkanToyRenderer/RenderPass/RenderPassManager.h>
+#include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Device/Device.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
+#include <VulkanToyRenderer/Textures/Texture.h>
 
 class Renderer
 {
@@ -35,13 +36,13 @@ private:
 
    void destroySyncObjects();
 
-   WindowManager            m_windowM;
+   Window                   m_window;
    VkInstance               m_vkInstance;
    Device                   m_device;
    QueueFamilyIndices       m_qfIndices;
    QueueFamilyHandles       m_qfHandles;
-   SwapchainManager         m_swapchainM;
-   RenderPassManager        m_renderPassM;
+   Swapchain                m_swapchain;
+   RenderPass               m_renderPass;
    GraphicsPipelineManager  m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT m_debugMessenger;
    std::vector<CommandPool> m_commandPools;
@@ -60,4 +61,7 @@ private:
 
    VkBuffer m_indexBuffer;
    VkDeviceMemory m_memory2;
+
+   // Textures
+   Texture m_texture;
 };

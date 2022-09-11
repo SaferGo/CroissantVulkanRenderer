@@ -7,7 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
-#include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
+#include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
 
 Device::Device() {}
@@ -40,8 +40,8 @@ void Device::createLogicalDevice(
    }
 
    // - Specifices which device FEATURES we want to use.
-   // For now, this will be empty.
    VkPhysicalDeviceFeatures deviceFeatures{};
+   deviceFeatures.samplerAnisotropy = VK_TRUE;
 
 
    // Now we can create the logical device.
@@ -93,7 +93,7 @@ void Device::pickPhysicalDevice(
       VkInstance& vkInstance,
       QueueFamilyIndices& requiredQueueFamiliesIndices,
       const VkSurfaceKHR& windowSurface,
-      SwapchainManager& swapchain
+      Swapchain& swapchain
 ) {
    uint32_t deviceCount = 0;
    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
@@ -125,7 +125,7 @@ void Device::pickPhysicalDevice(
 bool Device::isPhysicalDeviceSuitable(
       QueueFamilyIndices& requiredQueueFamiliesIndices,
       const VkSurfaceKHR& windowSurface,
-      SwapchainManager& swapchain,
+      Swapchain& swapchain,
       const VkPhysicalDevice& possiblePhysicalDevice
 ) {
 
@@ -155,6 +155,9 @@ bool Device::isPhysicalDeviceSuitable(
 
    // Here we can score the gpu(so later select the best one to use) or just
    // verify if it has the features that we need.
+
+   if (!deviceFeatures.samplerAnisotropy)
+      return false;
 
    // For now, we will just return the dedicated one.
    if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)

@@ -23,7 +23,11 @@ public:
       const size_t nSets
    );
    void createDescriptorSetLayout(const VkDevice& logicalDevice);
-   void createDescriptorSets(const VkDevice logicalDevice);
+   void createDescriptorSets(
+         const VkDevice logicalDevice,
+         const VkImageView& textureImageView,
+         const VkSampler& textureSampler
+   );
 
    void destroyDescriptorPool(const VkDevice& logicalDevice);
    void destroyDescriptorSetLayout(const VkDevice& logicalDevice);
@@ -40,16 +44,13 @@ public:
 
 private:
 
-   void createUboLayoutBinding(
-      VkDescriptorSetLayoutBinding& uboLayoutBinding
-   ); 
-
    void allocDescriptorSets(const VkDevice& logicalDevice);
 
    VkDescriptorPool             m_descriptorPool;
    VkDescriptorSetLayout        m_descriptorSetLayout;
    std::vector<VkDescriptorSet> m_descriptorSets;
 
+   // Types of descriptors
    std::vector<VkBuffer>        m_uniformBuffers;
    std::vector<VkDeviceMemory>  m_uniformBuffersMemory;
 

@@ -83,6 +83,7 @@ void bufferManager::copyBuffer(
       VkQueue& graphicsQueue
 ) {
    VkCommandBuffer commandBuffer;
+
    commandPool.allocCommandBuffer(commandBuffer);
    
    // Records the cmd buffer.
@@ -93,17 +94,7 @@ void bufferManager::copyBuffer(
          commandBuffer
    );
    
-   VkSubmitInfo submitInfo{};
-   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-   submitInfo.commandBufferCount = 1;
-   submitInfo.pCommandBuffers = &commandBuffer;
-
-   // Submits and execute the cmd immediately and wait on this transfer to
-   // complete.
-   vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-   vkQueueWaitIdle(graphicsQueue);
-
-   commandPool.freeCommandBuffer(commandBuffer);
+   commandPool.submitCommandBuffer(graphicsQueue, commandBuffer);
 }
 
 void bufferManager::allocBuffer(
@@ -137,9 +128,9 @@ void bufferManager::allocBuffer(
    allocInfo.allocationSize =  memRequirements.size;
    allocInfo.memoryTypeIndex = (
          bufferUtils::findMemoryType(
+            physicalDevice,
             memRequirements.memoryTypeBits,
-            memoryProperties,
-            physicalDevice
+            memoryProperties
          )
    );
 

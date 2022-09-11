@@ -91,7 +91,7 @@ void GraphicsPipelineManager::createDynamicStatesInfo(
  */
 void GraphicsPipelineManager::createVertexShaderInputInfo(
       const VkVertexInputBindingDescription& bindingDescription,
-      const std::array<VkVertexInputAttributeDescription, 2>&
+      const std::array<VkVertexInputAttributeDescription, 3>&
          attribDescriptions,
       VkPipelineVertexInputStateCreateInfo& vertexInputInfo
 ) {
@@ -328,7 +328,7 @@ void GraphicsPipelineManager::createGraphicsPipeline(
    VkVertexInputBindingDescription bindingDescription = (
          Vertex::getBindingDescription()
    );
-   std::array<VkVertexInputAttributeDescription, 2> attribDescriptions = (
+   std::array<VkVertexInputAttributeDescription, 3> attribDescriptions = (
          Vertex::getAttributeDescriptions()
    );
    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};

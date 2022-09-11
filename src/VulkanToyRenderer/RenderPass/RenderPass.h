@@ -2,13 +2,13 @@
 
 #include <vulkan/vulkan.h>
 
-class RenderPassManager
+class RenderPass
 {
 
 public:
 
-   RenderPassManager();
-   ~RenderPassManager();
+   RenderPass();
+   ~RenderPass();
 
    void createRenderPass(
          const VkDevice& logicalDevice,

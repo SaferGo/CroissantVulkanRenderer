@@ -43,7 +43,7 @@ private:
    );
    void createVertexShaderInputInfo(
          const VkVertexInputBindingDescription& bindingDescription,
-         const std::array<VkVertexInputAttributeDescription, 2>&
+         const std::array<VkVertexInputAttributeDescription, 3>&
             attribDescriptions,
          VkPipelineVertexInputStateCreateInfo& vertexInputInfo
    );

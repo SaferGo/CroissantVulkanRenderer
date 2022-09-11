@@ -14,6 +14,7 @@ set(SHADERS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/shaders")
 set(SHADERS_BINARY_DIR "${PROJECT_BIN_DIR}/shaders")
 set(PROJECT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(PROJECT_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/libs")
+set(TEXTURES_DIR "${CMAKE_SOURCE_DIR}/assets/textures")
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
@@ -41,6 +42,10 @@ add_subdirectory(${GLFW_DIR} EXCLUDE_FROM_ALL)
 set(GLM_DIR "${PROJECT_LIBRARIES_DIR}/glm")
 add_subdirectory(${GLM_DIR} EXCLUDE_FROM_ALL)
 
+# -STB(Image Loader) -> Header file that contains all the code.
+set(STB_DIR "${PROJECT_LIBRARIES_DIR}/stb")
+add_subdirectory(${STB_DIR} EXCLUDE_FROM_ALL)
+
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -52,20 +57,22 @@ add_subdirectory(${SHADERS_SOURCE_DIR})
 # To get the full path of the compiled shaders in the c++ code.
 add_definitions(-DSHADERS_BINARY_DIR="${SHADERS_BINARY_DIR}")
 
+################################Textures#######################################
+add_definitions(-DTEXTURES_DIR="${TEXTURES_DIR}/")
 #################################Executable####################################
 
 add_executable(${PROJECT_NAME} 
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/main.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Renderer.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/WindowManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/Window.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayers/vlManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/qfUtils.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/SwapchainManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/Swapchain.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ShaderManager/shaderManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPassManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPass.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/CommandPool.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/commandUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Device/Device.cpp"
@@ -74,6 +81,9 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/MeshLoader/Vertex.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorPool.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/descriptorTypeUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/imageManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Texture.cpp"
 )
 
 target_include_directories(
@@ -92,6 +102,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
    Threads::Threads  # Needed by GLFW.
    X11               # To create windows. Needed by GLFW.
    glm
+   stb
    PRIVATE ${CMAKE_DL_LIBS}
 )
 # CMAKE_DL_LIBS -> is the library libdl which helps to link dynamic

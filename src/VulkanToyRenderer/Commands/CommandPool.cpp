@@ -49,6 +49,23 @@ void CommandPool::allocCommandBuffer(VkCommandBuffer& commandBuffer)
    vkAllocateCommandBuffers(m_logicalDevice, &allocInfo, &commandBuffer);
 }
 
+void CommandPool::submitCommandBuffer(
+      VkQueue& graphicsQueue,
+      VkCommandBuffer& commandBuffer
+) {
+   VkSubmitInfo submitInfo{};
+   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+   submitInfo.commandBufferCount = 1;
+   submitInfo.pCommandBuffers = &commandBuffer;
+
+   // Submits and execute the cmd immediately and wait on this transfer to
+   // complete.
+   vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+   vkQueueWaitIdle(graphicsQueue);
+
+   freeCommandBuffer(commandBuffer);
+}
+
 /*
  * Allocates all the commands buffers saved in m_commandBuffers.
 */

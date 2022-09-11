@@ -5,8 +5,8 @@
 namespace bufferUtils
 {
    uint32_t findMemoryType(
+      const VkPhysicalDevice& physicalDevice,
       const uint32_t typeFilter,
-      const VkMemoryPropertyFlags& properties,
-      const VkPhysicalDevice& physicalDevice
+      const VkMemoryPropertyFlags& properties
    );
 };

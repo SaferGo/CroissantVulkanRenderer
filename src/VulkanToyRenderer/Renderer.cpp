@@ -12,26 +12,28 @@
 
 #include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
-#include <VulkanToyRenderer/Window/WindowManager.h>
+#include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/ValidationLayers/vlManager.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
-#include <VulkanToyRenderer/Swapchain/SwapchainManager.h>
+#include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/ShaderManager/shaderManager.h>
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Extensions/extensionsUtils.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/Buffers/bufferUtils.h>
 #include <VulkanToyRenderer/MeshLoader/Vertex.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Descriptors/UniformBufferObject.h>
+#include <VulkanToyRenderer/Descriptors/DescriptorTypes.h>
+#include <VulkanToyRenderer/Textures/Texture.h>
 
 // Contains the pos and the color.
 const std::vector<Vertex> data = {
-   {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-   {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+   {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+   {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 };
 
 const std::vector<uint16_t> indices = {
@@ -41,7 +43,7 @@ const std::vector<uint16_t> indices = {
 
 void Renderer::run()
 {  
-   m_windowM.createWindow(
+   m_window.createWindow(
          config::RESOLUTION_W,
          config::RESOLUTION_H,
          config::TITLE
@@ -176,50 +178,49 @@ void Renderer::createVkInstance()
       throw std::runtime_error("Failed to create Vulkan's instance!");
 }
 
-
 void Renderer::initVK()
 {
    createVkInstance();
 
    vlManager::setupDebugMessenger(m_vkInstance, m_debugMessenger);
-   m_windowM.createSurface(m_vkInstance);
+   m_window.createSurface(m_vkInstance);
 
    m_device.pickPhysicalDevice(
          m_vkInstance,
          m_qfIndices,
-         m_windowM.getSurface(),
-         m_swapchainM
+         m_window.getSurface(),
+         m_swapchain
    );
 
    m_device.createLogicalDevice(m_qfIndices);
    
    m_qfHandles.setQueueHandles(m_device.getLogicalDevice(), m_qfIndices);
 
-   m_swapchainM.createSwapchain(
+   m_swapchain.createSwapchain(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
-         m_windowM
+         m_window
    );
 
-   m_swapchainM.createImageViews(m_device.getLogicalDevice());
+   m_swapchain.createAllImageViews(m_device.getLogicalDevice());
 
-   m_renderPassM.createRenderPass(
+   m_renderPass.createRenderPass(
          m_device.getLogicalDevice(),
-         m_swapchainM.getImageFormat()
+         m_swapchain.getImageFormat()
    );
 
    m_descriptorPool.createDescriptorSetLayout(m_device.getLogicalDevice());
 
    m_graphicsPipelineM.createGraphicsPipeline(
          m_device.getLogicalDevice(),
-         m_swapchainM.getExtent(),
-         m_renderPassM.getRenderPass(),
+         m_swapchain.getExtent(),
+         m_renderPass.getRenderPass(),
          m_descriptorPool.getDescriptorSetLayout()
    );
 
-   m_swapchainM.createFramebuffers(
+   m_swapchain.createFramebuffers(
          m_device.getLogicalDevice(),
-         m_renderPassM.getRenderPass()
+         m_renderPass.getRenderPass()
    );
 
    // Command Pool #1
@@ -228,7 +229,6 @@ void Renderer::initVK()
    m_commandPools.push_back(newCommandPool);
 
    // Vertex Buffer(with staging buffer)
-
    bufferManager::createBufferAndTransferToDevice(
          m_commandPools[cmdPoolIndex],
          m_device.getPhysicalDevice(),
@@ -252,6 +252,22 @@ void Renderer::initVK()
          m_indexBuffer
    );
 
+   m_texture.createTextureImage(
+         "model.jpg",
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         m_commandPools[0],
+         m_qfHandles.graphicsQueue
+   );
+   m_texture.createTextureImageView(
+         m_device.getLogicalDevice(),
+         VK_FORMAT_R8G8B8A8_SRGB
+   );
+   m_texture.createTextureSampler(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice()
+   );
+
    // Uniform Buffers
    m_descriptorPool.createUniformBuffers(
          m_device.getPhysicalDevice(),
@@ -267,7 +283,11 @@ void Renderer::initVK()
    );
   
    // Descriptor Sets
-   m_descriptorPool.createDescriptorSets(m_device.getLogicalDevice());
+   m_descriptorPool.createDescriptorSets(
+         m_device.getLogicalDevice(),
+         m_texture.getTextureImageView(),
+         m_texture.getTextureSampler()
+   );
 
    
    // Allocates all the command buffers in the command Pool #1
@@ -301,14 +321,14 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    m_descriptorPool.updateUniformBuffer(
          m_device.getLogicalDevice(),
          currentFrame,
-         m_swapchainM.getExtent()
+         m_swapchain.getExtent()
    );
 
    //--------------------Acquires an image from the swapchain------------------
    uint32_t imageIndex;
    vkAcquireNextImageKHR(
          m_device.getLogicalDevice(),
-         m_swapchainM.getSwapchain(),
+         m_swapchain.getSwapchain(),
          UINT64_MAX,
          // Specifies synchr. objects that have to be signaled when the
          // presentation engine is finished using the image.
@@ -322,9 +342,9 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    // Resets the command buffer to be able to be recorded.
    m_commandPools[0].resetCommandBuffer(currentFrame);
    m_commandPools[0].recordCommandBuffer(
-         m_swapchainM.getFramebuffer(imageIndex),
-         m_renderPassM.getRenderPass(),
-         m_swapchainM.getExtent(),
+         m_swapchain.getFramebuffer(imageIndex),
+         m_renderPass.getRenderPass(),
+         m_swapchain.getExtent(),
          m_graphicsPipelineM.getGraphicsPipeline(),
          currentFrame,
          m_vertexBuffer,
@@ -380,7 +400,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
 
    // Specifies the swapchains to present images to and the index of the
    // image for each swapchain.
-   VkSwapchainKHR swapchains[] = {m_swapchainM.getSwapchain()};
+   VkSwapchainKHR swapchains[] = {m_swapchain.getSwapchain()};
    presentInfo.swapchainCount = 1;
    presentInfo.pSwapchains = swapchains;
    presentInfo.pImageIndices = &imageIndex;
@@ -400,9 +420,9 @@ void Renderer::mainLoop()
    // Tells us in which frame we are,
    // between 1 <= frame <= MAX_FRAMES_IN_FLIGHT
    uint8_t currentFrame = 0;
-   while (m_windowM.isWindowClosed() == false)
+   while (m_window.isWindowClosed() == false)
    {
-      m_windowM.pollEvents();
+      m_window.pollEvents();
       drawFrame(currentFrame);
    }
    vkDeviceWaitIdle(m_device.getLogicalDevice());
@@ -433,13 +453,16 @@ void Renderer::destroySyncObjects()
 void Renderer::cleanup()
 {
    // Framebuffers
-   m_swapchainM.destroyFramebuffers(m_device.getLogicalDevice());
+   m_swapchain.destroyFramebuffers(m_device.getLogicalDevice());
 
    // ViewImages of the images from the Swapchain
-   m_swapchainM.destroyImageViews(m_device.getLogicalDevice());
+   m_swapchain.destroyImageViews(m_device.getLogicalDevice());
 
    // Swapchain
-   m_swapchainM.destroySwapchain(m_device.getLogicalDevice());
+   m_swapchain.destroySwapchain(m_device.getLogicalDevice());
+
+   // Texture
+   m_texture.destroyTexture(m_device.getLogicalDevice());
 
    // Uniform Buffer and Memory
    m_descriptorPool.destroyUniformBuffersAndMemories(
@@ -459,7 +482,7 @@ void Renderer::cleanup()
    m_graphicsPipelineM.destroyPipelineLayout(m_device.getLogicalDevice());
 
    // Render pass
-   m_renderPassM.destroyRenderPass(m_device.getLogicalDevice());
+   m_renderPass.destroyRenderPass(m_device.getLogicalDevice());
 
    // Buffers
    bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_vertexBuffer);
@@ -490,11 +513,11 @@ void Renderer::cleanup()
    }
 
    // Window Surface
-   m_windowM.destroySurface(m_vkInstance);
+   m_window.destroySurface(m_vkInstance);
    
    // Vulkan's instance
    vkDestroyInstance(m_vkInstance, nullptr);
 
    // GLFW
-   m_windowM.destroyWindow();
+   m_window.destroyWindow();
 }

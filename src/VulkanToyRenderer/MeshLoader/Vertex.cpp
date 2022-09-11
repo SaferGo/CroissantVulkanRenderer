@@ -30,10 +30,10 @@ VkVertexInputBindingDescription Vertex::getBindingDescription()
  * Describes how to extract a vertex attribute from a chunk of vertex data
  * originated from a binfing description.
  */
-std::array<VkVertexInputAttributeDescription, 2> 
+std::array<VkVertexInputAttributeDescription, 3> 
    Vertex::getAttributeDescriptions() 
 {
-   std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+   std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
    // -Vertex Attribute: Position
 
@@ -52,6 +52,11 @@ std::array<VkVertexInputAttributeDescription, 2>
    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
    attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+   attributeDescriptions[2].binding = 0;
+   attributeDescriptions[2].location = 2;
+   attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+   attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+   
    return attributeDescriptions;
 }
 

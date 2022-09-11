@@ -1,14 +1,14 @@
-#include <VulkanToyRenderer/RenderPass/RenderPassManager.h>
+#include <VulkanToyRenderer/RenderPass/RenderPass.h>
 
 #include <iostream>
 
 #include <vulkan/vulkan.h>
 
-RenderPassManager::RenderPassManager() {}
+RenderPass::RenderPass() {}
 
-RenderPassManager::~RenderPassManager() {}
+RenderPass::~RenderPass() {}
 
-void RenderPassManager::createColorAttachment(
+void RenderPass::createColorAttachment(
    const VkFormat& imageFormat,
    VkAttachmentDescription& colorAttachment
 ) {
@@ -43,7 +43,7 @@ void RenderPassManager::createColorAttachment(
    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 }
 
-void RenderPassManager::createColorAttachmentReference(
+void RenderPass::createColorAttachmentReference(
       VkAttachmentReference& colorAttachmentRef
 ) {
    // Specifies which attachment to reference by its index in the attachment
@@ -60,7 +60,7 @@ void RenderPassManager::createColorAttachmentReference(
    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 }
 
-void RenderPassManager::createSubPass(
+void RenderPass::createSubPass(
       const VkAttachmentReference& colorAttachmentRef,
       VkSubpassDescription& subpassDescript
 ) {
@@ -69,7 +69,7 @@ void RenderPassManager::createSubPass(
    subpassDescript.pColorAttachments = &colorAttachmentRef;
 }
 
-void RenderPassManager::createRenderPass(
+void RenderPass::createRenderPass(
       const VkDevice& logicalDevice,
       const VkFormat& imageFormat
 ) {
@@ -134,12 +134,12 @@ void RenderPassManager::createRenderPass(
       throw std::runtime_error("Failed to create render pass!");
 }
 
-const VkRenderPass& RenderPassManager::getRenderPass() const
+const VkRenderPass& RenderPass::getRenderPass() const
 {
    return m_renderPass;
 }
 
-void RenderPassManager::destroyRenderPass(const VkDevice& logicalDevice)
+void RenderPass::destroyRenderPass(const VkDevice& logicalDevice)
 {
    vkDestroyRenderPass(logicalDevice, m_renderPass, nullptr);
 }

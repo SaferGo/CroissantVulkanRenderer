@@ -3,11 +3,12 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-class WindowManager
+class Window
 {
 public:
 
-   WindowManager();
+   Window();
+   ~Window();
    void createWindow(
          const uint16_t width,
          const uint16_t height,
@@ -27,10 +28,9 @@ public:
    ) const;
    void pollEvents();
 
-   ~WindowManager();
-
 private:
 
    GLFWwindow* m_window;
    VkSurfaceKHR m_surface;
+
 };
