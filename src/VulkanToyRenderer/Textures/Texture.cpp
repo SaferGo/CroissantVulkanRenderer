@@ -166,6 +166,7 @@ void Texture::createTextureImageView(
          logicalDevice,
          format,
          m_textureImage,
+         VK_IMAGE_ASPECT_COLOR_BIT,
          m_textureImageView
    );
 

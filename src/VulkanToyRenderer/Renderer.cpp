@@ -23,23 +23,11 @@
 #include <VulkanToyRenderer/Extensions/extensionsUtils.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Buffers/bufferUtils.h>
-#include <VulkanToyRenderer/MeshLoader/Vertex.h>
+#include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorTypes.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
-
-// Contains the pos and the color.
-const std::vector<Vertex> data = {
-   {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-   {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-   {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-   {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-};
-
-const std::vector<uint16_t> indices = {
-   0, 1, 2, 2, 3, 0
-};
-
+#include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
 
 void Renderer::run()
 {  
@@ -205,6 +193,7 @@ void Renderer::initVK()
    m_swapchain.createAllImageViews(m_device.getLogicalDevice());
 
    m_renderPass.createRenderPass(
+         m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
          m_swapchain.getImageFormat()
    );
@@ -218,9 +207,16 @@ void Renderer::initVK()
          m_descriptorPool.getDescriptorSetLayout()
    );
 
+   m_depthBuffer.createDepthBuffer(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         m_swapchain.getExtent()
+   );
+
    m_swapchain.createFramebuffers(
          m_device.getLogicalDevice(),
-         m_renderPass.getRenderPass()
+         m_renderPass.getRenderPass(),
+         m_depthBuffer
    );
 
    // Command Pool #1
@@ -228,16 +224,19 @@ void Renderer::initVK()
    CommandPool newCommandPool(m_device.getLogicalDevice(), m_qfIndices);
    m_commandPools.push_back(newCommandPool);
 
+   // Load Models
+   m_model.readModel((std::string(MODEL_DIR) + "viking_room.obj").c_str());
+
    // Vertex Buffer(with staging buffer)
    bufferManager::createBufferAndTransferToDevice(
          m_commandPools[cmdPoolIndex],
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
-         data,
+         m_model.vertices,
          m_qfHandles.graphicsQueue,
          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-         m_memory1,
-         m_vertexBuffer
+         m_model.vertexMemory,
+         m_model.vertexBuffer
    );
 
    // Index Buffer(with staging buffer)
@@ -245,25 +244,25 @@ void Renderer::initVK()
          m_commandPools[cmdPoolIndex],
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
-         indices,
+         m_model.indices,
          m_qfHandles.graphicsQueue,
          VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-         m_memory2,
-         m_indexBuffer
+         m_model.indexMemory,
+         m_model.indexBuffer
    );
 
-   m_texture.createTextureImage(
-         "model.jpg",
+   m_model.texture.createTextureImage(
+         "viking_room.png",
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
          m_commandPools[0],
          m_qfHandles.graphicsQueue
    );
-   m_texture.createTextureImageView(
+   m_model.texture.createTextureImageView(
          m_device.getLogicalDevice(),
          VK_FORMAT_R8G8B8A8_SRGB
    );
-   m_texture.createTextureSampler(
+   m_model.texture.createTextureSampler(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice()
    );
@@ -285,8 +284,8 @@ void Renderer::initVK()
    // Descriptor Sets
    m_descriptorPool.createDescriptorSets(
          m_device.getLogicalDevice(),
-         m_texture.getTextureImageView(),
-         m_texture.getTextureSampler()
+         m_model.texture.getTextureImageView(),
+         m_model.texture.getTextureSampler()
    );
 
    
@@ -347,9 +346,9 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_swapchain.getExtent(),
          m_graphicsPipelineM.getGraphicsPipeline(),
          currentFrame,
-         m_vertexBuffer,
-         m_indexBuffer,
-         indices.size(),
+         m_model.vertexBuffer,
+         m_model.indexBuffer,
+         m_model.indices.size(),
          m_graphicsPipelineM.getPipelineLayout(),
          m_descriptorPool.getDescriptorSets()
    );
@@ -462,7 +461,7 @@ void Renderer::cleanup()
    m_swapchain.destroySwapchain(m_device.getLogicalDevice());
 
    // Texture
-   m_texture.destroyTexture(m_device.getLogicalDevice());
+   m_model.texture.destroyTexture(m_device.getLogicalDevice());
 
    // Uniform Buffer and Memory
    m_descriptorPool.destroyUniformBuffersAndMemories(
@@ -485,12 +484,12 @@ void Renderer::cleanup()
    m_renderPass.destroyRenderPass(m_device.getLogicalDevice());
 
    // Buffers
-   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_vertexBuffer);
-   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_indexBuffer);
+   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_model.vertexBuffer);
+   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_model.indexBuffer);
    
    // Buffer Memories
-   bufferManager::freeMemory(m_device.getLogicalDevice(), m_memory1);
-   bufferManager::freeMemory(m_device.getLogicalDevice(), m_memory2);
+   bufferManager::freeMemory(m_device.getLogicalDevice(), m_model.vertexMemory);
+   bufferManager::freeMemory(m_device.getLogicalDevice(), m_model.indexMemory);
 
    // Sync objects
    destroySyncObjects();

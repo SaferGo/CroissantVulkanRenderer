@@ -113,9 +113,19 @@ void CommandPool::recordCommandBuffer(
    VkCommandBufferBeginInfo beginInfo{};
    createCommandBufferBeginInfo(m_commandBuffers[index], beginInfo);
    
+   // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
+   std::vector<VkClearValue> clearValues(2);
+   clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+   clearValues[1].color = {1.0f, 0.0f};
 
    VkRenderPassBeginInfo renderPassInfo{};
-   createRenderPassBeginInfo(renderPass, framebuffer, extent, renderPassInfo);
+   createRenderPassBeginInfo(
+         renderPass,
+         framebuffer,
+         extent,
+         clearValues,
+         renderPassInfo
+   );
    
    //--------------------------------RenderPass--------------------------------
 
@@ -185,6 +195,7 @@ void CommandPool::createRenderPassBeginInfo(
       const VkRenderPass& renderPass,
       const VkFramebuffer& framebuffer,
       const VkExtent2D& extent,
+      const std::vector<VkClearValue>& clearValues,
       VkRenderPassBeginInfo& renderPassInfo
 ) {
    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -200,8 +211,8 @@ void CommandPool::createRenderPassBeginInfo(
    // These two param. define the clear values to use for
    // VK_ATTACHMENT_LOAD_OP_CLEAR, which we used as load operation for the
    // color attachment.
-   renderPassInfo.clearValueCount = 1;
-   renderPassInfo.pClearValues = &config::CLEAR_COLOR;
+   renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+   renderPassInfo.pClearValues = clearValues.data();
 }
 
 void CommandPool::bindVertexBuffers(
@@ -231,7 +242,7 @@ void CommandPool::bindIndexBuffer(
          commandBuffer,
          indexBuffer,
          0,
-         VK_INDEX_TYPE_UINT16
+         VK_INDEX_TYPE_UINT32
    );
 }
 

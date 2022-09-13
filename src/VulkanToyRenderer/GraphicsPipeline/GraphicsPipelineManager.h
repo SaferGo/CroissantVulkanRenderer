@@ -71,7 +71,7 @@ private:
    );
    void createPipelineLayout(
          const VkDevice& logicalDevice,
-   const VkDescriptorSetLayout& descriptorSetLayout
+         const VkDescriptorSetLayout& descriptorSetLayout
    );
 
 

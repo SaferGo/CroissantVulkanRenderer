@@ -47,6 +47,7 @@ private:
          const VkRenderPass& renderPass,
          const VkFramebuffer& framebuffer,
          const VkExtent2D& extent,
+         const std::vector<VkClearValue>& clearValues,
          VkRenderPassBeginInfo& renderPassInfo
    );
    void bindVertexBuffers(

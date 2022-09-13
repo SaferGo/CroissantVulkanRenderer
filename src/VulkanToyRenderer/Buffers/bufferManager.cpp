@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/MeshLoader/Vertex.h>
+#include <VulkanToyRenderer/Model/Vertex.h>
 #include <VulkanToyRenderer/Buffers/bufferUtils.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Commands/commandUtils.h>
@@ -207,11 +207,11 @@ void bufferManager::createBufferAndTransferToDevice(
 
 //////////////////////////////////Instances////////////////////////////////////
 
-template void bufferManager::createBufferAndTransferToDevice<uint16_t>(
+template void bufferManager::createBufferAndTransferToDevice<uint32_t>(
          CommandPool& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         const std::vector<uint16_t>& data,
+         const std::vector<uint32_t>& data,
          VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
@@ -259,9 +259,9 @@ template void bufferManager::fillBuffer<Vertex>(
       const std::vector<Vertex>& data,
       VkDeviceMemory& memory
 );
-template void bufferManager::fillBuffer<uint16_t>(
+template void bufferManager::fillBuffer<uint32_t>(
       const VkDevice& logicalDevice,
-      const std::vector<uint16_t>& data,
+      const std::vector<uint32_t>& data,
       VkDeviceMemory& memory
 );;
 ///////////////////////////////////////////////////////////////////////////////

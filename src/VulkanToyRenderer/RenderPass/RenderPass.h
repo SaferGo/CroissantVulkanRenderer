@@ -11,12 +11,14 @@ public:
    ~RenderPass();
 
    void createRenderPass(
+         const VkPhysicalDevice& phyisicalDevice,
          const VkDevice& logicalDevice,
          const VkFormat& imageFormat
    );
 
    void createSubPass(
          const VkAttachmentReference& colorAttachmentRef,
+         const VkAttachmentReference& depthAttachmentRef,
          VkSubpassDescription& subpassDescript
    );
 
@@ -31,9 +33,9 @@ private:
          VkAttachmentDescription& colorAttachment
    );
    void createColorAttachmentReference(
+         const uint32_t index,
          VkAttachmentReference& colorAttachmentRef
    );
-
 
    VkRenderPass m_renderPass;
 

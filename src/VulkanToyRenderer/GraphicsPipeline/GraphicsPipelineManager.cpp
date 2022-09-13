@@ -7,7 +7,8 @@
 #include <GLFW/glfw3.h>
 
 #include <VulkanToyRenderer/ShaderManager/shaderManager.h>
-#include <VulkanToyRenderer/MeshLoader/Vertex.h>
+#include <VulkanToyRenderer/Model/Vertex.h>
+#include <VulkanToyRenderer/DepthBuffer/depthUtils.h>
 
 GraphicsPipelineManager::GraphicsPipelineManager() {}
 
@@ -361,6 +362,10 @@ void GraphicsPipelineManager::createGraphicsPipeline(
    // Pipeline layout
    createPipelineLayout(logicalDevice, descriptorSetLayout);
 
+   // Depth and stencil
+   VkPipelineDepthStencilStateCreateInfo depthStencil{};
+   depthUtils::createDepthStencilStateInfo(depthStencil);
+   
    // --------------Graphics pipeline creation------------
 
    VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -373,7 +378,7 @@ void GraphicsPipelineManager::createGraphicsPipeline(
    pipelineInfo.pViewportState = &viewportStateInfo;
    pipelineInfo.pRasterizationState = &rasterizerInfo;
    pipelineInfo.pMultisampleState = &multisamplingInfo;
-   pipelineInfo.pDepthStencilState = nullptr;
+   pipelineInfo.pDepthStencilState = &depthStencil;
    pipelineInfo.pColorBlendState = &colorBlendingInfo;
    pipelineInfo.pDynamicState = &dynamicStatesInfo;
    // Pipeline Layout

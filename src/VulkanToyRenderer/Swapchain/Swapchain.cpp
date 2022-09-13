@@ -7,6 +7,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Images/imageManager.h>
 #include <VulkanToyRenderer/Window/Window.h>
+#include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
 
 Swapchain::Swapchain() {}
 
@@ -179,6 +180,7 @@ void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
             logicalDevice,
             m_imageFormat,
             m_images[i],
+            VK_IMAGE_ASPECT_COLOR_BIT,
             m_imageViews[i]
       );
    }
@@ -186,22 +188,26 @@ void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
 
 void Swapchain::createFramebuffers(
       const VkDevice& logicalDevice,
-      const VkRenderPass& renderPass
+      const VkRenderPass& renderPass,
+      const DepthBuffer& depthBuffer
 ) {
    m_framebuffers.resize(m_imageViews.size());
 
    // Iterates through each image view and creates the framebuffers.
    for (size_t i = 0; i < m_imageViews.size(); i++)
    {
-      VkImageView attachments[] = {
-         m_imageViews[i]
+      std::vector<VkImageView> attachments = {
+         m_imageViews[i],
+         depthBuffer.getDepthImageView()
       };
 
       VkFramebufferCreateInfo framebufferInfo{};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
       framebufferInfo.renderPass = renderPass;
-      framebufferInfo.attachmentCount = 1;
-      framebufferInfo.pAttachments = attachments;
+      framebufferInfo.attachmentCount = static_cast<uint32_t>(
+            attachments.size()
+      );
+      framebufferInfo.pAttachments = attachments.data();
       framebufferInfo.width = m_extent.width;
       framebufferInfo.height = m_extent.height;
       framebufferInfo.layers = 1;

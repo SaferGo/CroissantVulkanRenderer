@@ -3,6 +3,8 @@
 #include <chrono>
 #include <array>
 #include <cstring>
+#include <cmath>
+#include <iostream>
 
 #include <vulkan/vulkan.h>
 #define GLM_FORCE_RADIANS
@@ -245,7 +247,7 @@ void DescriptorPool::updateUniformBuffer(
    DescriptorTypes::UniformBufferObject ubo{};
    ubo.model = glm::rotate(
          glm::mat4(1.0f),
-         time * glm::radians(90.0f),
+         glm::radians(time * 90.0f),
          glm::vec3(0.0f, 0.0f, 1.0f)
    );
    ubo.view = glm::lookAt(

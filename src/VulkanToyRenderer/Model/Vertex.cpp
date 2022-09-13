@@ -1,4 +1,4 @@
-#include <VulkanToyRenderer/MeshLoader/Vertex.h>
+#include <VulkanToyRenderer/Model/Vertex.h>
 
 #include <vulkan/vulkan.h>
 
@@ -42,7 +42,7 @@ std::array<VkVertexInputAttributeDescription, 3>
    // References the location directive of the input in the vertex shader.
    attributeDescriptions[0].location = 0;
    // Format -> vec3
-   attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+   attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
    attributeDescriptions[0].offset = offsetof(Vertex, pos);
 
    // -Vertex Attribute: Color
@@ -58,5 +58,17 @@ std::array<VkVertexInputAttributeDescription, 3>
    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
    
    return attributeDescriptions;
+}
+
+/*
+ * This help us to use std::unordered_map to avoid vertex duplication.
+ */
+bool Vertex::operator==(const Vertex& other) const
+{
+   return (
+          pos == other.pos && 
+          color == other.color && 
+          texCoord == other.texCoord
+   );
 }
 

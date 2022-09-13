@@ -16,3 +16,6 @@
 [submodule "libs/Vulkan-ValidationLayers"]
 	path = libs/Vulkan-ValidationLayers
 	url = git@github.com:KhronosGroup/Vulkan-ValidationLayers.git
+[submodule "libs/tinyobjloader"]
+	path = libs/tinyobjloader
+	url = git@github.com:tinyobjloader/tinyobjloader.git

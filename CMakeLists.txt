@@ -15,6 +15,7 @@ set(SHADERS_BINARY_DIR "${PROJECT_BIN_DIR}/shaders")
 set(PROJECT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(PROJECT_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/libs")
 set(TEXTURES_DIR "${CMAKE_SOURCE_DIR}/assets/textures")
+set(MODEL_DIR "${CMAKE_SOURCE_DIR}/assets/obj")
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
@@ -46,6 +47,10 @@ add_subdirectory(${GLM_DIR} EXCLUDE_FROM_ALL)
 set(STB_DIR "${PROJECT_LIBRARIES_DIR}/stb")
 add_subdirectory(${STB_DIR} EXCLUDE_FROM_ALL)
 
+# -TinyObjLoader
+set(TINY_OBJ_LOADER_DIR "${PROJECT_LIBRARIES_DIR}/tinyobjloader")
+add_subdirectory(${TINY_OBJ_LOADER_DIR})
+
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -57,8 +62,9 @@ add_subdirectory(${SHADERS_SOURCE_DIR})
 # To get the full path of the compiled shaders in the c++ code.
 add_definitions(-DSHADERS_BINARY_DIR="${SHADERS_BINARY_DIR}")
 
-################################Textures#######################################
+################################Definitions####################################
 add_definitions(-DTEXTURES_DIR="${TEXTURES_DIR}/")
+add_definitions(-DMODEL_DIR="${MODEL_DIR}/")
 #################################Executable####################################
 
 add_executable(${PROJECT_NAME} 
@@ -79,11 +85,14 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Extensions/extensionsUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferUtils.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/MeshLoader/Vertex.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorPool.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/descriptorTypeUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/imageManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Texture.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/DepthBuffer/DepthBuffer.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/DepthBuffer/depthUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Vertex.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Model.cpp"
 )
 
 target_include_directories(
@@ -103,6 +112,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
    X11               # To create windows. Needed by GLFW.
    glm
    stb
+   tinyobjloader
    PRIVATE ${CMAKE_DL_LIBS}
 )
 # CMAKE_DL_LIBS -> is the library libdl which helps to link dynamic
