@@ -49,3 +49,11 @@ const VkImageView DepthBuffer::getDepthImageView() const
 {
    return m_depthImageView;
 }
+
+
+void DepthBuffer::destroyDepthBuffer(const VkDevice& logicalDevice)
+{
+   vkDestroyImageView(logicalDevice, m_depthImageView, nullptr);
+   vkDestroyImage(logicalDevice, m_depthImage, nullptr);
+   vkFreeMemory(logicalDevice, m_depthImageMemory, nullptr);
+}

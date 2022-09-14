@@ -451,28 +451,17 @@ void Renderer::destroySyncObjects()
 
 void Renderer::cleanup()
 {
+
+   // DepthBuffer
+   m_depthBuffer.destroyDepthBuffer(m_device.getLogicalDevice());
+
    // Framebuffers
    m_swapchain.destroyFramebuffers(m_device.getLogicalDevice());
 
    // ViewImages of the images from the Swapchain
    m_swapchain.destroyImageViews(m_device.getLogicalDevice());
-
    // Swapchain
    m_swapchain.destroySwapchain(m_device.getLogicalDevice());
-
-   // Texture
-   m_model.texture.destroyTexture(m_device.getLogicalDevice());
-
-   // Uniform Buffer and Memory
-   m_descriptorPool.destroyUniformBuffersAndMemories(
-         m_device.getLogicalDevice()
-   );
-   
-   // Descriptor Pool
-   m_descriptorPool.destroyDescriptorPool(m_device.getLogicalDevice());
-
-   // Descriptor Set Layout
-   m_descriptorPool.destroyDescriptorSetLayout(m_device.getLogicalDevice());
 
    // Graphics Pipeline
    m_graphicsPipelineM.destroyGraphicsPipeline(m_device.getLogicalDevice());
@@ -483,6 +472,20 @@ void Renderer::cleanup()
    // Render pass
    m_renderPass.destroyRenderPass(m_device.getLogicalDevice());
 
+   // Uniform Buffer and Memory
+   m_descriptorPool.destroyUniformBuffersAndMemories(
+         m_device.getLogicalDevice()
+   );
+
+   // Descriptor Pool
+   m_descriptorPool.destroyDescriptorPool(m_device.getLogicalDevice());
+
+   // Texture
+   m_model.texture.destroyTexture(m_device.getLogicalDevice());
+   
+   // Descriptor Set Layout
+   m_descriptorPool.destroyDescriptorSetLayout(m_device.getLogicalDevice());
+   
    // Buffers
    bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_model.vertexBuffer);
    bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_model.indexBuffer);
@@ -490,7 +493,7 @@ void Renderer::cleanup()
    // Buffer Memories
    bufferManager::freeMemory(m_device.getLogicalDevice(), m_model.vertexMemory);
    bufferManager::freeMemory(m_device.getLogicalDevice(), m_model.indexMemory);
-
+   
    // Sync objects
    destroySyncObjects();
 
@@ -498,6 +501,7 @@ void Renderer::cleanup()
    for (auto& commandPool : m_commandPools)
       commandPool.destroyCommandPool();
 
+   
    // Logical Device
    vkDestroyDevice(m_device.getLogicalDevice(), nullptr);
    

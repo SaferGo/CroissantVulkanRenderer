@@ -16,6 +16,7 @@ public:
       const VkExtent2D swapchainExtent
    );
    const VkImageView getDepthImageView() const;
+   void destroyDepthBuffer(const VkDevice& logicalDevice);
 
 private:
 
