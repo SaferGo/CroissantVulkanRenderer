@@ -85,15 +85,29 @@ void bufferManager::copyBuffer(
    VkCommandBuffer commandBuffer;
 
    commandPool.allocCommandBuffer(commandBuffer);
-   
-   // Records the cmd buffer.
-   commandUtils::copyCommandBuffer::record(
-         size,
-         srcBuffer,
-         dstBuffer,
+
+   commandPool.beginCommandBuffer(
+         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
          commandBuffer
    );
-   
+
+      VkBufferCopy copyRegion{};
+      // optional
+      copyRegion.srcOffset = 0;
+      // optional
+      copyRegion.dstOffset = 0;
+      copyRegion.size = size;
+
+      commandUtils::ACTION::copyBufferToBuffer(
+            srcBuffer,
+            dstBuffer,
+            1,
+            copyRegion,
+            commandBuffer
+      );
+
+   commandPool.endCommandBuffer(commandBuffer);
+
    commandPool.submitCommandBuffer(graphicsQueue, commandBuffer);
 }
 

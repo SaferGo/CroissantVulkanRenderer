@@ -6,6 +6,7 @@
 
 #include <VulkanToyRenderer/Images/imageManager.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/Commands/commandUtils.h>
 
 Texture::Texture() {}
 Texture::~Texture() {}
@@ -21,36 +22,36 @@ void Texture::transitionImageLayout(
 
    commandPool.allocCommandBuffer(commandBuffer);
 
-   VkCommandBufferBeginInfo beginInfo{};
-   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-   vkBeginCommandBuffer(commandBuffer, &beginInfo);
+   commandPool.beginCommandBuffer(
+         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+         commandBuffer
+   );
 
-      VkImageMemoryBarrier barrier{};
-      barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      VkImageMemoryBarrier imgMemoryBarrier{};
+      imgMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
       // We could use VK_IMAGE_LAYOUT_UNDEFINED if we don't care about the
       // existing contents of the image.
-      barrier.oldLayout = oldLayout;
-      barrier.newLayout = newLayout;
+      imgMemoryBarrier.oldLayout = oldLayout;
+      imgMemoryBarrier.newLayout = newLayout;
       // Since we are not using the barrier to transfer queue family ownership,
       // we'll ignore these two.
-      barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-      barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-      barrier.image = m_textureImage;
-      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-      barrier.subresourceRange.baseMipLevel = 0;
-      barrier.subresourceRange.levelCount = 1;
+      imgMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      imgMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      imgMemoryBarrier.image = m_textureImage;
+      imgMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      imgMemoryBarrier.subresourceRange.baseMipLevel = 0;
+      imgMemoryBarrier.subresourceRange.levelCount = 1;
       // In this case, our image is not an array(it has 2D coords -> texel).
-      barrier.subresourceRange.baseArrayLayer = 0;
-      barrier.subresourceRange.layerCount = 1;
+      imgMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+      imgMemoryBarrier.subresourceRange.layerCount = 1;
       //Barriers are primarily used for synchronization purposes, so you must
       //specify which types of operations that involve the resource must happen
       //before the barrier, and which operations that involve the resource must
       //wait on the barrier. We need to do that despite already using
       //vkQueueWaitIdle to manually synchronize. The right values depend on the
       //old and new layout.
-      barrier.srcAccessMask = 0;
-      barrier.dstAccessMask = 0;
+      imgMemoryBarrier.srcAccessMask = 0;
+      imgMemoryBarrier.dstAccessMask = 0;
 
       // Defines the (pseudo)pipelines stages.
       // (this prevents that the transfer doesn't collide with the writing and
@@ -62,8 +63,8 @@ void Texture::transitionImageLayout(
           newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
       ) {
 
-         barrier.srcAccessMask = 0;
-         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+         imgMemoryBarrier.srcAccessMask = 0;
+         imgMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
          sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
          destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -72,33 +73,26 @@ void Texture::transitionImageLayout(
                  newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
       ) {
 
-         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+         imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+         imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
          sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
          destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
       } else
          throw std::invalid_argument("Unsupported layout transition!");
 
-      vkCmdPipelineBarrier(
-            commandBuffer,
-            // Pipeline stage in which operations occur that should happen 
-            // before the barrier.
+
+      commandUtils::SYNCHRONIZATION::recordPipelineBarrier(
             sourceStage,
-            // Pipeline stage in which operations will wait on the barrier.
             destinationStage,
-            // 0 or VK_DEPENDENCY_BY_REGION_BIT(per-region condition)
             0,
-            // References arrays of pipeline barries of the three available
-            // types: memory barriers, buffer memory barriers, and image memory
-            // barriers.
             0, nullptr,
             0, nullptr,
-            1, &barrier
+            1, &imgMemoryBarrier,
+            commandBuffer
       );
-
-   vkEndCommandBuffer(commandBuffer);
-
+            
+   commandPool.endCommandBuffer(commandBuffer);
 
    commandPool.submitCommandBuffer(
          graphicsQueue,
@@ -173,7 +167,7 @@ void Texture::createTextureImageView(
 }
 
 void Texture::createTextureImage(
-      const std::string& texture,
+      const char* pathToTexture,
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       CommandPool& commandPool,
@@ -182,7 +176,7 @@ void Texture::createTextureImage(
    int texWidth, texHeight, texChannels;
 
    stbi_uc* pixels = stbi_load(
-         (std::string(TEXTURES_DIR) + texture).c_str(),
+         pathToTexture,
          &texWidth,
          &texHeight,
          &texChannels,
@@ -192,7 +186,9 @@ void Texture::createTextureImage(
    VkDeviceSize imageSize = texWidth * texHeight * 4;
 
    if (!pixels)
-      throw std::runtime_error("Failed to load texture image: " + texture);
+      throw std::runtime_error(
+            "Failed to load texture image: " + std::string(pathToTexture)
+      );
 
    VkBuffer stagingBuffer;
    VkDeviceMemory stagingBufferMemory;

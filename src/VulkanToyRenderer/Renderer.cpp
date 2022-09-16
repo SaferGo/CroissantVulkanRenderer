@@ -30,7 +30,13 @@
 #include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
 
 void Renderer::run()
-{  
+{
+   if (m_models.size() == 0)
+   {
+      std::cout << "Nothing to render..\n";
+      return;
+   }
+
    m_window.createWindow(
          config::RESOLUTION_W,
          config::RESOLUTION_H,
@@ -39,6 +45,18 @@ void Renderer::run()
    initVK();
    mainLoop();
    cleanup();
+}
+
+void Renderer::addModel(
+      const std::string& meshFile,
+      const std::string& textureFile
+) {
+   std::unique_ptr<Model> newModel = std::make_unique<Model>(
+         (std::string(MODEL_DIR) + meshFile).c_str(),
+         textureFile
+   );
+
+   m_models.push_back(std::move(newModel));
 }
 
 void Renderer::createSyncObjects()
@@ -224,49 +242,42 @@ void Renderer::initVK()
    CommandPool newCommandPool(m_device.getLogicalDevice(), m_qfIndices);
    m_commandPools.push_back(newCommandPool);
 
-   // Load Models
-   m_model.readModel((std::string(MODEL_DIR) + "viking_room.obj").c_str());
-
    // Vertex Buffer(with staging buffer)
-   bufferManager::createBufferAndTransferToDevice(
-         m_commandPools[cmdPoolIndex],
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         m_model.vertices,
-         m_qfHandles.graphicsQueue,
-         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-         m_model.vertexMemory,
-         m_model.vertexBuffer
-   );
+   for (auto& model : m_models)
+   {
+      bufferManager::createBufferAndTransferToDevice(
+            m_commandPools[cmdPoolIndex],
+            m_device.getPhysicalDevice(),
+            m_device.getLogicalDevice(),
+            model->vertices,
+            m_qfHandles.graphicsQueue,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            model->vertexMemory,
+            model->vertexBuffer
+      );
 
-   // Index Buffer(with staging buffer)
-   bufferManager::createBufferAndTransferToDevice(
-         m_commandPools[cmdPoolIndex],
+      // Index Buffer(with staging buffer)
+      bufferManager::createBufferAndTransferToDevice(
+            m_commandPools[cmdPoolIndex],
+            m_device.getPhysicalDevice(),
+            m_device.getLogicalDevice(),
+            model->indices,
+            m_qfHandles.graphicsQueue,
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            model->indexMemory,
+            model->indexBuffer
+      );
+      
+      // Create Textures
+      model->createTexture(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
-         m_model.indices,
-         m_qfHandles.graphicsQueue,
-         VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-         m_model.indexMemory,
-         m_model.indexBuffer
-   );
-
-   m_model.texture.createTextureImage(
-         "viking_room.png",
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
+         VK_FORMAT_R8G8B8A8_SRGB,
          m_commandPools[0],
          m_qfHandles.graphicsQueue
-   );
-   m_model.texture.createTextureImageView(
-         m_device.getLogicalDevice(),
-         VK_FORMAT_R8G8B8A8_SRGB
-   );
-   m_model.texture.createTextureSampler(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice()
-   );
-
+      );
+   }
+   
    // Uniform Buffers
    m_descriptorPool.createUniformBuffers(
          m_device.getPhysicalDevice(),
@@ -281,13 +292,16 @@ void Renderer::initVK()
          config::MAX_FRAMES_IN_FLIGHT
    );
   
-   // Descriptor Sets
-   m_descriptorPool.createDescriptorSets(
-         m_device.getLogicalDevice(),
-         m_model.texture.getTextureImageView(),
-         m_model.texture.getTextureSampler()
-   );
-
+   // Descriptor Sets(of each type of model)
+   for (auto& model : m_models)
+   {
+      m_descriptorPool.createDescriptorSets(
+            m_device.getLogicalDevice(),
+            model->texture.getTextureImageView(),
+            model->texture.getTextureSampler(),
+            model->descriptorSets
+      );
+   }
    
    // Allocates all the command buffers in the command Pool #1
    m_commandPools[cmdPoolIndex].allocAllCommandBuffers();
@@ -317,7 +331,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    );
 
    //------------------------Updates uniform buffer----------------------------
-   m_descriptorPool.updateUniformBuffer(
+   m_descriptorPool.updateUniformBuffer1(
          m_device.getLogicalDevice(),
          currentFrame,
          m_swapchain.getExtent()
@@ -336,7 +350,8 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          &imageIndex
    );
 
-   //------------------------Records command buffer----------------------------
+   //---------------------Records all the command buffer-----------------------
+
 
    // Resets the command buffer to be able to be recorded.
    m_commandPools[0].resetCommandBuffer(currentFrame);
@@ -346,11 +361,11 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_swapchain.getExtent(),
          m_graphicsPipelineM.getGraphicsPipeline(),
          currentFrame,
-         m_model.vertexBuffer,
-         m_model.indexBuffer,
-         m_model.indices.size(),
+         m_models[0]->vertexBuffer,
+         m_models[0]->indexBuffer,
+         m_models[0]->indices.size(),
          m_graphicsPipelineM.getPipelineLayout(),
-         m_descriptorPool.getDescriptorSets()
+         m_models[0]->descriptorSets
    );
 
    //----------------------Submits the command buffer--------------------------
@@ -480,19 +495,35 @@ void Renderer::cleanup()
    // Descriptor Pool
    m_descriptorPool.destroyDescriptorPool(m_device.getLogicalDevice());
 
-   // Texture
-   m_model.texture.destroyTexture(m_device.getLogicalDevice());
+   // Textures
+   for (auto& model : m_models)
+      model->texture.destroyTexture(m_device.getLogicalDevice());
    
    // Descriptor Set Layout
    m_descriptorPool.destroyDescriptorSetLayout(m_device.getLogicalDevice());
    
-   // Buffers
-   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_model.vertexBuffer);
-   bufferManager::destroyBuffer(m_device.getLogicalDevice(), m_model.indexBuffer);
+   // Bufferss
+   for (auto& model : m_models)
+   {
+      bufferManager::destroyBuffer(
+            m_device.getLogicalDevice(),
+            model->vertexBuffer
+      );
+      bufferManager::destroyBuffer(
+            m_device.getLogicalDevice(),
+            model->indexBuffer
+      );
    
-   // Buffer Memories
-   bufferManager::freeMemory(m_device.getLogicalDevice(), m_model.vertexMemory);
-   bufferManager::freeMemory(m_device.getLogicalDevice(), m_model.indexMemory);
+      // Buffer Memories
+      bufferManager::freeMemory(
+            m_device.getLogicalDevice(),
+            model->vertexMemory
+      );
+      bufferManager::freeMemory(
+            m_device.getLogicalDevice(),
+            model->indexMemory
+      );
+   }
    
    // Sync objects
    destroySyncObjects();

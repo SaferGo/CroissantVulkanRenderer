@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -24,6 +25,10 @@ class Renderer
 public:
 
    void run();
+   void addModel(
+         const std::string& meshFile,
+         const std::string& textureFile
+   );
 
 private:
 
@@ -58,5 +63,5 @@ private:
    std::vector<VkFence>     m_inFlightFences;
 
    // Models
-   Model m_model;
+   std::vector<std::unique_ptr<Model>> m_models;
 };

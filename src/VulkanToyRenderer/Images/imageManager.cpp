@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 
+#include <VulkanToyRenderer/Commands/commandUtils.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Buffers/bufferUtils.h>
 
@@ -99,6 +100,7 @@ void imageManager::createImageView(
       const VkImageAspectFlags& aspectFlags,
       VkImageView& imageView
 ) {
+
    VkImageViewCreateInfo createInfo{};
    createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    createInfo.image = image;
@@ -147,14 +149,12 @@ void imageManager::copyBufferToImage(
 
    commandPool.allocCommandBuffer(commandBuffer);
 
-   // Specifies which part of the buffer is going to be copied to which
-   // part of the image.
-   VkCommandBufferBeginInfo beginInfo{};
-   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-   vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
+   commandPool.beginCommandBuffer(
+         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+         commandBuffer
+   );
+      // Specifies which part of the buffer is going to be copied to which
+      // part of the image.
       VkBufferImageCopy region{};
 
       // Which parts of the buffer to copy.
@@ -175,20 +175,17 @@ void imageManager::copyBufferToImage(
          1
       };
 
-      vkCmdCopyBufferToImage(
-            commandBuffer,
+      commandUtils::ACTION::copyBufferToImage(
             buffer,
             image,
-            // Indicates wich layout the image is currently using. Here
-            // we are asumming that the image has already been transitioned to
-            // the layout that is optimal for copying pixels to.
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            // Count of VkBufferImageCopy(it can be an array of that).
             1,
-            &region
+            region,
+            commandBuffer
       );
 
-   vkEndCommandBuffer(commandBuffer);
+
+   commandPool.endCommandBuffer(commandBuffer);
 
    commandPool.submitCommandBuffer(
          graphicsQueue,

@@ -111,21 +111,23 @@ void DescriptorPool::createDescriptorSetLayout(const VkDevice& logicalDevice)
       throw std::runtime_error("Failed to create descriptor set layout!");
 }
 
-void DescriptorPool::allocDescriptorSets(const VkDevice& logicalDevice)
-{
+void DescriptorPool::allocDescriptorSets(
+      const VkDevice& logicalDevice,
+      std::vector<VkDescriptorSet>& descriptorSets
+) {
    // Improve this. Make it more custom.
    std::vector<VkDescriptorSetLayout> layouts(
          config::MAX_FRAMES_IN_FLIGHT,
          m_descriptorSetLayout
    );
 
-   m_descriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
+   descriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
 
    VkDescriptorSetAllocateInfo allocInfo{};
    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
    allocInfo.descriptorPool = m_descriptorPool;
    allocInfo.descriptorSetCount = static_cast<uint32_t>(
-         m_descriptorSets.size()
+         descriptorSets.size()
    );
    allocInfo.pSetLayouts = layouts.data();
 
@@ -133,7 +135,7 @@ void DescriptorPool::allocDescriptorSets(const VkDevice& logicalDevice)
    auto status = vkAllocateDescriptorSets(
          logicalDevice,
          &allocInfo,
-         m_descriptorSets.data()
+         descriptorSets.data()
    );
 
    if (status != VK_SUCCESS)
@@ -147,12 +149,13 @@ void DescriptorPool::allocDescriptorSets(const VkDevice& logicalDevice)
 void DescriptorPool::createDescriptorSets(
       const VkDevice logicalDevice,
       const VkImageView& textureImageView,
-      const VkSampler& textureSampler
+      const VkSampler& textureSampler,
+      std::vector<VkDescriptorSet>& descriptorSets
 ) {
-   allocDescriptorSets(logicalDevice);
+   allocDescriptorSets(logicalDevice, descriptorSets);
 
    // Configures the descriptor sets
-   for (size_t i = 0; i < m_descriptorSets.size(); i++)
+   for (size_t i = 0; i < descriptorSets.size(); i++)
    {
 
       VkDescriptorBufferInfo bufferInfo{};
@@ -173,12 +176,12 @@ void DescriptorPool::createDescriptorSets(
 
       descriptorTypeUtils::createUboWriteInfo(
             bufferInfo,
-            m_descriptorSets[i],
+            descriptorSets[i],
             descriptorWrites[0]
       );
       descriptorTypeUtils::createSamplerWriteInfo(
             imageInfo,
-            m_descriptorSets[i],
+            descriptorSets[i],
             descriptorWrites[1]
       );
 
@@ -222,17 +225,12 @@ void DescriptorPool::destroyUniformBuffersAndMemories(
 
 }
 
-const std::vector<VkDescriptorSet> DescriptorPool::getDescriptorSets() const
-{
-   return m_descriptorSets;
-}
-
 const VkDescriptorSetLayout DescriptorPool::getDescriptorSetLayout() const
 {
    return m_descriptorSetLayout;
 }
 
-void DescriptorPool::updateUniformBuffer(
+void DescriptorPool::updateUniformBuffer1(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent
@@ -249,6 +247,81 @@ void DescriptorPool::updateUniformBuffer(
          glm::mat4(1.0f),
          glm::radians(time * 90.0f),
          glm::vec3(0.0f, 0.0f, 1.0f)
+   );
+   ubo.view = glm::lookAt(
+         // Eye position
+         glm::vec3(2.0, 2.0f, 2.0f),
+         // Center position
+         glm::vec3(0.0f, 0.0f, 0.0f),
+         // Up Axis
+         glm::vec3(0.0, 0.0f, 1.0f)
+   );
+   ubo.proj = glm::perspective(
+         // VFOV
+         glm::radians(45.0f),
+         // Aspect
+         (
+          extent.width /
+          (float)extent.height
+         ),
+         // Near plane
+         0.1f,
+         // Far plane
+         10.0f
+   );
+
+   // GLM was designed for OpenGl, where the Y coordinate of the clip coord. is
+   // inverted. To compensate for that, we have to flip the sign on the scaling
+   // factor of the Y axis.
+   ubo.proj[1][1] *= -1;
+
+   void* data;
+   vkMapMemory(
+         logicalDevice,
+         m_uniformBuffersMemory[currentFrame],
+         0,
+         sizeof(ubo),
+         0,
+         &data
+   );
+      memcpy(data, &ubo, sizeof(ubo));
+   vkUnmapMemory(
+         logicalDevice,
+         m_uniformBuffersMemory[currentFrame]
+   );
+}
+
+void DescriptorPool::updateUniformBuffer2(
+         const VkDevice& logicalDevice,
+         const uint8_t currentFrame,
+         const VkExtent2D extent
+) {
+   static auto startTime = std::chrono::high_resolution_clock::now();
+
+   auto currentTime = std::chrono::high_resolution_clock::now();
+   float time = std::chrono::duration<float, std::chrono::seconds::period>(
+         currentTime - startTime
+   ).count();
+
+   DescriptorTypes::UniformBufferObject ubo{};
+   //ubo.model = glm::rotate(
+   //      glm::mat4(1.0f),
+   //      glm::radians(time * 90.0f),
+   //      glm::vec3(0.0f, 0.0f, 1.0f)
+   //);
+   ubo.model = glm::mat4(1.0f);
+   ubo.model = glm::scale(
+         ubo.model,
+         glm::vec3(0.003f)
+   );
+   ubo.model = glm::translate(
+         ubo.model,
+         glm::vec3(-700.0f, 0.0f, 0.0f)
+   );
+   ubo.model = glm::rotate(
+         ubo.model,
+         glm::radians(time * 90.0f),
+         glm::vec3(0.0f, 1.0f, 1.0f)
    );
    ubo.view = glm::lookAt(
          // Eye position
