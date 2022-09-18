@@ -11,8 +11,8 @@ int main()
 
    try
    {
-      //app.addModel("bunny.obj", "bunny-atlas.jpg");
       app.addModel("viking_room.obj", "viking_room.png");
+      app.addModel("bunny.obj", "bunny-atlas.jpg");
       app.run();
    } catch (const std::exception& e)
    {

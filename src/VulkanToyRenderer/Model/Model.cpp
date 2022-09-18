@@ -118,3 +118,8 @@ void Model::createTexture(
          logicalDevice
    );
 }
+
+const VkDescriptorSet& Model::getDescriptorSet(const uint32_t index) const
+{
+   return descriptorSets.getDescriptorSet(index);
+}

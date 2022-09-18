@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include <vulkan/vulkan.h>
 
@@ -28,22 +29,8 @@ public:
          VkCommandBuffer& commandBuffer
    );
    void allocAllCommandBuffers();
-   const VkCommandBuffer& getCommandBuffer(const uint32_t index);
+   VkCommandBuffer& getCommandBuffer(const uint32_t index);
    void resetCommandBuffer(const uint32_t index);
-   void recordCommandBuffer(
-      const VkFramebuffer& framebuffer,
-      const VkRenderPass& renderPass,
-      const VkExtent2D& extent,
-      const VkPipeline& graphicsPipeline,
-      const uint32_t index,
-      const VkBuffer& vertexBuffer,
-      const VkBuffer& indexBuffer,
-      const size_t indexCount,
-      const VkPipelineLayout& pipelineLayout,
-      const std::vector<VkDescriptorSet>& descriptorSets
-   );
-
-private:
 
    void freeCommandBuffer(VkCommandBuffer& commandBuffer);
 
@@ -55,6 +42,7 @@ private:
          VkRenderPassBeginInfo& renderPassInfo
    );
 
+private:
    //--------------------------------------------------------------------------
 
    VkCommandPool m_commandPool;
