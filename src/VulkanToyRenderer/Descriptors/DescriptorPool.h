@@ -14,10 +14,10 @@ public:
 
    void createDescriptorPool(
       const VkDevice& logicalDevice,
-      const std::vector<VkDescriptorType>& descriptorTypes,
-      const std::vector<uint32_t> descriptorSizes,
+      const std::vector<VkDescriptorPoolSize> poolSizes,
       const uint32_t descriptorSetsCount
    );
+   const VkDescriptorPool& getDescriptorPool() const;
    void allocDescriptorSets(
          const VkDevice& logicalDevice,
          std::vector<VkDescriptorSet>& descriptorSets,
@@ -41,11 +41,5 @@ public:
 
 private:
 
-   void createPoolSize(
-         const size_t size,
-         const VkDescriptorType& type,
-         VkDescriptorPoolSize& poolSize
-   );
-      
    VkDescriptorPool  m_descriptorPool;
 };

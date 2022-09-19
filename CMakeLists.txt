@@ -47,6 +47,22 @@ add_subdirectory(${GLM_DIR} EXCLUDE_FROM_ALL)
 set(STB_DIR "${PROJECT_LIBRARIES_DIR}/stb")
 add_subdirectory(${STB_DIR} EXCLUDE_FROM_ALL)
 
+# -ImGUI
+# (compiles it as an static library)
+set (IMGUI_DIR "${PROJECT_LIBRARIES_DIR}/imgui")
+file(GLOB IMGUI_SOURCES
+   ${IMGUI_DIR}/*.cpp
+   ${IMGUI_DIR}/backends/imgui_impl_glfw.cpp 
+   ${IMGUI_DIR}/backends/imgui_impl_vulkan.cpp 
+)
+add_library(imgui ${IMGUI_SOURCES})
+target_include_directories(
+   imgui
+   PUBLIC
+      ${IMGUI_DIR}
+      ${IMGUI_DIR}/backends
+)
+
 # -TinyObjLoader
 set(TINY_OBJ_LOADER_DIR "${PROJECT_LIBRARIES_DIR}/tinyobjloader")
 add_subdirectory(${TINY_OBJ_LOADER_DIR})
@@ -70,7 +86,7 @@ add_definitions(-DMODEL_DIR="${MODEL_DIR}/")
 add_executable(${PROJECT_NAME} 
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/main.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Renderer.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/Window.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/WindowManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayers/vlManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
@@ -117,6 +133,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
    glm
    stb
    tinyobjloader
+   imgui
    PRIVATE ${CMAKE_DL_LIBS}
 )
 # CMAKE_DL_LIBS -> is the library libdl which helps to link dynamic

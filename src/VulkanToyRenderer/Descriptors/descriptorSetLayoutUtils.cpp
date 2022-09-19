@@ -8,29 +8,19 @@
  */
 void descriptorSetLayoutUtils::createDescriptorSetLayout(
       const VkDevice& logicalDevice,
-      const std::vector<VkDescriptorType>& descriptorTypes,
-      const std::vector<uint32_t>& descriptorBindings,
-      const std::vector<VkShaderStageFlagBits>& descriptorStages,
+      const std::vector<DescriptorInfo>& descriptorsInfo,
       VkDescriptorSetLayout& descriptorSetLayout
 ) {
-   if (descriptorTypes.size() == 0 ||
-       descriptorBindings.size() == 0 ||
-       descriptorStages.size() == 0 ||
-       descriptorTypes.size() != descriptorBindings.size() ||
-       descriptorTypes.size() != descriptorStages.size()
-   ) {
+   if (descriptorsInfo.size() == 0)
       throw std::runtime_error("Failed to create descriptor set layout!");
-   }
 
    // Descriptor bindings layouts
-   std::vector<VkDescriptorSetLayoutBinding> bindings(descriptorTypes.size());
+   std::vector<VkDescriptorSetLayoutBinding> bindings(descriptorsInfo.size());
 
    for (size_t i = 0; i < bindings.size(); i++)
    {
       createDescriptorBindingLayout(
-            descriptorBindings[i],
-            descriptorTypes[i],
-            descriptorStages[i],
+            descriptorsInfo[i],
             {},
             bindings[i]
       );
@@ -60,16 +50,14 @@ void descriptorSetLayoutUtils::destroyDescriptorSetLayout(
 }
 
 void descriptorSetLayoutUtils::createDescriptorBindingLayout(
-      const uint32_t bindingNumber,
-      const VkDescriptorType& type,
-      const VkShaderStageFlags& stageFlags,
+      const DescriptorInfo& descriptorInfo,
       const std::vector<VkSampler>& immutableSamplers,
       VkDescriptorSetLayoutBinding& layout
 ) {
    // Binding used in the shader.
-   layout.binding = bindingNumber;
-   layout.descriptorType = type;
+   layout.binding = descriptorInfo.binding;
+   layout.descriptorType = descriptorInfo.type;
    layout.descriptorCount = 1;
-   layout.stageFlags = stageFlags;
+   layout.stageFlags = descriptorInfo.shaderStage;
    layout.pImmutableSamplers = immutableSamplers.data();
 }

@@ -12,11 +12,14 @@ class CommandPool
 
 public:
 
-   CommandPool(
-      const VkDevice& logicalDevice,
-      QueueFamilyIndices& queueFamilyIndices
-   );
+   CommandPool();
    ~CommandPool();
+   void createCommandPool(
+         const VkDevice& logicalDevice,
+         const VkCommandPoolCreateFlags& flags,
+         QueueFamilyIndices& queueFamilyIndices
+   );
+   VkCommandPool& getCommandPool();
    void beginCommandBuffer(
       const VkCommandBufferUsageFlags& flags,
       VkCommandBuffer& commandBuffer

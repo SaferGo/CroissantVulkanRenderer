@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Window/Window.h>
+#include <VulkanToyRenderer/Window/WindowManager.h>
 #include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
 
 struct SwapchainSupportedProperties
@@ -33,7 +33,7 @@ public:
    void createSwapchain(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const Window& window
+      const WindowManager& window
    );
    void createAllImageViews(const VkDevice& logicalDevice);
    void createFramebuffers(
@@ -51,6 +51,9 @@ public:
    const VkFormat& getImageFormat() const;
    VkFramebuffer& getFramebuffer(const uint32_t imageIndex);
    VkSwapchainKHR& getSwapchain();
+   uint32_t getImageCount();
+   uint32_t getMinImageCount();
+   VkImageView getImageView(const uint32_t index);
 
    // Used in isPhysicalDeviceSuitable function.
    bool isSwapchainAdequated(
@@ -63,7 +66,7 @@ private:
 
    void chooseBestSettings(
       const VkPhysicalDevice& physicalDevice,
-      const Window& window,
+      const WindowManager& window,
       VkSurfaceFormatKHR& surfaceFormat,
       VkPresentModeKHR& presentMode,
       VkExtent2D& extent
@@ -80,7 +83,7 @@ private:
 
    VkExtent2D chooseBestExtent(
          const VkSurfaceCapabilitiesKHR& capabilities,
-         const Window& window
+         const WindowManager& window
    );
 
    SwapchainSupportedProperties getSupportedProperties(
@@ -88,12 +91,15 @@ private:
       const VkSurfaceKHR& surface
    );
 
+
    bool existsMaxNumberOfSupportedImages(
          const VkSurfaceCapabilitiesKHR& capabilities
    );
 
    VkSwapchainKHR m_swapchain;
    std::vector<VkImage> m_images;
+   // Used for the creation of the Imgui instance.
+   uint32_t m_minImageCount;
    // Describes how to access the images and which part of the images to
    // access.
    std::vector<VkImageView> m_imageViews;

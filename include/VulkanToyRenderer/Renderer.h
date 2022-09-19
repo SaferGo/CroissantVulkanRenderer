@@ -6,7 +6,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <VulkanToyRenderer/Window/Window.h>
+#include <VulkanToyRenderer/Window/WindowManager.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
@@ -29,6 +29,8 @@ public:
          const std::string& meshFile,
          const std::string& textureFile
    );
+   void initImgui();
+   void imguiRender(const uint8_t currentFrame, const uint8_t imageIndex);
 
 
 private:
@@ -69,7 +71,7 @@ private:
 
    void destroySyncObjects();
 
-   Window                   m_window;
+   WindowManager            m_windowM;
    VkInstance               m_vkInstance;
    Device                   m_device;
    QueueFamilyIndices       m_qfIndices;
@@ -92,4 +94,15 @@ private:
    // Models
    std::vector<std::unique_ptr<Model>> m_models;
    VkDescriptorSetLayout m_descriptorSetLayout;
+
+   // Imgui
+   std::vector<VkFramebuffer>            m_framebuffersImgui;
+   CommandPool              m_commandPoolImgui;
+   std::vector<VkCommandBuffer> m_commandBuffersImgui;
+   DescriptorPool           m_descriptorPoolImgui;
+
+   VkRenderPass             m_renderPassImgui;
+
+   // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
+   std::vector<VkClearValue> clearValues;
 };

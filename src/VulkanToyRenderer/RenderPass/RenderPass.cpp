@@ -43,7 +43,11 @@ void RenderPass::createColorAttachment(
    //    swapchain.
    //    (we want the image to be ready for presentation using the swapchain
    //    after rendering)
-   colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+   //    CHANGE: Since the last render pass will be the IMGUI(porq se tiene q
+   //    renderizar al frente de todo), this render pass won't present! That's
+   //    why we changed VK_IMAGE_LAYOUT_PRESENT+SRC_KHR to
+   //    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+   colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 }
 
 void RenderPass::createColorAttachmentReference(

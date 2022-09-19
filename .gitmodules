@@ -19,3 +19,6 @@
 [submodule "libs/tinyobjloader"]
 	path = libs/tinyobjloader
 	url = git@github.com:tinyobjloader/tinyobjloader.git
+[submodule "libs/imgui"]
+	path = libs/imgui
+	url = git@github.com:ocornut/imgui.git

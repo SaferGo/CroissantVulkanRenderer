@@ -9,10 +9,16 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Commands/commandUtils.h>
 
-CommandPool::CommandPool(
+
+
+CommandPool::CommandPool() {}
+
+void CommandPool::createCommandPool(
       const VkDevice& logicalDevice,
+      const VkCommandPoolCreateFlags& flags,
       QueueFamilyIndices& queueFamilyIndices
 ) {
+   // CHANGE THIS!!
    m_logicalDevice = logicalDevice;
    m_queueFamilyIndices = queueFamilyIndices;
    m_commandBuffers.resize(config::MAX_FRAMES_IN_FLIGHT);
@@ -21,7 +27,7 @@ CommandPool::CommandPool(
    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
    // Allows command buffers to be rerecorded individually, without this
    // flag they all have to reset together.
-   poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+   poolInfo.flags = flags;
    poolInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
 
    auto status = vkCreateCommandPool(
@@ -33,6 +39,11 @@ CommandPool::CommandPool(
 
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to create command pool!");
+}
+
+VkCommandPool& CommandPool::getCommandPool()
+{
+   return m_commandPool;
 }
 
 void CommandPool::destroyCommandPool()

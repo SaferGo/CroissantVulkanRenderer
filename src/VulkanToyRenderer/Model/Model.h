@@ -14,6 +14,7 @@
 struct Model
 {
    Model(const char* pathToMesh, const std::string& texture);
+   void loadVertexInfo(const char* pathToMesh);
    void createTexture(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
