@@ -86,7 +86,8 @@ add_definitions(-DMODEL_DIR="${MODEL_DIR}/")
 add_executable(${PROJECT_NAME} 
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/main.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Renderer.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/WindowManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/Window.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GUI/GUI.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayers/vlManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
@@ -95,6 +96,8 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ShaderManager/shaderManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPass.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/attachmentUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/subPassUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/CommandPool.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/commandUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Device/Device.cpp"

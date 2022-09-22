@@ -34,6 +34,10 @@ namespace std {
 
 Model::Model(const char* pathToMesh, const std::string& texture)
 {
+   extremeX[0] = extremeX[1] = 0.0f;
+   extremeY[0] = extremeY[1] = 0.0f;
+   extremeZ[0] = extremeZ[1] = 0.0f;
+
    // We'll read the texture file later(after the creation of a cmd pool and
    // the queue handles).
    // Improve this.
@@ -76,6 +80,13 @@ void Model::loadVertexInfo(const char* pathToMesh)
             attrib.vertices[3 * index.vertex_index + 1],
             attrib.vertices[3 * index.vertex_index + 2]
          };
+         extremeX[0] = std::fmin(vertex.pos.x, extremeX[0]);
+         extremeX[1] = std::fmax(vertex.pos.x, extremeX[1]);
+         extremeY[0] = std::fmin(vertex.pos.y, extremeY[0]);
+         extremeY[1] = std::fmax(vertex.pos.y, extremeY[1]);
+         extremeZ[0] = std::fmin(vertex.pos.z, extremeZ[0]);
+         extremeZ[1] = std::fmax(vertex.pos.z, extremeZ[1]);
+
 
          vertex.texCoord = {
             attrib.texcoords[2 * index.texcoord_index + 0],

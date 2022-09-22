@@ -3,13 +3,15 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <VulkanToyRenderer/Window/Window.h>
+
 // Make it Singleton!
-class WindowManager
+class Window
 {
 public:
 
-   WindowManager();
-   ~WindowManager();
+   Window();
+   ~Window();
    void createWindow(
          const uint16_t width,
          const uint16_t height,
@@ -17,7 +19,7 @@ public:
    );
    void createSurface(const VkInstance& instance);
 
-   GLFWwindow* getWindow();
+   const GLFWwindow* get() const;
    const VkSurfaceKHR getSurface() const;
    void getResolutionInPixels(int& width, int& height) const;
 
@@ -32,6 +34,8 @@ public:
 
 private:
 
+   // ImGui needs to access to non-const GLFWwindow.
+   friend class GUI;
    GLFWwindow* m_window;
    VkSurfaceKHR m_surface;
 

@@ -18,18 +18,27 @@ public:
    void pickPhysicalDevice(
          VkInstance& m_vkInstance,
          QueueFamilyIndices& requiredQueueFamiliesIndices,
-         const VkSurfaceKHR& windowSurface,
-         Swapchain& swapchain
+         const VkSurfaceKHR& windowSurface
    );
-   const VkDevice& getLogicalDevice();
-   const VkPhysicalDevice& getPhysicalDevice();
+   const VkDevice& getLogicalDevice() const;
+   const VkPhysicalDevice& getPhysicalDevice() const;
+   const SwapchainSupportedProperties& getSupportedProperties() const;
 
 private:
 
+   void findSupportedProperties(
+      const VkPhysicalDevice& physicalDevice,
+      const VkSurfaceKHR& surface,
+      SwapchainSupportedProperties& supportedProperties
+   );
+
+   bool isSwapchainAdequated(
+      const VkPhysicalDevice& physicalDevice,
+      const VkSurfaceKHR& surface
+   );
    bool isPhysicalDeviceSuitable(
       QueueFamilyIndices& requiredQueueFamiliesIndices,
       const VkSurfaceKHR& windowSurface,
-      Swapchain& swapchain,
       const VkPhysicalDevice& possiblePhysicalDevice
    );
    bool areAllExtensionsSupported(
@@ -42,4 +51,6 @@ private:
    const std::vector<const char*> m_requiredExtensions = {
          VK_KHR_SWAPCHAIN_EXTENSION_NAME
    };
+   SwapchainSupportedProperties m_supportedProperties;
+
 };

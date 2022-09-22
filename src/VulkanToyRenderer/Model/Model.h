@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <array>
 
 #include <VulkanToyRenderer/Model/Vertex.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
@@ -28,6 +29,9 @@ struct Model
 
    std::vector<Vertex>   vertices;
    std::vector<uint32_t> indices;
+   float extremeX[2];
+   float extremeY[2];
+   float extremeZ[2];
 
    VkBuffer       vertexBuffer;
    VkDeviceMemory vertexMemory;

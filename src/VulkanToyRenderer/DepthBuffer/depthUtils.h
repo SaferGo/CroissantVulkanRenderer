@@ -6,16 +6,6 @@
 
 namespace depthUtils
 {
-   void createDepthAttachment(
-         const VkFormat& depthFormat,
-         VkAttachmentDescription& depthAttachment
-   );
-
-   void createDepthAttachmentReference(
-      const uint32_t index,
-      VkAttachmentReference& depthAttachmentRef
-   );
-
    void createDepthStencilStateInfo(
          VkPipelineDepthStencilStateCreateInfo& depthStencil
    );

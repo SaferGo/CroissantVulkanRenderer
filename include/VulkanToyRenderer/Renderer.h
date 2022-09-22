@@ -6,7 +6,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <VulkanToyRenderer/Window/WindowManager.h>
+#include <VulkanToyRenderer/Window/Window.h>
+#include <VulkanToyRenderer/GUI/GUI.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
@@ -29,11 +30,10 @@ public:
          const std::string& meshFile,
          const std::string& textureFile
    );
-   void initImgui();
-   void imguiRender(const uint8_t currentFrame, const uint8_t imageIndex);
 
 
 private:
+
    // Modify this
    void updateUniformBuffer1(
          const VkDevice& logicalDevice,
@@ -49,11 +49,10 @@ private:
          std::vector<VkDeviceMemory>& uniformBufferMemories
    );
 
-
-
    void initVK();
    void mainLoop();
    void cleanup();
+   void createRenderPass();
    void recordCommandBuffer(
          const VkFramebuffer& framebuffer,
          const VkRenderPass& renderPass,
@@ -61,7 +60,7 @@ private:
          const VkPipeline& graphicsPipeline,
          const VkPipelineLayout& pipelineLayout,
          const uint32_t currentFrame,
-         VkCommandBuffer& commandBuffer,
+         const VkCommandBuffer& commandBuffer,
          CommandPool& commandPool
    );
    void drawFrame(uint8_t& currentFrame);
@@ -71,20 +70,20 @@ private:
 
    void destroySyncObjects();
 
-   WindowManager            m_windowM;
-   VkInstance               m_vkInstance;
-   Device                   m_device;
-   QueueFamilyIndices       m_qfIndices;
-   QueueFamilyHandles       m_qfHandles;
-   Swapchain                m_swapchain;
-   RenderPass               m_renderPass;
-   GraphicsPipelineManager  m_graphicsPipelineM;
-   VkDebugUtilsMessengerEXT m_debugMessenger;
-   std::vector<CommandPool> m_commandPools;
-   DescriptorPool           m_descriptorPool;
-   DepthBuffer              m_depthBuffer;
-   // Future improv.
-   //CommandPool              m_commandPoolMemoryAlloc;
+   Window                     m_window;
+   std::unique_ptr<GUI>       m_GUI;
+   VkInstance                 m_vkInstance;
+   Device                     m_device;
+   QueueFamilyIndices         m_qfIndices;
+   QueueFamilyHandles         m_qfHandles;
+   std::unique_ptr<Swapchain> m_swapchain;
+   RenderPass                 m_renderPass;
+   GraphicsPipelineManager    m_graphicsPipelineM;
+   VkDebugUtilsMessengerEXT   m_debugMessenger;
+   // Command buffer for main drawing commands.
+   CommandPool                m_commandPool;
+   DescriptorPool             m_descriptorPool;
+   DepthBuffer                m_depthBuffer;
 
    // Sync objects(for each frame)
    std::vector<VkSemaphore> m_imageAvailableSemaphores;
@@ -95,14 +94,6 @@ private:
    std::vector<std::unique_ptr<Model>> m_models;
    VkDescriptorSetLayout m_descriptorSetLayout;
 
-   // Imgui
-   std::vector<VkFramebuffer>            m_framebuffersImgui;
-   CommandPool              m_commandPoolImgui;
-   std::vector<VkCommandBuffer> m_commandBuffersImgui;
-   DescriptorPool           m_descriptorPoolImgui;
-
-   VkRenderPass             m_renderPassImgui;
-
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
-   std::vector<VkClearValue> clearValues;
+   std::vector<VkClearValue> m_clearValues;
 };

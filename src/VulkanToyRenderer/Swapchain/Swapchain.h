@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Window/WindowManager.h>
+#include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
 
 struct SwapchainSupportedProperties
@@ -26,15 +26,17 @@ struct SwapchainSupportedProperties
 
 class Swapchain
 {
+
 public:
 
    Swapchain();
-   ~Swapchain();
-   void createSwapchain(
+   Swapchain(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const WindowManager& window
+      const Window& window,
+      const SwapchainSupportedProperties& supportedProperties
    );
+   ~Swapchain();
    void createAllImageViews(const VkDevice& logicalDevice);
    void createFramebuffers(
          const VkDevice& logicalDevice,
@@ -49,11 +51,11 @@ public:
      
    const VkExtent2D& getExtent() const;
    const VkFormat& getImageFormat() const;
-   VkFramebuffer& getFramebuffer(const uint32_t imageIndex);
-   VkSwapchainKHR& getSwapchain();
-   uint32_t getImageCount();
-   uint32_t getMinImageCount();
-   VkImageView getImageView(const uint32_t index);
+   const VkFramebuffer& getFramebuffer(const uint32_t imageIndex) const;
+   const VkSwapchainKHR& get() const;
+   const uint32_t getImageCount() const;
+   const uint32_t getMinImageCount() const;
+   const VkImageView& getImageView(const uint32_t index) const;
 
    // Used in isPhysicalDeviceSuitable function.
    bool isSwapchainAdequated(
@@ -65,8 +67,8 @@ public:
 private:
 
    void chooseBestSettings(
-      const VkPhysicalDevice& physicalDevice,
-      const WindowManager& window,
+      const Window& window,
+      const SwapchainSupportedProperties& supportedProperties,
       VkSurfaceFormatKHR& surfaceFormat,
       VkPresentModeKHR& presentMode,
       VkExtent2D& extent
@@ -83,18 +85,13 @@ private:
 
    VkExtent2D chooseBestExtent(
          const VkSurfaceCapabilitiesKHR& capabilities,
-         const WindowManager& window
-   );
-
-   SwapchainSupportedProperties getSupportedProperties(
-      const VkPhysicalDevice& physicalDevice,
-      const VkSurfaceKHR& surface
+         const Window& window
    );
 
 
-   bool existsMaxNumberOfSupportedImages(
+   const bool existsMaxNumberOfSupportedImages(
          const VkSurfaceCapabilitiesKHR& capabilities
-   );
+   ) const;
 
    VkSwapchainKHR m_swapchain;
    std::vector<VkImage> m_images;
@@ -103,12 +100,8 @@ private:
    // Describes how to access the images and which part of the images to
    // access.
    std::vector<VkImageView> m_imageViews;
-   // This object is "optional" beacuse we may need it before the creation
-   // of the swapchain to check if the device is suitable.
-   std::optional<SwapchainSupportedProperties> m_supportedProperties;
    VkFormat m_imageFormat;
    // Size of the swapchain color images.
    VkExtent2D m_extent;
-
    std::vector<VkFramebuffer> m_framebuffers;
 };

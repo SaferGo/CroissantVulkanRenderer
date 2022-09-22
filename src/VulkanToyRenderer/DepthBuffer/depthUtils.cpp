@@ -5,36 +5,6 @@
 
 #include <vulkan/vulkan.h>
 
-void depthUtils::createDepthAttachment(
-      const VkFormat& depthFormat,
-      VkAttachmentDescription& depthAttachment
-) {
-   depthAttachment.format = depthFormat;
-   depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-   depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-   // We don't care about storing the depth data, because it will not be used
-   // after drawing has finished.
-   depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-   depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-   depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-   // Just like the color buffer, we don't care about the previous depth
-   // contents.
-   depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-   depthAttachment.finalLayout = (
-         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-   );
-}
-
-void depthUtils::createDepthAttachmentReference(
-      const uint32_t index,
-      VkAttachmentReference& depthAttachmentRef
-) {
-   depthAttachmentRef.attachment = index;
-   depthAttachmentRef.layout = (
-         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-   );
-}
-
 VkFormat depthUtils::findSupportedFormat(
       const VkPhysicalDevice& physicalDevice,
       const std::vector<VkFormat>& candidates,

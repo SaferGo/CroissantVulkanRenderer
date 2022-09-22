@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <vulkan/vulkan.h>
 
 class RenderPass
@@ -9,34 +11,24 @@ public:
 
    RenderPass();
    ~RenderPass();
-
-   void createRenderPass(
-         const VkPhysicalDevice& phyisicalDevice,
-         const VkDevice& logicalDevice,
-         const VkFormat& imageFormat
+   RenderPass(
+      const VkDevice& logicalDevice,
+      const std::vector<VkAttachmentDescription>& attachments,
+      const std::vector<VkSubpassDescription>& subpasses,
+      const std::vector<VkSubpassDependency>& dependencies
    );
-
    void createSubPass(
          const VkAttachmentReference& colorAttachmentRef,
          const VkAttachmentReference& depthAttachmentRef,
          VkSubpassDescription& subpassDescript
    );
 
-   const VkRenderPass& getRenderPass() const;
+   const VkRenderPass& get() const;
 
-   void destroyRenderPass(const VkDevice& logicalDevice);
+   void destroy(const VkDevice& logicalDevice);
 
 private:
    
-   void createColorAttachment(
-         const VkFormat& imageFormat,
-         VkAttachmentDescription& colorAttachment
-   );
-   void createColorAttachmentReference(
-         const uint32_t index,
-         VkAttachmentReference& colorAttachmentRef
-   );
-
    VkRenderPass m_renderPass;
 
 };
