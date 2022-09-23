@@ -27,6 +27,7 @@ public:
 
    void run();
    void addModel(
+         const std::string& name,
          const std::string& meshFile,
          const std::string& textureFile
    );
@@ -35,18 +36,11 @@ public:
 private:
 
    // Modify this
-   void updateUniformBuffer1(
+   void updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent,
-         std::vector<VkDeviceMemory>& uniformBufferMemories
-   );
-   // Modify this
-   void updateUniformBuffer2(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         std::vector<VkDeviceMemory>& uniformBufferMemories
+         Model& model
    );
 
    void initVK();
@@ -55,7 +49,7 @@ private:
    void createRenderPass();
    void recordCommandBuffer(
          const VkFramebuffer& framebuffer,
-         const VkRenderPass& renderPass,
+         const RenderPass& renderPass,
          const VkExtent2D& extent,
          const VkPipeline& graphicsPipeline,
          const VkPipelineLayout& pipelineLayout,
@@ -80,6 +74,7 @@ private:
    RenderPass                 m_renderPass;
    GraphicsPipelineManager    m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT   m_debugMessenger;
+
    // Command buffer for main drawing commands.
    CommandPool                m_commandPool;
    DescriptorPool             m_descriptorPool;
@@ -91,7 +86,7 @@ private:
    std::vector<VkFence>     m_inFlightFences;
 
    // Models
-   std::vector<std::unique_ptr<Model>> m_models;
+   std::vector<std::shared_ptr<Model>> m_models;
    VkDescriptorSetLayout m_descriptorSetLayout;
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES

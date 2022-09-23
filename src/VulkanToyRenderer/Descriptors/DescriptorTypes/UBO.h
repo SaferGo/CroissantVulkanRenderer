@@ -17,6 +17,8 @@ public:
          const uint32_t nSets
    );
    std::vector<VkDeviceMemory>& getUniformBufferMemories();
+   VkDeviceMemory& getUniformBufferMemory(const uint32_t index);
+   VkDeviceMemory& getUniformBufferMemory();
    std::vector<VkBuffer>& getUniformBuffers();
    void destroyUniformBuffersAndMemories(const VkDevice& logicalDevice);
 

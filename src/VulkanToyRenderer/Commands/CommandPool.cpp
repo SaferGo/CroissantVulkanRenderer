@@ -106,28 +106,11 @@ const VkCommandBuffer& CommandPool::getCommandBuffer(const uint32_t index) const
    return m_commandBuffers[index];
 }
 
-void CommandPool::createRenderPassBeginInfo(
-      const VkRenderPass& renderPass,
-      const VkFramebuffer& framebuffer,
-      const VkExtent2D& extent,
-      const std::vector<VkClearValue>& clearValues,
-      VkRenderPassBeginInfo& renderPassInfo
+void CommandPool::beginCommandBuffer(
+      const VkCommandBufferUsageFlags& flags,
+      const uint32_t& cmdBufferIndex
 ) {
-   renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-   renderPassInfo.renderPass = renderPass;
-   // Binds the framebuffer for the swapchain image we want to draw to.
-   renderPassInfo.framebuffer = framebuffer;
-   // These two param. define the size of the render area. The render area
-   // defines where shader loads and stores will take place. The pixels
-   // outside this region will have undefined values. It should match
-   // the size of the attachments for best performance.
-   renderPassInfo.renderArea.offset = {0, 0};
-   renderPassInfo.renderArea.extent = extent;
-   // These two param. define the clear values to use for
-   // VK_ATTACHMENT_LOAD_OP_CLEAR, which we used as load operation for the
-   // color attachment.
-   renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-   renderPassInfo.pClearValues = clearValues.data();
+   beginCommandBuffer(flags, m_commandBuffers[cmdBufferIndex]);
 }
 
 void CommandPool::beginCommandBuffer(

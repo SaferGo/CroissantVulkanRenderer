@@ -39,6 +39,11 @@ std::vector<VkDeviceMemory>& UBO::getUniformBufferMemories()
    return m_uniformBufferMemories;
 }
 
+VkDeviceMemory& UBO::getUniformBufferMemory(const uint32_t index)
+{
+   return m_uniformBufferMemories[index];
+}
+
 std::vector<VkBuffer>& UBO::getUniformBuffers()
 {
    return m_uniformBuffers;

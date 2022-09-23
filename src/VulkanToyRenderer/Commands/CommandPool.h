@@ -24,6 +24,10 @@ public:
       const VkCommandBufferUsageFlags& flags,
       const VkCommandBuffer& commandBuffer
    );
+   void beginCommandBuffer(
+         const VkCommandBufferUsageFlags& flags,
+         const uint32_t& cmdBufferIndex
+   );
    void endCommandBuffer(const VkCommandBuffer& commandBuffer);
    void destroy();
    void allocCommandBuffer(
@@ -39,14 +43,6 @@ public:
    void resetCommandBuffer(const uint32_t index);
 
    void freeCommandBuffer(VkCommandBuffer& commandBuffer);
-
-   void createRenderPassBeginInfo(
-         const VkRenderPass& renderPass,
-         const VkFramebuffer& framebuffer,
-         const VkExtent2D& extent,
-         const std::vector<VkClearValue>& clearValues,
-         VkRenderPassBeginInfo& renderPassInfo
-   );
 
 private:
 
