@@ -14,7 +14,7 @@
  * It does:
  *    -Creates the memory for the buffer.
  *    -Allocates the buffer.
- *    -Binds the memory with the buffer.
+ *    -Binds the buffer with the memory.
  */
 void bufferManager::createBuffer(
          const VkPhysicalDevice& physicalDevice,
@@ -188,6 +188,7 @@ void bufferManager::createBufferAndTransferToDevice(
          stagingBufferMemory,
          stagingBuffer
    );
+
    fillBuffer(
          logicalDevice,
          data,

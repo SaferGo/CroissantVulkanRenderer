@@ -10,16 +10,20 @@ file (GLOB SHADERS
 foreach(source IN LISTS SHADERS)
    get_filename_component(FILENAME ${source} NAME)
 
+   get_filename_component(NAME_WITHOUT_EXT ${source} NAME_WE)
+
    get_filename_component(TMP_EXTENSION ${source} EXT)
    string(REPLACE "." "" EXTENSION ${TMP_EXTENSION})
 
+   set(OUTPUT_FILENAME "${EXTENSION}-${NAME_WITHOUT_EXT}")
+
    add_custom_command(
-      COMMAND ${glslc_executable} ${source} -o ${EXTENSION}.spv
-      OUTPUT ${SHADERS_BINARY_DIR}/${EXTENSION}.spv
+      COMMAND ${glslc_executable} ${source} -o ${OUTPUT_FILENAME}.spv
+      OUTPUT ${SHADERS_BINARY_DIR}/${OUTPUT_FILENAME}.spv
       COMMENT "Compiling ${FILENAME}"
    )
 
-   list(APPEND SPV_SHADERS ${SHADERS_BINARY_DIR}/${EXTENSION}.spv)
+   list(APPEND SPV_SHADERS ${SHADERS_BINARY_DIR}/${OUTPUT_FILENAME}.spv)
 endforeach()
 
 add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})

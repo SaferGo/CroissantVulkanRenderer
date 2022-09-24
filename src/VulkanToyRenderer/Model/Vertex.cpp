@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <array>
+#include <vector>
 
 /*
  * Describes at which rate to load data from memory through the vertices. It
@@ -28,12 +28,12 @@ VkVertexInputBindingDescription Vertex::getBindingDescription()
 
 /*
  * Describes how to extract a vertex attribute from a chunk of vertex data
- * originated from a binfing description.
+ * originated from a binding description.
  */
-std::array<VkVertexInputAttributeDescription, 3> 
+std::vector<VkVertexInputAttributeDescription> 
    Vertex::getAttributeDescriptions() 
 {
-   std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+   std::vector<VkVertexInputAttributeDescription> attributeDescriptions(4);
 
    // -Vertex Attribute: Position
 
@@ -52,10 +52,19 @@ std::array<VkVertexInputAttributeDescription, 3>
    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
    attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+   // - Vertex Attribute: Texture coord.
+
    attributeDescriptions[2].binding = 0;
    attributeDescriptions[2].location = 2;
    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
+   // - Vertex Attribute: Normal
+
+   attributeDescriptions[3].binding = 0;
+   attributeDescriptions[3].location = 3;
+   attributeDescriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+   attributeDescriptions[3].offset = offsetof(Vertex, normal);
    
    return attributeDescriptions;
 }
@@ -67,8 +76,9 @@ bool Vertex::operator==(const Vertex& other) const
 {
    return (
           pos == other.pos && 
-          color == other.color && 
-          texCoord == other.texCoord
+          color == other.color &&
+          texCoord == other.texCoord &&
+          normal == other.normal
    );
 }
 

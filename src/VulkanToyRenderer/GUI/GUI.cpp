@@ -337,25 +337,26 @@ void GUI::modelsWindow(std::vector<std::shared_ptr<Model>> models)
 
       for (auto& model : models)
       {
-         if (ImGui::TreeNode((model.get()->name).c_str()))
+         std::string modelName = model.get()->getName();
+         if (ImGui::TreeNode(modelName.c_str()))
          {
             if (ImGui::TreeNode(
-                     ("Position##TRANSLATION::" + model.get()->name).c_str()
+                     ("Position##TRANSLATION::" + modelName).c_str()
             ) ){
                ImGui::SliderFloat(
-                     ("X##TRANSLATION::" + model.get()->name).c_str(),
+                     ("X##TRANSLATION::" + modelName).c_str(),
                      &(model.get()->actualPos.x),
                      -10.0f,
                      10.0f
                );
                ImGui::SliderFloat(
-                     ("Y##TRANSLATION::" + model.get()->name).c_str(),
+                     ("Y##TRANSLATION::" + modelName).c_str(),
                      &(model.get()->actualPos.y),
                      -10.0f,
                      10.0f
                );
                ImGui::SliderFloat(
-                     ("Z##TRANSLATION::" + model.get()->name).c_str(),
+                     ("Z##TRANSLATION::" + modelName).c_str(),
                      &(model.get()->actualPos.z),
                      -10.0f,
                      10.0f
@@ -364,22 +365,22 @@ void GUI::modelsWindow(std::vector<std::shared_ptr<Model>> models)
                ImGui::Separator();
             }
             if (ImGui::TreeNode(
-                     ("Size##SIZE::" + model.get()->name).c_str()
+                     ("Size##SIZE::" + modelName).c_str()
             ) ) {
                ImGui::SliderFloat(
-                     ("X##SCALE::" + model.get()->name).c_str(),
+                     ("X##SCALE::" + modelName).c_str(),
                      &(model.get()->actualSize.x),
                      0.0f,
                      1.0f
                );
                ImGui::SliderFloat(
-                     ("Y##SCALE" + model.get()->name).c_str(),
+                     ("Y##SCALE" + modelName).c_str(),
                      &(model.get()->actualSize.y),
                      0.0f,
                      1.0f
                );
                ImGui::SliderFloat(
-                     ("Z##SCALE" + model.get()->name).c_str(),
+                     ("Z##SCALE" + modelName).c_str(),
                      &(model.get()->actualSize.z),
                      0.0f,
                      1.0f
@@ -388,22 +389,22 @@ void GUI::modelsWindow(std::vector<std::shared_ptr<Model>> models)
                ImGui::Separator();
             }
             if (ImGui::TreeNode(
-                     ("Rotation##ROTATION::" + model.get()->name).c_str()
+                     ("Rotation##ROTATION::" + modelName).c_str()
             ) ) {
                ImGui::SliderFloat(
-                     ("X##ROTATION::" + model.get()->name).c_str(),
+                     ("X##ROTATION::" + modelName).c_str(),
                      &(model.get()->actualRot.x),
                      -5.0f,
                      5.0f
                );
                ImGui::SliderFloat(
-                     ("Y##ROTATION" + model.get()->name).c_str(),
+                     ("Y##ROTATION" + modelName).c_str(),
                      &(model.get()->actualRot.y),
                      -5.0f,
                      5.0f
                );
                ImGui::SliderFloat(
-                     ("Z##ROTATION" + model.get()->name).c_str(),
+                     ("Z##ROTATION" + modelName).c_str(),
                      &(model.get()->actualRot.z),
                      -5.0f,
                      5.0f

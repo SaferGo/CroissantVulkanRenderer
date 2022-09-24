@@ -22,10 +22,10 @@ void GraphicsPipelineManager::createShaderModules(
       const VkDevice& logicalDevice
 ) {
    const std::vector<char> vertexShaderCode = (
-         shaderManager::getBinaryDataFromFile("vert")
+         shaderManager::getBinaryDataFromFile("vert-shader")
    );
    const std::vector<char> fragmentShaderCode = (
-         shaderManager::getBinaryDataFromFile("frag")
+         shaderManager::getBinaryDataFromFile("frag-shader")
    );
 
    vertexShaderModule = shaderManager::createShaderModule(
@@ -92,7 +92,7 @@ void GraphicsPipelineManager::createDynamicStatesInfo(
  */
 void GraphicsPipelineManager::createVertexShaderInputInfo(
       const VkVertexInputBindingDescription& bindingDescription,
-      const std::array<VkVertexInputAttributeDescription, 3>&
+      const std::vector<VkVertexInputAttributeDescription>&
          attribDescriptions,
       VkPipelineVertexInputStateCreateInfo& vertexInputInfo
 ) {
@@ -322,14 +322,14 @@ void GraphicsPipelineManager::createGraphicsPipeline(
    VkPipelineViewportStateCreateInfo viewportStateInfo{};
    createViewportStateInfo(viewportStateInfo);
 
-   // -Vertex input
+   // -Vertex input(attributes)
 
    // Gets the binding and descriptions of the triangle's vertices and
    // vertex attributes(one array containing both).
    VkVertexInputBindingDescription bindingDescription = (
          Vertex::getBindingDescription()
    );
-   std::array<VkVertexInputAttributeDescription, 3> attribDescriptions = (
+   std::vector<VkVertexInputAttributeDescription> attribDescriptions = (
          Vertex::getAttributeDescriptions()
    );
    VkPipelineVertexInputStateCreateInfo vertexInputInfo{};

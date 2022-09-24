@@ -11,9 +11,10 @@ int main()
 
    try
    {
-      app.addModel("Erato", "erato.obj", "erato.jpg");
+      app.addModel("Bunny", "stanford-bunny.obj");
+      app.addModel("Light", "lightSphere.obj");
+      //app.addModel("Erato", "erato.obj", "erato.jpg");
       app.addModel("Viking room", "viking_room.obj", "viking_room.png");
-      app.addModel("Bunny tonto", "bunny.obj", "bunny-atlas.jpg");
       app.run();
    } catch (const std::exception& e)
    {

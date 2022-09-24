@@ -31,11 +31,15 @@ public:
          const std::string& meshFile,
          const std::string& textureFile
    );
+   void addModel(
+         const std::string& name,
+         const std::string& meshFile
+   );
+
 
 
 private:
 
-   // Modify this
    void updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
@@ -77,7 +81,7 @@ private:
 
    // Command buffer for main drawing commands.
    CommandPool                m_commandPool;
-   DescriptorPool             m_descriptorPool;
+
    DepthBuffer                m_depthBuffer;
 
    // Sync objects(for each frame)
@@ -87,8 +91,11 @@ private:
 
    // Models
    std::vector<std::shared_ptr<Model>> m_models;
+
+   DescriptorPool             m_descriptorPool;
    VkDescriptorSetLayout m_descriptorSetLayout;
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    std::vector<VkClearValue> m_clearValues;
+   glm::fvec3 m_cameraPos;
 };

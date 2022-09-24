@@ -25,19 +25,6 @@ public:
    );
    void destroyDescriptorPool(const VkDevice& logicalDevice);
 
-   void updateUniformBuffer1(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         std::vector<VkDeviceMemory>& uniformBufferMemories
-   );
-   void updateUniformBuffer2(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         std::vector<VkDeviceMemory>& uniformBufferMemories
-   );
-
 
 private:
 
