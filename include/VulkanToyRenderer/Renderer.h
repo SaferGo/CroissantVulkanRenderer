@@ -26,7 +26,11 @@ class Renderer
 public:
 
    void run();
-   void addModel(
+   void addNormalModel(
+         const std::string& name,
+         const std::string& meshFile
+   );
+   void addNormalModel(
          const std::string& name,
          const std::string& meshFile,
          const std::string& textureFile
@@ -35,10 +39,25 @@ public:
          const std::string& name,
          const std::string& meshFile
    );
+   void addLightModel(
+         const std::string& name,
+         const std::string& meshFile
+   );
+   void addLightModel(
+      const std::string& name,
+      const std::string& meshFile,
+      const std::string& textureFile
+   ) ;
 
 
 
 private:
+
+   void addModel(
+         const std::string& name,
+         const std::string& meshFile,
+         const std::string& textureFile
+   );
 
    void updateUniformBuffer(
          const VkDevice& logicalDevice,
@@ -76,8 +95,8 @@ private:
    QueueFamilyHandles         m_qfHandles;
    std::unique_ptr<Swapchain> m_swapchain;
    RenderPass                 m_renderPass;
-   GraphicsPipelineManager    m_graphicsPipelineM;
    VkDebugUtilsMessengerEXT   m_debugMessenger;
+   GraphicsPipelineManager    m_graphicsPipelineM;
 
    // Command buffer for main drawing commands.
    CommandPool                m_commandPool;
@@ -90,7 +109,12 @@ private:
    std::vector<VkFence>     m_inFlightFences;
 
    // Models
-   std::vector<std::shared_ptr<Model>> m_models;
+   std::vector<std::shared_ptr<Model>> m_allModels;
+   // The light models will be saved also in m_allModels but we will
+   // keep track of them in m_lightModels.
+   std::vector<size_t> m_lightModelIndices;
+   // Models that interact with the light.
+   std::vector<size_t> m_normalModelIndices;
 
    DescriptorPool             m_descriptorPool;
    VkDescriptorSetLayout m_descriptorSetLayout;

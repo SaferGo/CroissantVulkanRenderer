@@ -68,7 +68,6 @@ public:
    float extremeX[2];
    float extremeY[2];
    float extremeZ[2];
-   glm::fvec3 centerPos;
    glm::fvec3 actualPos;
    glm::fvec3 actualSize;
    glm::fvec3 actualRot;

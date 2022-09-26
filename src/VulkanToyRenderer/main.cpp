@@ -11,10 +11,14 @@ int main()
 
    try
    {
-      app.addModel("Bunny", "stanford-bunny.obj");
-      app.addModel("Light", "lightSphere.obj");
-      //app.addModel("Erato", "erato.obj", "erato.jpg");
-      app.addModel("Viking room", "viking_room.obj", "viking_room.png");
+      /*
+       * Normal Model -> Model that interacts with light.
+       * Light Model  -> Model that produces light.
+       */
+      app.addNormalModel("Bunny", "stanford-bunny.obj");
+      app.addLightModel("Light", "lightSphere.obj");
+      //app.addNormalModel("Erato", "erato.obj", "erato.jpg");
+      //app.addNormalModel("Viking room", "viking_room.obj", "viking_room.png");
       app.run();
    } catch (const std::exception& e)
    {

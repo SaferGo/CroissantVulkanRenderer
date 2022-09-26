@@ -51,7 +51,7 @@ void Renderer::run()
    m_cameraPos = glm::fvec3(2.0f);
 
 
-   if (m_models.size() == 0)
+   if (m_allModels.size() == 0)
    {
       std::cout << "Nothing to render..\n";
       return;
@@ -76,34 +76,52 @@ void Renderer::run()
    cleanup();
 }
 
-// Loads and adds a new model(without texture) to the scene.
-void Renderer::addModel(
+void Renderer::addNormalModel(
       const std::string& name,
       const std::string& meshFile
 ) {
-   m_models.push_back(
-         std::make_shared<Model>(
-            (std::string(MODEL_DIR) + meshFile).c_str(),
-            "default.png",
-            name
-         )
-   );
+   addModel(name, meshFile, "default.png");
+   m_normalModelIndices.push_back(m_allModels.size() - 1);
 }
 
-// Loads and adds a new model(with texture) to the scene.
+void Renderer::addNormalModel(
+      const std::string& name,
+      const std::string& meshFile,
+      const std::string& textureFile
+) {
+   addModel(name, meshFile, textureFile);
+   m_normalModelIndices.push_back(m_allModels.size() - 1);
+}
+
 void Renderer::addModel(
       const std::string& name,
       const std::string& meshFile,
       const std::string& textureFile
 ) {
-   m_models.push_back(
+   m_allModels.push_back(
          std::make_shared<Model>(
             (std::string(MODEL_DIR) + meshFile).c_str(),
             textureFile,
             name
          )
    );
+}
 
+void Renderer::addLightModel(
+      const std::string& name,
+      const std::string& meshFile
+) {
+   addModel(name, meshFile, "default.png");
+   m_lightModelIndices.push_back(m_allModels.size() - 1);
+}
+
+void Renderer::addLightModel(
+      const std::string& name,
+      const std::string& meshFile,
+      const std::string& textureFile
+) {
+   addModel(name, meshFile, textureFile);
+   m_lightModelIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::createSyncObjects()
@@ -344,6 +362,7 @@ void Renderer::initVK()
    createVkInstance();
 
    vlManager::setupDebugMessenger(m_vkInstance, m_debugMessenger);
+
    m_window.createSurface(m_vkInstance);
 
    m_device.pickPhysicalDevice(
@@ -366,7 +385,9 @@ void Renderer::initVK()
    m_swapchain->createAllImageViews(m_device.getLogicalDevice());
 
    createRenderPass();
-   
+
+   // Specifies all the neccessary descriptors, their bindings and their 
+   // shader stages.
    descriptorSetLayoutUtils::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
          // Descriptor Types / Descriptor Bindings / Descriptor Stages
@@ -374,13 +395,16 @@ void Renderer::initVK()
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                0,
-               VK_SHADER_STAGE_VERTEX_BIT
+               (VkShaderStageFlagBits)(
+                     VK_SHADER_STAGE_VERTEX_BIT |
+                     VK_SHADER_STAGE_FRAGMENT_BIT
+               )
             },
             {
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                1,
                VK_SHADER_STAGE_FRAGMENT_BIT
-            },
+            }
          },
          m_descriptorSetLayout
    );
@@ -426,23 +450,23 @@ void Renderer::initVK()
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                static_cast<uint32_t> (
-                     m_models.size() * config::MAX_FRAMES_IN_FLIGHT
+                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                )
             },
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                static_cast<uint32_t> (
-                     m_models.size() * config::MAX_FRAMES_IN_FLIGHT
+                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                )
             }
          },
          // Descriptor SETS count.
-         m_models.size() * config::MAX_FRAMES_IN_FLIGHT
+         m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
    );
 
 
    // Uploads the data from each model to the gpu.
-   for (auto& model : m_models)
+   for (auto& model : m_allModels)
    {
       // Vertex buffer and index buffer(with staging buffer)
       // (Position, color, texCoord, normal, etc)
@@ -541,7 +565,7 @@ void Renderer::recordCommandBuffer(
                commandBuffer
          );
 
-         for (const auto& model : m_models)
+         for (const auto& model : m_allModels)
          {
             commandUtils::STATE::bindVertexBuffers(
                   {model->getVertexBuffer()},
@@ -608,7 +632,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    );
 
    //------------------------Updates uniform buffer----------------------------
-   for (auto& model : m_models)
+   for (auto& model : m_allModels)
    {
       updateUniformBuffer(
             m_device.getLogicalDevice(),
@@ -724,7 +748,7 @@ void Renderer::mainLoop()
       m_window.pollEvents();
 
       // Draws Imgui
-      m_GUI->draw(m_models, m_cameraPos);
+      m_GUI->draw(m_allModels, m_cameraPos);
       drawFrame(currentFrame);
    }
    vkDeviceWaitIdle(m_device.getLogicalDevice());
@@ -779,47 +803,18 @@ void Renderer::cleanup()
    // Render pass
    m_renderPass.destroy(m_device.getLogicalDevice());
 
-   // UBO(with their uniform buffers and uniform memories)
-   for (auto& model : m_models)
+   // Models -> Buffers, Memories and Textures.
+   for (auto& model : m_allModels)
       model->destroy(m_device.getLogicalDevice());
-   //for (auto& model : m_models)
-   //   model->ubo.destroyUniformBuffersAndMemories(m_device.getLogicalDevice());
 
    // Descriptor Pool
    m_descriptorPool.destroyDescriptorPool(m_device.getLogicalDevice());
 
-   // Textures
-   //for (auto& model : m_models)
-   //   model->texture->destroyTexture(m_device.getLogicalDevice());
-   
    // Descriptor Set Layout
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
          m_device.getLogicalDevice(),
          m_descriptorSetLayout
    );
-   
-   // Buffers
-   //for (auto& model : m_models)
-   //{
-   //   bufferManager::destroyBuffer(
-   //         m_device.getLogicalDevice(),
-   //         model->vertexBuffer
-   //   );
-   //   bufferManager::destroyBuffer(
-   //         m_device.getLogicalDevice(),
-   //         model->indexBuffer
-   //   );
-   //
-   //   // Buffer Memories
-   //   bufferManager::freeMemory(
-   //         m_device.getLogicalDevice(),
-   //         model->vertexMemory
-   //   );
-   //   bufferManager::freeMemory(
-   //         m_device.getLogicalDevice(),
-   //         model->indexMemory
-   //   );
-   //}
    
    // Sync objects
    destroySyncObjects();
@@ -871,9 +866,6 @@ void Renderer::updateUniformBuffer(
          model.actualPos
    );
 
-   // Updates the center of the mesh.
-   model.centerPos += model.actualPos;
-
    ubo.model = glm::scale(
          ubo.model,
          model.actualSize
@@ -924,6 +916,16 @@ void Renderer::updateUniformBuffer(
    // inverted. To compensate for that, we have to flip the sign on the scaling
    // factor of the Y axis.
    ubo.proj[1][1] *= -1;
+
+   ubo.lightsCount = 1;
+   ubo.lightPositions = m_allModels[m_lightModelIndices[0]]->actualPos;
+   //std::cout << "POS: " << m_models[m_lightModels[0]]->actualPos.x << " " << m_models[m_lightModels[0]]->actualPos.y << " " << m_models[m_lightModels[0]]->actualPos.z << std::endl;
+   //for (size_t i = 0; i < ubo.lightsCount; i++)
+   //{
+   //   ubo.lightPositions = m_models[m_lightModels[i]]->centerPos;
+   //   //ubo.lightPosition = m_lightModels[i].centerPos;
+   //}
+   
 
    model.updateUBO(logicalDevice, ubo, currentFrame);
 }

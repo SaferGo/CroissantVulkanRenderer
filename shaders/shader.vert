@@ -5,6 +5,9 @@ layout(binding = 0) uniform UniformBufferObject
    mat4 model;
    mat4 view;
    mat4 proj;
+   vec3 lightPositions;
+   vec3 lightColors;
+   int  lightsCount;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
@@ -15,6 +18,7 @@ layout(location = 3) in vec3 inNormal;
 layout(location = 0) out vec3 outColor;
 layout(location = 1) out vec2 outTexCoord;
 layout(location = 2) out vec3 outNormal;
+layout(location = 3) out vec3 outPosition;
 
 void main()
 {
@@ -25,4 +29,5 @@ void main()
    outColor = inColor;
    outTexCoord = inTexCoord;
    outNormal = ((transpose(inverse(ubo.model)) * vec4(inNormal, 0.0))).xyz;
+   outPosition = inPosition;
 }
