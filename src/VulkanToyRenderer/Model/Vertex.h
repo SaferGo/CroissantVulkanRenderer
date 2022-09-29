@@ -5,8 +5,6 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
-// Improve this.
-
 struct Vertex
 {
    glm::vec3 pos;

@@ -24,13 +24,16 @@ public:
    Model(
          const char* pathToMesh,
          const std::string& texture,
-         const std::string& modelName
+         const std::string& modelName,
+         const bool lightModel,
+         const glm::fvec4& lightColor
    );
    ~Model();
    void destroy(const VkDevice& logicalDevice);
+   template<typename T>
    void updateUBO(
          const VkDevice& logicalDevice,
-         DescriptorTypes::UniformBufferObject& newUbo,
+         T& newUbo,
          const uint32_t& currentFrame
    );
    void uploadVertexData(
@@ -63,21 +66,22 @@ public:
    VkBuffer& getVertexBuffer();
    VkBuffer& getIndexBuffer();
    uint32_t getIndexCount();
+   const bool isLightModel() const;
 
    // Info to update UBO.
    float extremeX[2];
    float extremeY[2];
    float extremeZ[2];
-   glm::fvec3 actualPos;
+   glm::fvec4 actualPos;
    glm::fvec3 actualSize;
    glm::fvec3 actualRot;
+   glm::fvec4 lightColor;
 
 private:
 
    void loadVertexInfo(const char* pathToMesh);
-   void translateToCenter();
+   void makeBasicTransformations();
    void initExtremeValues();
-   void makeItSmaller(const float maxZ);
 
    std::string m_name;
 
@@ -99,4 +103,6 @@ private:
 
    // Descriptors
    UBO m_ubo;
+
+   bool m_isLightModel;
 };

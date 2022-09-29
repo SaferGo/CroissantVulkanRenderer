@@ -2,34 +2,39 @@
 
 #include <vector>
 #include <array>
+#include <string>
 
 #include <vulkan/vulkan.h>
 
-class GraphicsPipelineManager
+class GraphicsPipeline
 {
 
 public:
 
-   GraphicsPipelineManager();
-   ~GraphicsPipelineManager();
-   void createGraphicsPipeline(
+   GraphicsPipeline();
+   ~GraphicsPipeline();
+   GraphicsPipeline(
          const VkDevice& logicalDevice,
          const VkExtent2D& extent,
          const VkRenderPass& renderPass,
-         const VkDescriptorSetLayout& descriptorSetLayout
+         const VkDescriptorSetLayout& descriptorSetLayout,
+         const std::string& vertexShaderFileName,
+         const std::string& fragmentShaderFileName,
+         std::vector<size_t>* modelIndices
    );
-   const VkPipeline& getGraphicsPipeline() const;
-
-   VkPipelineLayout& getPipelineLayout();
-   void destroyGraphicsPipeline(const VkDevice& logicalDevice);
-   void destroyPipelineLayout(const VkDevice& logicalDevice);
+   const VkPipeline& get() const;
+   const VkPipelineLayout& getPipelineLayout() const;
+   const std::vector<size_t>& getModelIndices() const;
+   void destroy(const VkDevice& logicalDevice);
 
 private:
 
    void createShaderModules(
+      const VkDevice& logicalDevice,
+      const std::string& vertexShaderFileName,
       VkShaderModule& vertexShaderModule,
-      VkShaderModule& fragmentShaderModule,
-      const VkDevice& logicalDevice
+      const std::string& fragmentShaderFileName,
+      VkShaderModule& fragmentShaderModule
    );
    void createShaderStagesInfos(
       const VkShaderModule& vertexShaderModule,
@@ -74,7 +79,9 @@ private:
          const VkDescriptorSetLayout& descriptorSetLayout
    );
 
-
    VkPipeline m_graphicsPipeline;
    VkPipelineLayout m_pipelineLayout;
+
+   // Observer pointer
+   std::vector<size_t>* m_opModelIndices;
 };

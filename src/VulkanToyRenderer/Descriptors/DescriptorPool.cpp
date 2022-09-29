@@ -7,10 +7,6 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Descriptors/DescriptorTypes/DescriptorTypes.h>
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
-#include <VulkanToyRenderer/Settings/config.h>
-
 DescriptorPool::DescriptorPool() {}
 DescriptorPool::~DescriptorPool() {}
 
@@ -19,8 +15,7 @@ void DescriptorPool::createDescriptorPool(
       const std::vector<VkDescriptorPoolSize> poolSizes,
       const uint32_t descriptorSetsCount
 ) {
-
-   if (poolSizes.size() == 0)
+if (poolSizes.size() == 0)
       throw std::runtime_error("Failed to create descriptor pool!");
 
    VkDescriptorPoolCreateInfo poolInfo{};

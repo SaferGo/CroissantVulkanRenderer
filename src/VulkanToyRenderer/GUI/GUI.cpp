@@ -1,5 +1,6 @@
 #include <VulkanToyRenderer/GUI/GUI.h>
 
+#include <string>
 #include <cstring>
 
 #include <imgui.h>
@@ -10,6 +11,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_vulkan.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
@@ -318,127 +320,217 @@ const VkCommandBuffer& GUI::getCommandBuffer(const uint32_t index) const
 
 void GUI::draw(
       std::vector<std::shared_ptr<Model>> models,
-      glm::fvec3& cameraPos
+      glm::fvec4& cameraPos,
+      const std::vector<size_t> normalModelIndices,
+      const std::vector<size_t> lightModelIndices
 ) {
 
    ImGui_ImplVulkan_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
 
-      modelsWindow(models);
-      cameraWindow(cameraPos);
+      createModelsWindow(models, normalModelIndices);
+      createLightsWindow(models, lightModelIndices);
+      createCameraWindow("Camera", cameraPos);
 
    ImGui::Render();
 }
 
-void GUI::modelsWindow(std::vector<std::shared_ptr<Model>> models)
-{
-   ImGui::Begin("Models");
-
-      for (auto& model : models)
+void GUI::createLightsWindow(
+      std::vector<std::shared_ptr<Model>> models,
+      const std::vector<size_t> indices
+) {
+   ImGui::Begin("Lights");
+   
+      for (const size_t& j : indices)
       {
-         std::string modelName = model.get()->getName();
+         auto& model = models[j];
+         const std::string modelName = model.get()->getName();
+
+
+
          if (ImGui::TreeNode(modelName.c_str()))
          {
-            if (ImGui::TreeNode(
-                     ("Position##TRANSLATION::" + modelName).c_str()
-            ) ){
-               ImGui::SliderFloat(
-                     ("X##TRANSLATION::" + modelName).c_str(),
-                     &(model.get()->actualPos.x),
-                     -10.0f,
-                     10.0f
-               );
-               ImGui::SliderFloat(
-                     ("Y##TRANSLATION::" + modelName).c_str(),
-                     &(model.get()->actualPos.y),
-                     -10.0f,
-                     10.0f
-               );
-               ImGui::SliderFloat(
-                     ("Z##TRANSLATION::" + modelName).c_str(),
-                     &(model.get()->actualPos.z),
-                     -10.0f,
-                     10.0f
-               );
-               ImGui::TreePop();
-               ImGui::Separator();
-            }
-            if (ImGui::TreeNode(
-                     ("Size##SIZE::" + modelName).c_str()
-            ) ) {
-               ImGui::SliderFloat(
-                     ("X##SCALE::" + modelName).c_str(),
-                     &(model.get()->actualSize.x),
-                     0.0f,
-                     1.0f
-               );
-               ImGui::SliderFloat(
-                     ("Y##SCALE" + modelName).c_str(),
-                     &(model.get()->actualSize.y),
-                     0.0f,
-                     1.0f
-               );
-               ImGui::SliderFloat(
-                     ("Z##SCALE" + modelName).c_str(),
-                     &(model.get()->actualSize.z),
-                     0.0f,
-                     1.0f
-               );
-               ImGui::TreePop();
-               ImGui::Separator();
-            }
-            if (ImGui::TreeNode(
-                     ("Rotation##ROTATION::" + modelName).c_str()
-            ) ) {
-               ImGui::SliderFloat(
-                     ("X##ROTATION::" + modelName).c_str(),
-                     &(model.get()->actualRot.x),
-                     -5.0f,
-                     5.0f
-               );
-               ImGui::SliderFloat(
-                     ("Y##ROTATION" + modelName).c_str(),
-                     &(model.get()->actualRot.y),
-                     -5.0f,
-                     5.0f
-               );
-               ImGui::SliderFloat(
-                     ("Z##ROTATION" + modelName).c_str(),
-                     &(model.get()->actualRot.z),
-                     -5.0f,
-                     5.0f
-               );
-               ImGui::TreePop();
-               ImGui::Separator();
-            }
+            ImGui::ColorEdit4(
+                  ("Color###" + modelName).c_str(),
+                  &(model.get()->lightColor.x)
+            );
+
+            createTransformationsInfo(model, modelName);
 
             ImGui::TreePop();
             ImGui::Separator();
          }
       }
 
-      ImGui::End();
+   ImGui::End();
 }
 
-void GUI::cameraWindow(glm::fvec3& cameraPos)
+void GUI::createModelsWindow(
+      std::vector<std::shared_ptr<Model>> models,
+      const std::vector<size_t> indices
+) {
+   ImGui::Begin("Models");
+   
+      for (const size_t& j : indices)
+      {
+         auto& model = models[j];
+         const std::string modelName = model.get()->getName();
+
+         if (ImGui::TreeNode(modelName.c_str()))
+         {
+            createTransformationsInfo(model, modelName);
+
+            ImGui::TreePop();
+            ImGui::Separator();
+         }
+      }
+
+   ImGui::End();
+}
+
+void GUI::createTranslationSliders(
+      const std::string& name,
+      glm::fvec4& pos,
+      const float minR,
+      const float maxR
+) {
+   const std::vector<std::string> sliderNames =
+   {
+      "X##TRANSLATION::" + name,
+      "Y##TRANSLATION::" + name,
+      "Z##TRANSLATION::" + name
+   };
+
+   std::vector<float*> values =
+   {
+      &pos.x,
+      &pos.y,
+      &pos.z
+   };
+
+   if (ImGui::TreeNode(
+            ("Position##TRANSLATION::" + name).c_str()) 
+   ){
+      for (size_t i = 0; i < sliderNames.size(); i++)
+      {
+         ImGui::SliderFloat(
+            sliderNames[i].c_str(),
+            values[i],
+            minR,
+            maxR
+         );
+      }
+      ImGui::TreePop();
+      ImGui::Separator();
+   }
+}
+void GUI::createRotationSliders(
+      const std::string& name,
+      glm::fvec3& pos,
+      const float minR,
+      const float maxR
+) {
+   const std::vector<std::string> sliderNames =
+   {
+      "X##ROTATION::" + name,
+      "Y##ROTATION::" + name,
+      "Z##ROTATION::" + name
+   };
+
+   std::vector<float*> values =
+   {
+      &pos.x,
+      &pos.y,
+      &pos.z
+   };
+
+   if (ImGui::TreeNode(
+            ("Rotation##ROTATION::" + name).c_str()) 
+   ){
+      for (size_t i = 0; i < sliderNames.size(); i++)
+      {
+         ImGui::SliderFloat(
+            sliderNames[i].c_str(),
+            values[i],
+            minR,
+            maxR
+         );
+      }
+      ImGui::TreePop();
+      ImGui::Separator();
+   }
+}
+
+void GUI::createSizeSliders(
+      const std::string& name,
+      glm::fvec3& pos,
+      const float minR,
+      const float maxR
+) {
+   const std::vector<std::string> sliderNames =
+   {
+      "X##SIZE::" + name,
+      "Y##SIZE::" + name,
+      "Z##SIZE::" + name
+   };
+   std::vector<float*> values =
+   {
+      &pos.x,
+      &pos.y,
+      &pos.z
+   };
+
+   if (ImGui::TreeNode(
+            ("Scale##SIZE::" + name).c_str()) 
+   ){
+      for (size_t i = 0; i < sliderNames.size(); i++)
+      {
+         ImGui::SliderFloat(
+            sliderNames[i].c_str(),
+            values[i],
+            minR,
+            maxR
+         );
+      }
+      ImGui::TreePop();
+      ImGui::Separator();
+   }
+}
+
+void GUI::createTransformationsInfo(
+      std::shared_ptr<Model> model,
+      const std::string& modelName
+) {
+
+   createTranslationSliders(
+         modelName,
+         model.get()->actualPos,
+         -10.0f,
+         10.0f
+   );
+   createRotationSliders(
+         modelName,
+         model.get()->actualRot,
+         -5.0f,
+         5.0f
+   );
+   createSizeSliders(
+         modelName,
+         model.get()->actualSize,
+         0.0f,
+         1.0f
+   );
+}
+
+void GUI::createCameraWindow(const std::string& name, glm::fvec4& cameraPos)
 {
+
    ImGui::Begin("Camera");
-      ImGui::SliderFloat(
-            "X##POSITION::CAMERA",
-            &cameraPos.x,
-            -5.0f,
-            5.0f
-      );
-      ImGui::SliderFloat(
-            "Y##POSITION::CAMERA",
-            &cameraPos.y,
-            -5.0f,
-            5.0f
-      );
-      ImGui::SliderFloat(
-            "Z##POSITION::CAMERA",
-            &cameraPos.z,
+
+      createTranslationSliders(
+            name,
+            cameraPos,
             -5.0f,
             5.0f
       );

@@ -11,7 +11,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
+#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Device/Device.h>
@@ -35,18 +35,16 @@ public:
          const std::string& meshFile,
          const std::string& textureFile
    );
-   void addModel(
-         const std::string& name,
-         const std::string& meshFile
-   );
    void addLightModel(
          const std::string& name,
-         const std::string& meshFile
+         const std::string& meshFile,
+         const glm::fvec4& lightColor
    );
    void addLightModel(
       const std::string& name,
       const std::string& meshFile,
-      const std::string& textureFile
+      const std::string& textureFile,
+      const glm::fvec4& lightColor
    ) ;
 
 
@@ -56,26 +54,46 @@ private:
    void addModel(
          const std::string& name,
          const std::string& meshFile,
-         const std::string& textureFile
+         const std::string& textureFile,
+         const bool isLightModel,
+         const glm::fvec4& lightColor
    );
-
+   void createGraphicsPipelines();
+   void uploadAllData();
    void updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent,
          Model& model
    );
+   void updateLightData(DescriptorTypes::UniformBufferObject::Normal& ubo);
+   glm::mat4 getUpdatedModelMatrix(
+         const glm::fvec4 actualPos,
+         const glm::fvec3 actualRot,
+         const glm::fvec3 actualSize
+   );
+   glm::mat4 getUpdatedViewMatrix(
+         const glm::fvec3& cameraPos,
+         const glm::fvec3& centerPos,
+         const glm::fvec3& upAxis
+   );
+   glm::mat4 getUpdatedProjMatrix(
+      const float vfov,
+      const float aspect,
+      const float nearZ,
+      const float farZ
+   );
 
    void initVK();
    void mainLoop();
    void cleanup();
    void createRenderPass();
+   void createDescriptorSetLayouts();
    void recordCommandBuffer(
          const VkFramebuffer& framebuffer,
          const RenderPass& renderPass,
          const VkExtent2D& extent,
-         const VkPipeline& graphicsPipeline,
-         const VkPipelineLayout& pipelineLayout,
+         const std::vector<GraphicsPipeline>& graphicsPipelines,
          const uint32_t currentFrame,
          const VkCommandBuffer& commandBuffer,
          CommandPool& commandPool
@@ -96,7 +114,8 @@ private:
    std::unique_ptr<Swapchain> m_swapchain;
    RenderPass                 m_renderPass;
    VkDebugUtilsMessengerEXT   m_debugMessenger;
-   GraphicsPipelineManager    m_graphicsPipelineM;
+   GraphicsPipeline           m_graphicsPipelineNormalM;
+   GraphicsPipeline           m_graphicsPipelineLightM;
 
    // Command buffer for main drawing commands.
    CommandPool                m_commandPool;
@@ -117,9 +136,10 @@ private:
    std::vector<size_t> m_normalModelIndices;
 
    DescriptorPool             m_descriptorPool;
-   VkDescriptorSetLayout m_descriptorSetLayout;
+   VkDescriptorSetLayout      m_descriptorSetLayoutNormalM;
+   VkDescriptorSetLayout      m_descriptorSetLayoutLightM;
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    std::vector<VkClearValue> m_clearValues;
-   glm::fvec3 m_cameraPos;
+   glm::fvec4 m_cameraPos;
 };

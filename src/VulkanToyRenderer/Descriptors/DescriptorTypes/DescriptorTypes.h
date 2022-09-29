@@ -5,14 +5,23 @@
 
 namespace DescriptorTypes
 {
-   struct UniformBufferObject
+   namespace UniformBufferObject
    {
-      alignas(16) glm::mat4 model;
-      alignas(16) glm::mat4 view;
-      alignas(16) glm::mat4 proj;
-      alignas(16) glm::vec3 lightPositions;
-      alignas(16) glm::vec3 lightColors;
-      alignas(16) int       lightsCount;
-   };
-
+      struct alignas(16) Normal
+      {
+         glm::mat4 model;
+         glm::mat4 view;
+         glm::mat4 proj;
+         glm::vec4 lightPositions[10];
+         glm::vec4 lightColors[10];
+         int lightsCount;
+      };
+      struct alignas(16) Light
+      {
+         glm::mat4 model;
+         glm::mat4 view;
+         glm::mat4 proj;
+         glm::vec4 lightColor;
+      };
+   }
 };

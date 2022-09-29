@@ -11,6 +11,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -21,7 +22,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipelineManager.h>
+#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Commands/commandUtils.h>
 #include <VulkanToyRenderer/Extensions/extensionsUtils.h>
@@ -48,13 +49,18 @@ void Renderer::run()
    m_clearValues.resize(2);
    m_clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
    m_clearValues[1].color = {1.0f, 0.0f};
-   m_cameraPos = glm::fvec3(2.0f);
+   m_cameraPos = glm::fvec4(0.0f, 0.0f, -5.0f, 0.0f);
 
 
    if (m_allModels.size() == 0)
    {
       std::cout << "Nothing to render..\n";
       return;
+   }
+
+   if (m_lightModelIndices.size() == 0)
+   {
+      std::cout << "No lights to render! Add at least one light model.\n";
    }
 
    m_window.createWindow(
@@ -80,7 +86,7 @@ void Renderer::addNormalModel(
       const std::string& name,
       const std::string& meshFile
 ) {
-   addModel(name, meshFile, "default.png");
+   addModel(name, meshFile, "default.png", false, glm::fvec4(1.0f));
    m_normalModelIndices.push_back(m_allModels.size() - 1);
 }
 
@@ -89,38 +95,44 @@ void Renderer::addNormalModel(
       const std::string& meshFile,
       const std::string& textureFile
 ) {
-   addModel(name, meshFile, textureFile);
+   addModel(name, meshFile, textureFile, false, glm::fvec4(1.0));
    m_normalModelIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::addModel(
       const std::string& name,
       const std::string& meshFile,
-      const std::string& textureFile
+      const std::string& textureFile,
+      const bool isLightModel,
+      const glm::fvec4& lightColor
 ) {
    m_allModels.push_back(
          std::make_shared<Model>(
             (std::string(MODEL_DIR) + meshFile).c_str(),
             textureFile,
-            name
+            name,
+            isLightModel,
+            lightColor
          )
    );
 }
 
 void Renderer::addLightModel(
       const std::string& name,
-      const std::string& meshFile
+      const std::string& meshFile,
+      const glm::fvec4& lightColor
 ) {
-   addModel(name, meshFile, "default.png");
+   addModel(name, meshFile, "default.png", true, lightColor);
    m_lightModelIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::addLightModel(
       const std::string& name,
       const std::string& meshFile,
-      const std::string& textureFile
+      const std::string& textureFile,
+      const glm::fvec4& lightColor
 ) {
-   addModel(name, meshFile, textureFile);
+   addModel(name, meshFile, textureFile, true, lightColor);
    m_lightModelIndices.push_back(m_allModels.size() - 1);
 }
 
@@ -357,115 +369,11 @@ void Renderer::createRenderPass()
    );
 }
 
-void Renderer::initVK()
+/*
+ * Uploads the data of each model to the gpu.
+ */
+void Renderer::uploadAllData()
 {
-   createVkInstance();
-
-   vlManager::setupDebugMessenger(m_vkInstance, m_debugMessenger);
-
-   m_window.createSurface(m_vkInstance);
-
-   m_device.pickPhysicalDevice(
-         m_vkInstance,
-         m_qfIndices,
-         m_window.getSurface()
-   );
-
-   m_device.createLogicalDevice(m_qfIndices);
-   
-   m_qfHandles.setQueueHandles(m_device.getLogicalDevice(), m_qfIndices);
-
-   m_swapchain = std::make_unique<Swapchain>(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         m_window,
-         m_device.getSupportedProperties()
-   );
-
-   m_swapchain->createAllImageViews(m_device.getLogicalDevice());
-
-   createRenderPass();
-
-   // Specifies all the neccessary descriptors, their bindings and their 
-   // shader stages.
-   descriptorSetLayoutUtils::createDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         // Descriptor Types / Descriptor Bindings / Descriptor Stages
-         {
-            {
-               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               0,
-               (VkShaderStageFlagBits)(
-                     VK_SHADER_STAGE_VERTEX_BIT |
-                     VK_SHADER_STAGE_FRAGMENT_BIT
-               )
-            },
-            {
-               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               1,
-               VK_SHADER_STAGE_FRAGMENT_BIT
-            }
-         },
-         m_descriptorSetLayout
-   );
-
-   m_graphicsPipelineM.createGraphicsPipeline(
-         m_device.getLogicalDevice(),
-         m_swapchain->getExtent(),
-         m_renderPass.get(),
-         m_descriptorSetLayout
-   );
-
-   m_depthBuffer.createDepthBuffer(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         m_swapchain->getExtent()
-   );
-
-   m_swapchain->createFramebuffers(
-         m_device.getLogicalDevice(),
-         m_renderPass.get(),
-         m_depthBuffer
-   );
-
-   // Command Pool #1
-   m_commandPool = CommandPool(
-         m_device.getLogicalDevice(),
-         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-         m_qfIndices.graphicsFamily.value()
-   );
-   
-   // Allocates all the neccessary cmd buffers in the cmd pool.
-   m_commandPool.allocCommandBuffers(
-         config::MAX_FRAMES_IN_FLIGHT
-   );
-
-   // Descriptor Pool
-   // (Calculates the total size of the pool depending of the descriptors
-   // we send as parameter and the number of descriptor SETS defined)
-   m_descriptorPool.createDescriptorPool(
-         m_device.getLogicalDevice(),
-         // Type of descriptors / Count of each type of descriptor in the pool.
-         {
-            {
-               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               static_cast<uint32_t> (
-                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
-               )
-            },
-            { 
-               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               static_cast<uint32_t> (
-                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
-               )
-            }
-         },
-         // Descriptor SETS count.
-         m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
-   );
-
-
-   // Uploads the data from each model to the gpu.
    for (auto& model : m_allModels)
    {
       // Vertex buffer and index buffer(with staging buffer)
@@ -497,11 +405,175 @@ void Renderer::initVK()
       // Descriptor Sets
       model->createDescriptorSets(
             m_device.getLogicalDevice(),
-            m_descriptorSetLayout,
+            (
+             (model->isLightModel()) ?
+               m_descriptorSetLayoutLightM :
+               m_descriptorSetLayoutNormalM
+            ),
             m_descriptorPool
       );
    }
-  
+
+}
+
+void Renderer::createGraphicsPipelines()
+{
+   m_graphicsPipelineNormalM = GraphicsPipeline(
+         m_device.getLogicalDevice(),
+         m_swapchain->getExtent(),
+         m_renderPass.get(),
+         m_descriptorSetLayoutNormalM,
+         // Filename of the vertex shader.
+         "normal",
+         // Filename of the fragment shader.
+         "normal",
+         // Models assocciated with this graphics pipeline.
+         &m_normalModelIndices
+   );
+
+   m_graphicsPipelineLightM = GraphicsPipeline(
+         m_device.getLogicalDevice(),
+         m_swapchain->getExtent(),
+         m_renderPass.get(),
+         m_descriptorSetLayoutLightM,
+         // Filename of the vertex shader.
+         "light",
+         // Filename of the fragment shader.
+         "light",
+         // Models assocciated with this graphics pipeline.
+         &m_lightModelIndices
+   );
+}
+
+void Renderer::createDescriptorSetLayouts()
+{
+   // Specifies all the neccessary descriptors, their bindings and their 
+   // shader stages.
+   descriptorSetLayoutUtils::createDescriptorSetLayout(
+         m_device.getLogicalDevice(),
+         // Descriptor Types / Descriptor Bindings / Descriptor Stages
+         {
+            {
+               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+               0,
+               (VkShaderStageFlagBits)(
+                     VK_SHADER_STAGE_VERTEX_BIT |
+                     VK_SHADER_STAGE_FRAGMENT_BIT
+               )
+            },
+            {
+               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+               1,
+               VK_SHADER_STAGE_FRAGMENT_BIT
+            }
+         },
+         m_descriptorSetLayoutNormalM
+   );
+   
+   descriptorSetLayoutUtils::createDescriptorSetLayout(
+         m_device.getLogicalDevice(),
+         // Descriptor Types / Descriptor Bindings / Descriptor Stages
+         {
+            {
+               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+               0,
+               (VkShaderStageFlagBits)(
+                     VK_SHADER_STAGE_VERTEX_BIT
+               )
+            },
+            {
+               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+               1,
+               VK_SHADER_STAGE_FRAGMENT_BIT
+            }
+         },
+         m_descriptorSetLayoutLightM
+   );
+}
+
+void Renderer::initVK()
+{
+   createVkInstance();
+
+   vlManager::setupDebugMessenger(m_vkInstance, m_debugMessenger);
+
+   m_window.createSurface(m_vkInstance);
+
+   m_device.pickPhysicalDevice(
+         m_vkInstance,
+         m_qfIndices,
+         m_window.getSurface()
+   );
+
+   m_device.createLogicalDevice(m_qfIndices);
+   
+   m_qfHandles.setQueueHandles(m_device.getLogicalDevice(), m_qfIndices);
+
+   m_swapchain = std::make_unique<Swapchain>(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         m_window,
+         m_device.getSupportedProperties()
+   );
+
+   m_swapchain->createAllImageViews(m_device.getLogicalDevice());
+
+   createRenderPass();
+   
+   // Descriptor Pool
+   // (Calculates the total size of the pool depending of the descriptors
+   // we send as parameter and the number of descriptor SETS defined)
+   m_descriptorPool.createDescriptorPool(
+         m_device.getLogicalDevice(),
+         // Type of descriptors / Count of each type of descriptor in the pool.
+         {
+            {
+               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+               static_cast<uint32_t> (
+                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
+               )
+            },
+            { 
+               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+               static_cast<uint32_t> (
+                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
+               )
+            }
+         },
+         // Descriptor SETS count.
+         m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
+   );
+
+   createDescriptorSetLayouts();
+   
+   createGraphicsPipelines();
+
+   m_depthBuffer.createDepthBuffer(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         m_swapchain->getExtent()
+   );
+
+   m_swapchain->createFramebuffers(
+         m_device.getLogicalDevice(),
+         m_renderPass.get(),
+         m_depthBuffer
+   );
+
+   m_commandPool = CommandPool(
+         m_device.getLogicalDevice(),
+         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+         m_qfIndices.graphicsFamily.value()
+   );
+   
+   // Allocates all the neccessary cmd buffers in the cmd pool.
+   m_commandPool.allocCommandBuffers(
+         config::MAX_FRAMES_IN_FLIGHT
+   );
+
+   
+   uploadAllData();
+     
    createSyncObjects();
 
 }
@@ -510,8 +582,7 @@ void Renderer::recordCommandBuffer(
       const VkFramebuffer& framebuffer,
       const RenderPass& renderPass,
       const VkExtent2D& extent,
-      const VkPipeline& graphicsPipeline,
-      const VkPipelineLayout& pipelineLayout,
+      const std::vector<GraphicsPipeline>& graphicsPipelines,
       const uint32_t currentFrame,
       const VkCommandBuffer& commandBuffer,
       CommandPool& commandPool
@@ -542,68 +613,78 @@ void Renderer::recordCommandBuffer(
 
          //---------------------------------CMDs-------------------------------
 
-         commandUtils::STATE::bindPipeline(
-               graphicsPipeline,
-               commandBuffer
-         );
-         // Set Dynamic States
-         commandUtils::STATE::setViewport(
-               0.0f,
-               0.0f,
-               extent,
-               0.0f,
-               1.0f,
-               0,
-               1,
-               commandBuffer
-         );
-         commandUtils::STATE::setScissor(
-               {0, 0},
-               extent,
-               0,
-               1,
-               commandBuffer
-         );
-
-         for (const auto& model : m_allModels)
+         for (const auto& graphicsPipeline : graphicsPipelines)
          {
-            commandUtils::STATE::bindVertexBuffers(
-                  {model->getVertexBuffer()},
-                  {0},
+            commandUtils::STATE::bindPipeline(
+                  graphicsPipeline.get(),
+                  commandBuffer
+            );
+            // Set Dynamic States
+            commandUtils::STATE::setViewport(
+                  0.0f,
+                  0.0f,
+                  extent,
+                  0.0f,
+                  1.0f,
                   0,
                   1,
                   commandBuffer
             );
-            commandUtils::STATE::bindIndexBuffer(
-                  model->getIndexBuffer(),
+            commandUtils::STATE::setScissor(
+                  {0, 0},
+                  extent,
                   0,
-                  VK_INDEX_TYPE_UINT32,
-                  commandBuffer
-            );
-
-            commandUtils::STATE::bindDescriptorSets(
-                  pipelineLayout,
-                  // Index of first descriptor set.
-                  0,
-                  {model->getDescriptorSet(currentFrame)},
-                  // Dynamic offsets.
-                  {},
-                  commandBuffer
-            );
-
-            commandUtils::ACTION::drawIndexed(
-                  model->getIndexCount(),
-                  // Instance Count
                   1,
-                  // First index.
-                  0,
-                  // Vertex Offset.
-                  0,
-                  // First Intance.
-                  0,
                   commandBuffer
             );
-         }
+
+            for (const size_t& i : graphicsPipeline.getModelIndices())
+            {
+
+               const auto& model = m_allModels[i];
+
+               commandUtils::STATE::bindVertexBuffers(
+                     {model->getVertexBuffer()},
+                     // Offsets.
+                     {0},
+                     // Index of first binding.
+                     0,
+                     // Bindings count.
+                     1,
+                     commandBuffer
+               );
+               commandUtils::STATE::bindIndexBuffer(
+                     model->getIndexBuffer(),
+                     // Offset.
+                     0,
+                     VK_INDEX_TYPE_UINT32,
+                     commandBuffer
+               );
+
+               commandUtils::STATE::bindDescriptorSets(
+                     graphicsPipeline.getPipelineLayout(),
+                     // Index of first descriptor set.
+                     0,
+                     {model->getDescriptorSet(currentFrame)},
+                     // Dynamic offsets.
+                     {},
+                     commandBuffer
+               );
+
+               commandUtils::ACTION::drawIndexed(
+                     model->getIndexCount(),
+                     // Instance Count
+                     1,
+                     // First index.
+                     0,
+                     // Vertex Offset.
+                     0,
+                     // First Intance.
+                     0,
+                     commandBuffer
+               );
+            }
+      }
 
       renderPass.end(commandBuffer);
 
@@ -661,8 +742,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_swapchain->getFramebuffer(imageIndex),
          m_renderPass,
          m_swapchain->getExtent(),
-         m_graphicsPipelineM.getGraphicsPipeline(),
-         m_graphicsPipelineM.getPipelineLayout(),
+         {m_graphicsPipelineNormalM, m_graphicsPipelineLightM},
          currentFrame,
          m_commandPool.getCommandBuffer(currentFrame),
          m_commandPool
@@ -748,7 +828,12 @@ void Renderer::mainLoop()
       m_window.pollEvents();
 
       // Draws Imgui
-      m_GUI->draw(m_allModels, m_cameraPos);
+      m_GUI->draw(
+            m_allModels,
+            m_cameraPos,
+            m_normalModelIndices,
+            m_lightModelIndices
+      );
       drawFrame(currentFrame);
    }
    vkDeviceWaitIdle(m_device.getLogicalDevice());
@@ -794,11 +879,9 @@ void Renderer::cleanup()
    // Swapchain
    m_swapchain->destroySwapchain(m_device.getLogicalDevice());
 
-   // Graphics Pipeline
-   m_graphicsPipelineM.destroyGraphicsPipeline(m_device.getLogicalDevice());
-
-   // Graphics Pipeline Layout
-   m_graphicsPipelineM.destroyPipelineLayout(m_device.getLogicalDevice());
+   // Graphics Pipelines
+   m_graphicsPipelineNormalM.destroy(m_device.getLogicalDevice());
+   m_graphicsPipelineLightM.destroy(m_device.getLogicalDevice());
 
    // Render pass
    m_renderPass.destroy(m_device.getLogicalDevice());
@@ -810,10 +893,14 @@ void Renderer::cleanup()
    // Descriptor Pool
    m_descriptorPool.destroyDescriptorPool(m_device.getLogicalDevice());
 
-   // Descriptor Set Layout
+   // Descriptor Set Layouts
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
          m_device.getLogicalDevice(),
-         m_descriptorSetLayout
+         m_descriptorSetLayoutNormalM
+   );
+   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
+         m_device.getLogicalDevice(),
+         m_descriptorSetLayoutLightM
    );
    
    // Sync objects
@@ -845,87 +932,151 @@ void Renderer::cleanup()
    m_window.destroyWindow();
 }
 
+void Renderer::updateLightData(
+      DescriptorTypes::UniformBufferObject::Normal& ubo
+) {
+   ubo.lightsCount = m_lightModelIndices.size();
+
+   for (int i = 0; i < ubo.lightsCount; i++)
+   {
+      ubo.lightPositions[i] = (
+            m_allModels[m_lightModelIndices[i]]->actualPos
+      );
+      ubo.lightColors[i] = m_allModels[m_lightModelIndices[i]]->lightColor;
+   }
+}
+
+/*
+ * Remember that the correct order is SRT!
+ */
+glm::mat4 Renderer::getUpdatedModelMatrix(
+      const glm::fvec4 actualPos,
+      const glm::fvec3 actualRot,
+      const glm::fvec3 actualSize
+) {
+   glm::mat4 model = glm::mat4(1.0);
+   
+   model = glm::translate(
+         model,
+         glm::vec3(actualPos)
+   );
+
+   model = glm::rotate(
+         model,
+         actualRot.x,
+         glm::vec3(1.0f, 0.0f, 0.0f)
+   );
+
+   model = glm::rotate(
+         model,
+         actualRot.y,
+         glm::vec3(0.0f, 1.0f, 0.0f)
+   );
+
+   model = glm::rotate(
+         model,
+         actualRot.z,
+         glm::vec3(0.0f, 0.0f, 1.0f)
+   );
+
+   model = glm::scale(
+         model,
+         actualSize
+   );
+   
+   return model;
+}
+
+glm::mat4 Renderer::getUpdatedViewMatrix(
+      const glm::fvec3& cameraPos,
+      const glm::fvec3& centerPos,
+      const glm::fvec3& upAxis
+) {
+   return glm::lookAt(
+         cameraPos,
+         centerPos,
+         upAxis
+   );
+}
+
+glm::mat4 Renderer::getUpdatedProjMatrix(
+      const float vfov,
+      const float aspect,
+      const float nearZ,
+      const float farZ
+) {
+   glm::mat4 proj = glm::perspective(
+         vfov,
+         aspect,
+         nearZ,
+         farZ
+   );
+
+   // GLM was designed for OpenGl, where the Y coordinate of the clip coord. is
+   // inverted. To compensate for that, we have to flip the sign on the scaling
+   // factor of the Y axis.
+   proj[1][1] *= -1;
+
+   return proj;
+}
+
+
 void Renderer::updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent,
          Model& model
 ) {
-   static auto startTime = std::chrono::high_resolution_clock::now();
+   //static auto startTime = std::chrono::high_resolution_clock::now();
 
-   auto currentTime = std::chrono::high_resolution_clock::now();
-   float time = std::chrono::duration<float, std::chrono::seconds::period>(
-         currentTime - startTime
-   ).count();
-
-   DescriptorTypes::UniformBufferObject ubo{};
+   //auto currentTime = std::chrono::high_resolution_clock::now();
+   //float time = std::chrono::duration<float, std::chrono::seconds::period>(
+   //      currentTime - startTime
+   //).count();
    
-   ubo.model = glm::mat4(1.0);
-   ubo.model = glm::translate(
-         ubo.model,
-         model.actualPos
-   );
-
-   ubo.model = glm::scale(
-         ubo.model,
+   glm::mat4 modelMat = getUpdatedModelMatrix(
+         model.actualPos,
+         model.actualRot,
          model.actualSize
    );
 
-   ubo.model = glm::rotate(
-         ubo.model,
-         model.actualRot.x,
-         glm::vec3(1.0f, 0.0f, 0.0f)
-   );
-
-   ubo.model = glm::rotate(
-         ubo.model,
-         model.actualRot.y,
+   glm::mat4 viewMat = getUpdatedViewMatrix(
+         // Eyes position.
+         glm::vec3(m_cameraPos),
+         // Center Position.
+         glm::vec3(0.0f, 0.0f, 0.0f),
+         // Up axis.
          glm::vec3(0.0f, 1.0f, 0.0f)
    );
 
-   ubo.model = glm::rotate(
-         ubo.model,
-         model.actualRot.z,
-         glm::vec3(0.0f, 0.0f, 1.0f)
-   );
-
-   ubo.view = glm::lookAt(
-         // Eye position
-         m_cameraPos,
-         //glm::vec3(2.0, 2.0f, 2.0f),
-         // Center position
-         glm::vec3(0.0f, 0.0f, 0.0f),
-         // Up Axis
-         glm::vec3(0.0, 0.0f, 1.0f)
-   );
-   ubo.proj = glm::perspective(
-         // VFOV
+   glm::mat4 projMat = getUpdatedProjMatrix(
          glm::radians(45.0f),
-         // Aspect
-         (
-          extent.width /
-          (float)extent.height
-         ),
-         // Near plane
-         0.1f,
-         // Far plane
+         extent.width / (float)extent.height,
+         0.01f,
          10.0f
    );
 
-   // GLM was designed for OpenGl, where the Y coordinate of the clip coord. is
-   // inverted. To compensate for that, we have to flip the sign on the scaling
-   // factor of the Y axis.
-   ubo.proj[1][1] *= -1;
+   if (model.isLightModel())
+   {
+      DescriptorTypes::UniformBufferObject::Light ubo;
 
-   ubo.lightsCount = 1;
-   ubo.lightPositions = m_allModels[m_lightModelIndices[0]]->actualPos;
-   //std::cout << "POS: " << m_models[m_lightModels[0]]->actualPos.x << " " << m_models[m_lightModels[0]]->actualPos.y << " " << m_models[m_lightModels[0]]->actualPos.z << std::endl;
-   //for (size_t i = 0; i < ubo.lightsCount; i++)
-   //{
-   //   ubo.lightPositions = m_models[m_lightModels[i]]->centerPos;
-   //   //ubo.lightPosition = m_lightModels[i].centerPos;
-   //}
-   
+      ubo.model = modelMat;
+      ubo.view = viewMat;
+      ubo.proj = projMat;
+      ubo.lightColor = model.lightColor;
 
-   model.updateUBO(logicalDevice, ubo, currentFrame);
+      model.updateUBO(logicalDevice, ubo, currentFrame);
+
+   } else
+   {
+      DescriptorTypes::UniformBufferObject::Normal ubo;
+
+      ubo.model = modelMat;
+      ubo.view = viewMat;
+      ubo.proj = projMat;
+      
+      updateLightData(ubo);
+
+      model.updateUBO(logicalDevice, ubo, currentFrame);
+   }
 }

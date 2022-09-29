@@ -13,6 +13,7 @@
 
 #include <VulkanToyRenderer/Model/Vertex.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/Descriptors/DescriptorTypes/DescriptorTypes.h>
 
 // REMEMBER: LoadObj automatically applies triangularization by default!
 
@@ -29,7 +30,8 @@ namespace std {
          return (
                (hash<glm::vec3>()(vertex.pos) ^
                (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-               (hash<glm::vec2>()(vertex.texCoord) << 1
+               (hash<glm::vec2>()(vertex.texCoord) << 1) ^
+               (hash<glm::vec3>()(vertex.normal) << 1
          );
       }
    };
@@ -38,8 +40,13 @@ namespace std {
 Model::Model(
       const char* pathToMesh,
       const std::string& texture,
-      const std::string& modelName
-) : m_name(modelName), m_textureFileName(texture)
+      const std::string& modelName,
+      const bool lightModel,
+      const glm::fvec4& lightColor
+) : m_name(modelName),
+   m_textureFileName(texture),
+   m_isLightModel(lightModel),
+   lightColor(lightColor)
 {
    // We'll read the texture file later(after the creation of a cmd pool and
    // the queue handles).
@@ -48,9 +55,10 @@ Model::Model(
    loadVertexInfo(pathToMesh);
 }
 
+template<typename T>
 void Model::updateUBO(
       const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject& newUbo,
+      T& newUbo,
       const uint32_t& currentFrame
 ) {
    void* data;
@@ -68,6 +76,18 @@ void Model::updateUBO(
          m_ubo.getUniformBufferMemory(currentFrame)
    );
 }
+//////////////////////////////////Instances////////////////////////////////////
+template void Model::updateUBO<DescriptorTypes::UniformBufferObject::Normal>(
+      const VkDevice& logicalDevice,
+      DescriptorTypes::UniformBufferObject::Normal& newUbo,
+      const uint32_t& currentFrame
+);
+template void Model::updateUBO<DescriptorTypes::UniformBufferObject::Light>(
+      const VkDevice& logicalDevice,
+      DescriptorTypes::UniformBufferObject::Light& newUbo,
+      const uint32_t& currentFrame
+);
+///////////////////////////////////////////////////////////////////////////////
 
 Model::~Model() {}
 
@@ -173,18 +193,10 @@ void Model::loadVertexInfo(const char* pathToMesh)
    }
 
 
-   translateToCenter();
+   makeBasicTransformations();
    
-   float maxZ = std::fmax(
-         std::fabs(extremeZ[1]),
-         std::fabs(extremeZ[0])
-   );
-
-   // If the mesh is too big, this will scale it.
-   if (maxZ > 1.0f || maxZ < -1.0f)
-      makeItSmaller(maxZ);
-
-   actualPos = glm::fvec3(
+   actualPos = glm::fvec4(
+         0.0f,
          0.0f,
          0.0f,
          0.0f
@@ -259,7 +271,10 @@ void Model::createUniformBuffers(
    m_ubo.createUniformBuffers(
          physicalDevice,
          logicalDevice,
-         uboCount
+         uboCount,
+         (m_isLightModel) ?
+            sizeof(DescriptorTypes::UniformBufferObject::Light) :
+            sizeof(DescriptorTypes::UniformBufferObject::Normal)
    );
 }
 
@@ -285,6 +300,11 @@ const VkDescriptorSet& Model::getDescriptorSet(const uint32_t index) const
    return m_descriptorSets.getDescriptorSet(index);
 }
 
+const bool Model::isLightModel() const
+{
+   return m_isLightModel;
+}
+
 VkBuffer& Model::getVertexBuffer()
 {
    return m_vertexBuffer;
@@ -307,43 +327,85 @@ void Model::initExtremeValues()
 
 }
 
-void Model::translateToCenter()
+/*
+ * Translates and scales(depending if the model is too big) all the
+ * vertices and normals of the model to the center.
+ */
+void Model::makeBasicTransformations()
 {
-   float backX = -((extremeX[1] + extremeX[0]) / 2.0);
-   float backY = -((extremeY[1] + extremeY[0]) / 2.0);
-   float backZ = -((extremeZ[1] + extremeZ[0]) / 2.0);
+   glm::mat4 model = glm::mat4(1.0f);
+
+   float maxZ = std::fmax(
+         std::fmax(
+            std::fabs(extremeX[1]),
+            std::fabs(extremeX[0])
+         ),
+         std::fmax(
+            std::fabs(extremeY[1]),
+            std::fabs(extremeY[0])
+         )
+   );
+   maxZ = std::fmax(
+         maxZ,
+         std::fmax(
+            std::fabs(extremeZ[1]),
+            std::fabs(extremeZ[0])
+         )
+   );
 
    initExtremeValues();
 
-   for (auto& vertex : m_vertices)
+   // If the mesh is too big, this will scale it.
+   if (maxZ > 1.0f || maxZ < -1.0f)
    {
-      vertex.pos.x += backX;
-      vertex.pos.y += backY;
-      vertex.pos.z += backZ;
-      extremeX[0] = std::fmin(vertex.pos.x, extremeX[0]);
-      extremeX[1] = std::fmax(vertex.pos.x, extremeX[1]);
-      extremeY[0] = std::fmin(vertex.pos.y, extremeY[0]);
-      extremeY[1] = std::fmax(vertex.pos.y, extremeY[1]);
-      extremeZ[0] = std::fmin(vertex.pos.z, extremeZ[0]);
-      extremeZ[1] = std::fmax(vertex.pos.z, extremeZ[1]);
+      model = glm::scale(
+            model,
+            glm::fvec3(1.0f / maxZ)
+      );
 
+      for (auto& vertex : m_vertices)
+      {
+         vertex.pos = glm::fvec3(model * glm::fvec4(vertex.pos, 1.0f));
+         vertex.normal = glm::fvec3(
+               glm::transpose(glm::inverse(model)) * 
+               glm::vec4(vertex.normal, 0.0)
+         );
+
+         extremeX[0] = std::fmin(vertex.pos.x, extremeX[0]);
+         extremeX[1] = std::fmax(vertex.pos.x, extremeX[1]);
+         extremeY[0] = std::fmin(vertex.pos.y, extremeY[0]);
+         extremeY[1] = std::fmax(vertex.pos.y, extremeY[1]);
+         extremeZ[0] = std::fmin(vertex.pos.z, extremeZ[0]);
+         extremeZ[1] = std::fmax(vertex.pos.z, extremeZ[1]);
+
+      }
    }
-}
 
-void Model::makeItSmaller(const float maxZ)
-{
+
+   model = glm::translate(
+         glm::mat4(1.0f),
+         glm::fvec3(
+            -((extremeX[1] + extremeX[0]) / 2.0),
+            -((extremeY[1] + extremeY[0]) / 2.0),
+            -((extremeZ[1] + extremeZ[0]) / 2.0)
+         )
+   );
+
    initExtremeValues();
 
    for (auto& vertex : m_vertices)
    {
-      vertex.pos.x /= maxZ;
-      vertex.pos.y /= maxZ;
-      vertex.pos.z /= maxZ;
+      vertex.pos = glm::fvec3(model * glm::fvec4(vertex.pos, 1.0f));
+      vertex.normal = glm::fvec3(
+            glm::transpose(glm::inverse(model)) * glm::vec4(vertex.normal, 0.0)
+      );
+
       extremeX[0] = std::fmin(vertex.pos.x, extremeX[0]);
       extremeX[1] = std::fmax(vertex.pos.x, extremeX[1]);
       extremeY[0] = std::fmin(vertex.pos.y, extremeY[0]);
       extremeY[1] = std::fmax(vertex.pos.y, extremeY[1]);
       extremeZ[0] = std::fmin(vertex.pos.z, extremeZ[0]);
       extremeZ[1] = std::fmax(vertex.pos.z, extremeZ[1]);
+
    }
 }
