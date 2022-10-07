@@ -1,5 +1,13 @@
 #version 450
 
+struct Material
+{
+   vec4 ambient;
+   vec4 diffuse;
+   vec4 specular;
+   int shininess;
+};
+
 layout(std140, binding = 0) uniform UniformBufferObject
 {
    mat4 model;
@@ -7,6 +15,8 @@ layout(std140, binding = 0) uniform UniformBufferObject
    mat4 proj;
    vec4 lightPositions[10];
    vec4 lightColors[10];
+   vec4 cameraPos;
+   Material material;
    int  lightsCount;
 } ubo;
 
@@ -29,5 +39,9 @@ void main()
    outPosition = vec3(ubo.model * vec4(inPosition, 1.0));
    outColor = inColor;
    outTexCoord = inTexCoord;
-   outNormal = ((transpose(inverse(ubo.model)) * vec4(inNormal, 0.0))).xyz;
+   outNormal = normalize(
+         vec3(
+            transpose(inverse(ubo.model)) * vec4(inNormal, 0.0)
+         )
+   );
 }

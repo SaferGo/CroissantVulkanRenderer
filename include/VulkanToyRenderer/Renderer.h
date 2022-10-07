@@ -60,13 +60,19 @@ private:
    );
    void createGraphicsPipelines();
    void uploadAllData();
+   void updateMaterialData(
+         const Model& model,
+         DescriptorTypes::UniformBufferObject::Normal& ubo
+   );
    void updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent,
          Model& model
    );
-   void updateLightData(DescriptorTypes::UniformBufferObject::Normal& ubo);
+   void updateLightData(
+         DescriptorTypes::UniformBufferObject::Normal& ubo
+   );
    glm::mat4 getUpdatedModelMatrix(
          const glm::fvec4 actualPos,
          const glm::fvec3 actualRot,
@@ -134,6 +140,11 @@ private:
    std::vector<size_t> m_lightModelIndices;
    // Models that interact with the light.
    std::vector<size_t> m_normalModelIndices;
+   
+   // The vertices from all the models will be saved on the same memory.
+   VkBuffer       m_vertexBuffer;
+   VkDeviceMemory m_vertexMemory;
+   uint32_t m_lastMemoryVertexOffset;
 
    DescriptorPool             m_descriptorPool;
    VkDescriptorSetLayout      m_descriptorSetLayoutNormalM;

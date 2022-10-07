@@ -6,36 +6,15 @@
 #include <unordered_map>
 #include <string>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
 #include <VulkanToyRenderer/Model/Vertex.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorTypes/DescriptorTypes.h>
-
-// REMEMBER: LoadObj automatically applies triangularization by default!
-
-
-/*
- * Approach taken from https://en.cppreference.com/w/cpp/utility/hash.
- * This helps us to use std::unordered_map to avoid vertex duplication.
- */
-namespace std {
-   template<> struct hash<Vertex>
-   {
-      size_t operator()(Vertex const& vertex) const
-      {
-         return (
-               (hash<glm::vec3>()(vertex.pos) ^
-               (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-               (hash<glm::vec2>()(vertex.texCoord) << 1) ^
-               (hash<glm::vec3>()(vertex.normal) << 1
-         );
-      }
-   };
-};
 
 Model::Model(
       const char* pathToMesh,
@@ -120,97 +99,109 @@ const std::string& Model::getName() const
    return m_name;
 }
 
+void Model::loadMaterial(aiMaterial* material)
+{
+   aiString materialName;
+   material->Get(AI_MATKEY_NAME, materialName);
+   std::string mName = materialName.C_Str();
+
+   if (mName != "DefaultMaterial")
+   {
+      aiColor3D color;
+      material->Get(AI_MATKEY_COLOR_AMBIENT, color);
+      materials.ambient = glm::fvec4(color.r, color.g, color.b, 1.0f);
+      material->Get(AI_MATKEY_COLOR_DIFFUSE, color);              
+      materials.diffuse = glm::fvec4(color.r, color.g, color.b, 1.0f);
+      material->Get(AI_MATKEY_COLOR_SPECULAR, color); 
+      materials.specular = glm::fvec4(color.r, color.g, color.b, 1.0f);
+      material->Get(AI_MATKEY_SHININESS, materials.shininess);    
+   } else
+   {
+      materials.ambient = glm::fvec4(0.0003);
+      materials.diffuse = glm::fvec4(0.5);
+      materials.specular = glm::fvec4(0.5);
+      materials.shininess = 33;
+   }
+   
+}
+
 void Model::loadVertexInfo(const char* pathToMesh)
 {
-   // Holds all the positions, normals and texture coordinates.
-   tinyobj::attrib_t attrib;
-   // Contains all the objects and their faces.
-   std::vector<tinyobj::shape_t> shapes;
-   std::vector<tinyobj::material_t> materials;
-
-   std::string warn, err;
-
-   auto status = tinyobj::LoadObj(
-         &attrib,
-         &shapes,
-         &materials,
-         &warn,
-         &err,
-         pathToMesh
+   Assimp::Importer importer;
+   const auto* scene = importer.ReadFile(
+         pathToMesh,
+         aiProcess_Triangulate | aiProcess_FlipUVs
    );
 
-   if (!status)
-      throw std::runtime_error(warn + err);
+   if (!scene ||
+       scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
+       !scene->mRootNode
+   ) {
+      throw std::runtime_error(
+            "ERROR::ASSIMP" +
+            std::string(importer.GetErrorString())
+      );
+   }
+
+   ///
+   aiNode* node = scene->mRootNode->mChildren[0];
+   auto* mesh = scene->mMeshes[node->mMeshes[0]];
 
    initExtremeValues();
 
-   std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-
-   for (const auto& shape : shapes)
+   for (size_t i = 0; i < mesh->mNumVertices; i++)
    {
-      for (const auto& index : shape.mesh.indices)
-      {
-         Vertex vertex{};
+      Vertex vertex{};
 
-         vertex.pos = {
-            attrib.vertices[3 * index.vertex_index + 0],
-            attrib.vertices[3 * index.vertex_index + 1],
-            attrib.vertices[3 * index.vertex_index + 2]
-         };
+      vertex.pos = {
+         mesh->mVertices[i].x,
+         mesh->mVertices[i].y,
+         mesh->mVertices[i].z
+      };
 
-         // These will help us to move model to the center.
-         extremeX[0] = std::fmin(vertex.pos.x, extremeX[0]);
-         extremeX[1] = std::fmax(vertex.pos.x, extremeX[1]);
-         extremeY[0] = std::fmin(vertex.pos.y, extremeY[0]);
-         extremeY[1] = std::fmax(vertex.pos.y, extremeY[1]);
-         extremeZ[0] = std::fmin(vertex.pos.z, extremeZ[0]);
-         extremeZ[1] = std::fmax(vertex.pos.z, extremeZ[1]);
+      vertex.normal = {
+         mesh->mNormals[i].x,
+         mesh->mNormals[i].y,
+         mesh->mNormals[i].z
+      };
 
-         vertex.normal = {
-            attrib.normals[3 * index.normal_index + 0],
-            attrib.normals[3 * index.normal_index + 1],
-            attrib.normals[3 * index.normal_index + 2]
-         };
+      vertex.texCoord = {
+         mesh->mTextureCoords[0][i].x,
+         // Flips the vertical component.
+         1.0f - mesh->mTextureCoords[0][i].y,
+      };
 
-         vertex.texCoord = {
-            attrib.texcoords[2 * index.texcoord_index + 0],
-            // Flips the vertical component.
-            1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-         };
 
-         // In this case de mesh is already iluminated in the texture.
-         vertex.color = {1.0f, 1.0f, 1.0f};
 
-         // Avoids vertex duplication
-         if (uniqueVertices.count(vertex) == 0)
-         {
-            uniqueVertices[vertex] = static_cast<uint32_t>(m_vertices.size());
-            m_vertices.push_back(vertex);
-         }
+      // In this case de mesh is already iluminated in the texture.
+      vertex.color = {1.0f, 1.0f, 1.0f};
 
-         m_indices.push_back(uniqueVertices[vertex]);
-      }
+      m_vertices.push_back(vertex);
+
+      // These will help us to move model to the center.
+      extremeX[0] = std::fmin(vertex.pos.x, extremeX[0]);
+      extremeX[1] = std::fmax(vertex.pos.x, extremeX[1]);
+      extremeY[0] = std::fmin(vertex.pos.y, extremeY[0]);
+      extremeY[1] = std::fmax(vertex.pos.y, extremeY[1]);
+      extremeZ[0] = std::fmin(vertex.pos.z, extremeZ[0]);
+      extremeZ[1] = std::fmax(vertex.pos.z, extremeZ[1]);
    }
 
+   for (size_t i = 0; i < mesh->mNumFaces; i++)
+   {
+      auto face = mesh->mFaces[i];
+      for (size_t j = 0; j < face.mNumIndices; j++)
+         m_indices.push_back(face.mIndices[j]);
+   }
+
+   aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+   loadMaterial(material);
 
    makeBasicTransformations();
    
-   actualPos = glm::fvec4(
-         0.0f,
-         0.0f,
-         0.0f,
-         0.0f
-   );
-   actualSize = glm::fvec3(
-         1.0f,
-         1.0f,
-         1.0f
-   );
-   actualRot = glm::fvec3(
-         0.0f,
-         0.0f,
-         0.0f
-   );
+   actualPos = glm::fvec4(0.0f);
+   actualSize = glm::fvec3(1.0f);
+   actualRot = glm::fvec3(0.0f);
 }
 
 void Model::uploadVertexData(

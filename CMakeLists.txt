@@ -63,9 +63,9 @@ target_include_directories(
       ${IMGUI_DIR}/backends
 )
 
-# -TinyObjLoader
-set(TINY_OBJ_LOADER_DIR "${PROJECT_LIBRARIES_DIR}/tinyobjloader")
-add_subdirectory(${TINY_OBJ_LOADER_DIR})
+# -Assimp
+set(ASSIMP_DIR "${PROJECT_LIBRARIES_DIR}/assimp")
+add_subdirectory(${ASSIMP_DIR})
 
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
@@ -135,7 +135,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
    X11               # To create windows. Needed by GLFW.
    glm
    stb
-   tinyobjloader
+   assimp
    imgui
    PRIVATE ${CMAKE_DL_LIBS}
 )

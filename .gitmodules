@@ -22,3 +22,6 @@
 [submodule "libs/imgui"]
 	path = libs/imgui
 	url = git@github.com:ocornut/imgui.git
+[submodule "libs/assimp"]
+	path = libs/assimp
+	url = git@github.com:assimp/assimp.git

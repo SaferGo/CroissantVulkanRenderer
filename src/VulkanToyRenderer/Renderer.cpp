@@ -932,6 +932,16 @@ void Renderer::cleanup()
    m_window.destroyWindow();
 }
 
+void Renderer::updateMaterialData(
+      const Model& model,
+      DescriptorTypes::UniformBufferObject::Normal& ubo
+) {
+   ubo.material.ambient = model.materials.ambient;
+   ubo.material.diffuse = model.materials.diffuse;
+   ubo.material.specular = model.materials.specular;
+   ubo.material.shininess = model.materials.shininess;
+}
+
 void Renderer::updateLightData(
       DescriptorTypes::UniformBufferObject::Normal& ubo
 ) {
@@ -1074,8 +1084,9 @@ void Renderer::updateUniformBuffer(
       ubo.model = modelMat;
       ubo.view = viewMat;
       ubo.proj = projMat;
-      
+      ubo.cameraPos = m_cameraPos;
       updateLightData(ubo);
+      updateMaterialData(model, ubo);
 
       model.updateUBO(logicalDevice, ubo, currentFrame);
    }

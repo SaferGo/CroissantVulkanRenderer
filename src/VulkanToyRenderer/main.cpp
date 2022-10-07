@@ -19,7 +19,7 @@ int main()
        * (add at least one light model!)
        */
 
-      //app.addNormalModel("Bunny", "stanford-bunny.obj");
+      app.addNormalModel("Bunny", "stanford-bunny.obj");
       app.addLightModel(
             "Light1",
             "lightSphere.obj",
@@ -31,7 +31,7 @@ int main()
             glm::fvec4(1.0f, 0.0f, 0.0f, 1.0f)
       );
 
-      app.addNormalModel("Erato", "erato.obj", "erato.jpg");
+      //app.addNormalModel("Erato", "erato.obj", "erato.jpg");
       //app.addNormalModel(
       //      "Viking room",
       //      "viking_room.obj",
