@@ -53,7 +53,9 @@ private:
    );
    void createCameraWindow(const std::string& name, glm::fvec4& cameraPos);
    void createTransformationsInfo(
-         std::shared_ptr<Model> model,
+         glm::vec4& pos,
+         glm::vec3& rot,
+         glm::vec3& size,
          const std::string& modelName
    );
    void createTranslationSliders(

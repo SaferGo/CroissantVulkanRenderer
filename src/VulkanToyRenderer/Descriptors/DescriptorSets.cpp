@@ -5,8 +5,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <VulkanToyRenderer/Descriptors/DescriptorInfo.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorTypes/descriptorTypesUtils.h>
+#include <VulkanToyRenderer/Descriptors/Types/descriptorTypesUtils.h>
 #include <VulkanToyRenderer/Settings/config.h>
 
 /*
@@ -14,12 +15,20 @@
  */
 void DescriptorSets::createDescriptorSets(
       const VkDevice logicalDevice,
-      const VkImageView& textureImageView,
-      const VkSampler& textureSampler,
+      const std::vector<DescriptorInfo>& uboInfo,
+      const std::vector<DescriptorInfo>& samplersInfo,
+      const std::vector<Texture>& textures,
       std::vector<VkBuffer>& uniformBuffers,
       const VkDescriptorSetLayout& descriptorSetLayout,
       DescriptorPool& descriptorPool
 ) {
+   // TODO: Improve this, since all the descriptors sets
+   // are the same, just copy it instead of creating them
+   // many times.
+
+   std::vector<VkDescriptorImageInfo> imageInfos;
+   imageInfos.resize(textures.size());
+
    // It creates a descriptor set for each frame in flight.
    // ONE FRAME FOR WRITING, ANOTHER FOR READING
    m_descriptorSets.resize(config::MAX_FRAMES_IN_FLIGHT);
@@ -43,36 +52,47 @@ void DescriptorSets::createDescriptorSets(
             uniformBuffers[i],
             bufferInfo
       );
-      VkDescriptorImageInfo imageInfo{};
-      descriptorTypesUtils::createDescriptorImageInfo(
-            textureImageView,
-            textureSampler,
-            imageInfo
-      );
+
+      for (size_t j = 0; j < imageInfos.size(); j++)
+      {
+         descriptorTypesUtils::createDescriptorImageInfo(
+               textures[j].getTextureImageView(),
+               textures[j].getTextureSampler(),
+               imageInfos[j]
+         );
+      }
 
       // Describes how to update the descriptors.
       // (how and which buffer/image use to bind with the each descriptor)
-      std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+      std::vector<VkWriteDescriptorSet> descriptorWrites;
+      descriptorWrites.resize(uboInfo.size() + samplersInfo.size());
 
-      // Another
-      createDescriptorWriteInfo(
-            bufferInfo,
-            m_descriptorSets[i],
-            0,
-            0,
-            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            descriptorWrites[0]
-      );
-      // Another
-      createDescriptorWriteInfo(
-            imageInfo,
-            m_descriptorSets[i],
-            // Binding number.
-            1,
-            0,
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            descriptorWrites[1]
-      );
+      // UBOs
+      for (size_t j = 0; j < uboInfo.size(); j++)
+      {
+         createDescriptorWriteInfo(
+               bufferInfo,
+               m_descriptorSets[i],
+               uboInfo[j].bindingNumber,
+               0,
+               uboInfo[j].descriptorType,
+               descriptorWrites[j]
+         );
+      }
+      // Samplers
+      for (size_t j = 0; j < samplersInfo.size(); j++)
+      {
+         // Another
+         createDescriptorWriteInfo(
+               imageInfos[j],
+               m_descriptorSets[i],
+               // Binding number.
+               samplersInfo[j].bindingNumber,
+               0,
+               samplersInfo[j].descriptorType,
+               descriptorWrites[uboInfo.size() + j]
+         );
+      }
 
       vkUpdateDescriptorSets(
          logicalDevice,
@@ -129,7 +149,7 @@ template void DescriptorSets::createDescriptorWriteInfo<VkDescriptorImageInfo>(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const VkDescriptorSet& DescriptorSets::getDescriptorSet(
+const VkDescriptorSet& DescriptorSets::get(
       const uint32_t index
 ) const {
    return m_descriptorSets[index];

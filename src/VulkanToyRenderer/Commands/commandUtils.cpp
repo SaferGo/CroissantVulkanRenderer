@@ -138,15 +138,15 @@ void commandUtils::STATE::bindDescriptorSets(
       const VkCommandBuffer& commandBuffer
 ) {
    vkCmdBindDescriptorSets(
-            commandBuffer,
-            VK_PIPELINE_BIND_POINT_GRAPHICS,
-            pipelineLayout,
-            // Index of the first descriptor set.
-            firstSet,
-            descriptorSets.size(),
-            descriptorSets.data(),
-            dynamicOffsets.size(),
-            dynamicOffsets.data()
+         commandBuffer,
+         VK_PIPELINE_BIND_POINT_GRAPHICS,
+         pipelineLayout,
+         // Index of the first descriptor set.
+         firstSet,
+         descriptorSets.size(),
+         descriptorSets.data(),
+         dynamicOffsets.size(),
+         dynamicOffsets.data()
    );
 }
 

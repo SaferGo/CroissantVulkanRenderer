@@ -16,6 +16,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <VulkanToyRenderer/Settings/config.h>
+#include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/ValidationLayers/vlManager.h>
@@ -29,22 +30,25 @@
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Buffers/bufferUtils.h>
 #include <VulkanToyRenderer/Model/Model.h>
+#include <VulkanToyRenderer/Model/Types/NormalPBR.h>
+#include <VulkanToyRenderer/Model/Types/Skybox.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorTypes/UBO.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorTypes/DescriptorTypes.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO.h>
+#include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
-#include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
-#include <VulkanToyRenderer/DepthBuffer/depthUtils.h>
+#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.h>
+#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/depthUtils.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
 #include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
+#include <VulkanToyRenderer/Model/Attributes.h>
 #include <VulkanToyRenderer/GUI/GUI.h>
 
 void Renderer::run()
 {
-   // Improve this!
+   // TODO: Improve this!
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    m_clearValues.resize(2);
    m_clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -58,17 +62,14 @@ void Renderer::run()
       return;
    }
 
-   if (m_lightModelIndices.size() == 0)
-   {
-      std::cout << "No lights to render! Add at least one light model.\n";
-   }
-
    m_window.createWindow(
          config::RESOLUTION_W,
          config::RESOLUTION_H,
          config::TITLE
    );
+
    initVK();
+
    m_GUI = std::make_unique<GUI>(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
@@ -78,62 +79,32 @@ void Renderer::run()
          m_qfHandles.graphicsQueue,
          m_window
    );
+
    mainLoop();
+
    cleanup();
 }
 
-void Renderer::addNormalModel(
+void Renderer::addSkybox(
       const std::string& name,
-      const std::string& meshFile
-) {
-   addModel(name, meshFile, "default.png", false, glm::fvec4(1.0f));
-   m_normalModelIndices.push_back(m_allModels.size() - 1);
-}
-
-void Renderer::addNormalModel(
-      const std::string& name,
-      const std::string& meshFile,
-      const std::string& textureFile
-) {
-   addModel(name, meshFile, textureFile, false, glm::fvec4(1.0));
-   m_normalModelIndices.push_back(m_allModels.size() - 1);
-}
-
-void Renderer::addModel(
-      const std::string& name,
-      const std::string& meshFile,
-      const std::string& textureFile,
-      const bool isLightModel,
-      const glm::fvec4& lightColor
+      const std::string& textureFolderName
 ) {
    m_allModels.push_back(
-         std::make_shared<Model>(
-            (std::string(MODEL_DIR) + meshFile).c_str(),
-            textureFile,
-            name,
-            isLightModel,
-            lightColor
-         )
+      std::make_shared<Skybox>(
+         name,
+         textureFolderName
+      )
    );
+
+   m_skyboxModelIndices.push_back(m_allModels.size() - 1);
 }
 
-void Renderer::addLightModel(
+void Renderer::addObjectPBR(
       const std::string& name,
-      const std::string& meshFile,
-      const glm::fvec4& lightColor
+      const std::string& modelFileName
 ) {
-   addModel(name, meshFile, "default.png", true, lightColor);
-   m_lightModelIndices.push_back(m_allModels.size() - 1);
-}
-
-void Renderer::addLightModel(
-      const std::string& name,
-      const std::string& meshFile,
-      const std::string& textureFile,
-      const glm::fvec4& lightColor
-) {
-   addModel(name, meshFile, textureFile, true, lightColor);
-   m_lightModelIndices.push_back(m_allModels.size() - 1);
+   m_allModels.push_back(std::make_shared<NormalPBR>(name, modelFileName));
+   m_normalModelIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::createSyncObjects()
@@ -242,7 +213,9 @@ void Renderer::createVkInstance()
 
       debugCreateInfo = vlManager::getDebugMessengerCreateInfo();
 
-      createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+      createInfo.pNext = (
+            (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo
+      );
 
    } else
    {
@@ -305,7 +278,6 @@ void Renderer::createRenderPass()
    );
 
    // Attachment references
-
    VkAttachmentReference colorAttachmentRef{};
    attachmentUtils::createAttachmentReference(
          0,
@@ -321,7 +293,6 @@ void Renderer::createRenderPass()
    );
 
    // Subpasses
-
    std::vector<VkAttachmentReference> allAttachments = {
       colorAttachmentRef
    };
@@ -334,7 +305,6 @@ void Renderer::createRenderPass()
    );
 
    // Subpass dependencies
-
    VkSubpassDependency dependency{};
    subPassUtils::createSubPassDependency(
          // -Source parameters.
@@ -385,9 +355,8 @@ void Renderer::uploadAllData()
             m_commandPool
       );
             
-      // Creates and uploads the Texture.
-      // (if it hasn't any texture, it will use a default one)
-      model->createTexture(
+      // Creates and uploads the Textures.
+      model->createTextures(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
          m_commandPool,
@@ -402,93 +371,123 @@ void Renderer::uploadAllData()
          config::MAX_FRAMES_IN_FLIGHT
       );
 
+      // TODO: Improve this
       // Descriptor Sets
-      model->createDescriptorSets(
-            m_device.getLogicalDevice(),
-            (
-             (model->isLightModel()) ?
-               m_descriptorSetLayoutLightM :
-               m_descriptorSetLayoutNormalM
-            ),
-            m_descriptorPool
-      );
+      switch (model->getType())
+      {
+         case ModelType::SKYBOX:
+         {
+
+            model->createDescriptorSets(
+               m_device.getLogicalDevice(),
+               m_descriptorSetLayoutSkybox,
+               m_descriptorPool
+            );
+
+            break;
+         } case ModelType::NORMAL_PBR:
+         {
+
+            model->createDescriptorSets(
+               m_device.getLogicalDevice(),
+               m_descriptorSetLayoutNormalPBR,
+               m_descriptorPool
+            );
+
+            break;
+         } case ModelType::LIGHT:
+         {
+            model->createDescriptorSets(
+               m_device.getLogicalDevice(),
+               m_descriptorSetLayoutNormalPBR,
+               m_descriptorPool
+            );
+
+            break;
+         } case ModelType::NONE:
+         {
+
+            break;
+         }
+      }
    }
 
 }
 
 void Renderer::createGraphicsPipelines()
 {
-   m_graphicsPipelineNormalM = GraphicsPipeline(
+
+   m_graphicsPipelineSkybox = GraphicsPipeline(
          m_device.getLogicalDevice(),
+         GraphicsPipelineType::SKYBOX,
          m_swapchain->getExtent(),
          m_renderPass.get(),
-         m_descriptorSetLayoutNormalM,
+         m_descriptorSetLayoutSkybox,
+         "skybox",
+         "skybox",
+         Attributes::SKYBOX::getBindingDescription(),
+         Attributes::SKYBOX::getAttributeDescriptions(),
+         &m_skyboxModelIndices
+   );
+
+   m_graphicsPipelinePBR = GraphicsPipeline(
+         m_device.getLogicalDevice(),
+         GraphicsPipelineType::PBR,
+         m_swapchain->getExtent(),
+         m_renderPass.get(),
+         m_descriptorSetLayoutNormalPBR,
          // Filename of the vertex shader.
          "normal",
          // Filename of the fragment shader.
          "normal",
+         Attributes::PBR::getBindingDescription(),
+         Attributes::PBR::getAttributeDescriptions(),
          // Models assocciated with this graphics pipeline.
          &m_normalModelIndices
    );
 
-   m_graphicsPipelineLightM = GraphicsPipeline(
-         m_device.getLogicalDevice(),
-         m_swapchain->getExtent(),
-         m_renderPass.get(),
-         m_descriptorSetLayoutLightM,
-         // Filename of the vertex shader.
-         "light",
-         // Filename of the fragment shader.
-         "light",
-         // Models assocciated with this graphics pipeline.
-         &m_lightModelIndices
-   );
+   //m_graphicsPipelineLight = GraphicsPipeline(
+   //      m_device.getLogicalDevice(),
+   //      m_swapchain->getExtent(),
+   //      m_renderPass.get(),
+   //      m_descriptorSetLayoutLightM,
+   //      // Filename of the vertex shader.
+   //      "light",
+   //      // Filename of the fragment shader.
+   //      "light",
+   //      // Models assocciated with this graphics pipeline.
+   //      &m_lightModelIndices
+   //);
 }
 
+/*
+ * Specifies all the neccessary descriptors, their bindings and their 
+ * shader stages.
+ */
 void Renderer::createDescriptorSetLayouts()
 {
-   // Specifies all the neccessary descriptors, their bindings and their 
-   // shader stages.
-   descriptorSetLayoutUtils::createDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         // Descriptor Types / Descriptor Bindings / Descriptor Stages
-         {
-            {
-               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               0,
-               (VkShaderStageFlagBits)(
-                     VK_SHADER_STAGE_VERTEX_BIT |
-                     VK_SHADER_STAGE_FRAGMENT_BIT
-               )
-            },
-            {
-               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               1,
-               VK_SHADER_STAGE_FRAGMENT_BIT
-            }
-         },
-         m_descriptorSetLayoutNormalM
-   );
    
    descriptorSetLayoutUtils::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
-         // Descriptor Types / Descriptor Bindings / Descriptor Stages
-         {
-            {
-               VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               0,
-               (VkShaderStageFlagBits)(
-                     VK_SHADER_STAGE_VERTEX_BIT
-               )
-            },
-            {
-               VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               1,
-               VK_SHADER_STAGE_FRAGMENT_BIT
-            }
-         },
-         m_descriptorSetLayoutLightM
+         GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
+         GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO,
+         m_descriptorSetLayoutSkybox
    );
+
+
+   descriptorSetLayoutUtils::createDescriptorSetLayout(
+         m_device.getLogicalDevice(),
+         GRAPHICS_PIPELINE::PBR::UBOS_INFO,
+         GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
+         m_descriptorSetLayoutNormalPBR
+   );
+   
+   //descriptorSetLayoutUtils::createDescriptorSetLayout(
+   //      m_device.getLogicalDevice(),
+   //      config::LightModels::uboInfo,
+   //      config::LightModels::samplersInfo,
+   //      m_descriptorSetLayoutLightM
+   //);
 }
 
 void Renderer::initVK()
@@ -529,19 +528,25 @@ void Renderer::initVK()
          {
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               static_cast<uint32_t> (
-                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
-               )
+               // TODO: Make the size more precise.
+               25
+               //static_cast<uint32_t> (
+               //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
+               //)
             },
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               static_cast<uint32_t> (
-                     m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
-               )
+               // TODO: Make the size more precise.
+               25
+               //static_cast<uint32_t> (
+               //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
+               //)
             }
          },
          // Descriptor SETS count.
-         m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
+         // TODO: Make the size more precise.
+         25
+         //m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
    );
 
    createDescriptorSetLayouts();
@@ -577,6 +582,72 @@ void Renderer::initVK()
    createSyncObjects();
 
 }
+
+template <typename T>
+void Renderer::bindAllMeshesData(
+      const std::shared_ptr<T>& model,
+      const GraphicsPipeline& graphicsPipeline,
+      const VkCommandBuffer& commandBuffer,
+      const uint32_t currentFrame
+) {
+   for (auto& mesh : model->m_meshes)
+   {
+      commandUtils::STATE::bindVertexBuffers(
+            {mesh.m_vertexBuffer},
+            // Offsets.
+            {0},
+            // Index of first binding.
+            0,
+            // Bindings count.
+            1,
+            commandBuffer
+      );
+      commandUtils::STATE::bindIndexBuffer(
+            mesh.m_indexBuffer,
+            // Offset.
+            0,
+            VK_INDEX_TYPE_UINT32,
+            commandBuffer
+      );
+
+      commandUtils::STATE::bindDescriptorSets(
+            graphicsPipeline.getPipelineLayout(),
+            // Index of first descriptor set.
+            0,
+            {mesh.m_descriptorSets.get(currentFrame)},
+            // Dynamic offsets.
+            {},
+            commandBuffer
+      );
+
+      commandUtils::ACTION::drawIndexed(
+            // Index Count
+            mesh.m_indices.size(),
+            // Instance Count
+            1,
+            // First index.
+            0,
+            // Vertex Offset.
+            0,
+            // First Intance.
+            0,
+            commandBuffer
+      );
+   }
+}
+template void Renderer::bindAllMeshesData<NormalPBR>(
+      const std::shared_ptr<NormalPBR>& model,
+      const GraphicsPipeline& graphicsPipeline,
+      const VkCommandBuffer& commandBuffer,
+      const uint32_t currentFrame
+);
+
+template void Renderer::bindAllMeshesData<Skybox>(
+      const std::shared_ptr<Skybox>& model,
+      const GraphicsPipeline& graphicsPipeline,
+      const VkCommandBuffer& commandBuffer,
+      const uint32_t currentFrame
+);
 
 void Renderer::recordCommandBuffer(
       const VkFramebuffer& framebuffer,
@@ -638,51 +709,26 @@ void Renderer::recordCommandBuffer(
                   commandBuffer
             );
 
+            // Binds all the models with the same Graphics Pipeline.
             for (const size_t& i : graphicsPipeline.getModelIndices())
             {
-
                const auto& model = m_allModels[i];
 
-               commandUtils::STATE::bindVertexBuffers(
-                     {model->getVertexBuffer()},
-                     // Offsets.
-                     {0},
-                     // Index of first binding.
-                     0,
-                     // Bindings count.
-                     1,
-                     commandBuffer
-               );
-               commandUtils::STATE::bindIndexBuffer(
-                     model->getIndexBuffer(),
-                     // Offset.
-                     0,
-                     VK_INDEX_TYPE_UINT32,
-                     commandBuffer
-               );
+               if (model->getType() == ModelType::SKYBOX)
+               {
+                  if (auto pModel = std::dynamic_pointer_cast<Skybox>(model))
+                     bindAllMeshesData<Skybox>(
+                           pModel, graphicsPipeline, commandBuffer, currentFrame
+                     );
+               }
 
-               commandUtils::STATE::bindDescriptorSets(
-                     graphicsPipeline.getPipelineLayout(),
-                     // Index of first descriptor set.
-                     0,
-                     {model->getDescriptorSet(currentFrame)},
-                     // Dynamic offsets.
-                     {},
-                     commandBuffer
-               );
-
-               commandUtils::ACTION::drawIndexed(
-                     model->getIndexCount(),
-                     // Instance Count
-                     1,
-                     // First index.
-                     0,
-                     // Vertex Offset.
-                     0,
-                     // First Intance.
-                     0,
-                     commandBuffer
-               );
+               if (model->getType() == ModelType::NORMAL_PBR)
+               {
+                  if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
+                     bindAllMeshesData<NormalPBR>(
+                           pModel, graphicsPipeline, commandBuffer, currentFrame
+                     );
+               }
             }
       }
 
@@ -715,12 +761,27 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    //------------------------Updates uniform buffer----------------------------
    for (auto& model : m_allModels)
    {
-      updateUniformBuffer(
-            m_device.getLogicalDevice(),
-            currentFrame,
-            m_swapchain->getExtent(),
-            *model
-      );
+      if (model->getType() == ModelType::SKYBOX)
+      {
+         if (auto pModel = std::dynamic_pointer_cast<Skybox>(model))
+            updateUniformBuffer<Skybox>(
+                  m_device.getLogicalDevice(),
+                  currentFrame,
+                  m_swapchain->getExtent(),
+                  pModel
+            );
+      }
+
+      if (model->getType() == ModelType::NORMAL_PBR)
+      {
+         if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
+            updateUniformBuffer<NormalPBR>(
+                  m_device.getLogicalDevice(),
+                  currentFrame,
+                  m_swapchain->getExtent(),
+                  pModel
+            );
+      }
    }
 
    //--------------------Acquires an image from the swapchain------------------
@@ -742,7 +803,12 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_swapchain->getFramebuffer(imageIndex),
          m_renderPass,
          m_swapchain->getExtent(),
-         {m_graphicsPipelineNormalM, m_graphicsPipelineLightM},
+         {
+            m_graphicsPipelinePBR,
+            // The skybox has to be always the last one.
+            m_graphicsPipelineSkybox
+            /*, m_graphicsPipelineLightM*/
+         },
          currentFrame,
          m_commandPool.getCommandBuffer(currentFrame),
          m_commandPool
@@ -880,8 +946,8 @@ void Renderer::cleanup()
    m_swapchain->destroySwapchain(m_device.getLogicalDevice());
 
    // Graphics Pipelines
-   m_graphicsPipelineNormalM.destroy(m_device.getLogicalDevice());
-   m_graphicsPipelineLightM.destroy(m_device.getLogicalDevice());
+   m_graphicsPipelinePBR.destroy(m_device.getLogicalDevice());
+   m_graphicsPipelineSkybox.destroy(m_device.getLogicalDevice());
 
    // Render pass
    m_renderPass.destroy(m_device.getLogicalDevice());
@@ -896,11 +962,11 @@ void Renderer::cleanup()
    // Descriptor Set Layouts
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
          m_device.getLogicalDevice(),
-         m_descriptorSetLayoutNormalM
+         m_descriptorSetLayoutNormalPBR
    );
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
          m_device.getLogicalDevice(),
-         m_descriptorSetLayoutLightM
+         m_descriptorSetLayoutSkybox
    );
    
    // Sync objects
@@ -932,29 +998,19 @@ void Renderer::cleanup()
    m_window.destroyWindow();
 }
 
-void Renderer::updateMaterialData(
-      const Model& model,
-      DescriptorTypes::UniformBufferObject::Normal& ubo
-) {
-   ubo.material.ambient = model.materials.ambient;
-   ubo.material.diffuse = model.materials.diffuse;
-   ubo.material.specular = model.materials.specular;
-   ubo.material.shininess = model.materials.shininess;
-}
-
-void Renderer::updateLightData(
-      DescriptorTypes::UniformBufferObject::Normal& ubo
-) {
-   ubo.lightsCount = m_lightModelIndices.size();
-
-   for (int i = 0; i < ubo.lightsCount; i++)
-   {
-      ubo.lightPositions[i] = (
-            m_allModels[m_lightModelIndices[i]]->actualPos
-      );
-      ubo.lightColors[i] = m_allModels[m_lightModelIndices[i]]->lightColor;
-   }
-}
+//void Renderer::updateLightData(
+//      DescriptorTypes::UniformBufferObject::PBR& ubo
+//) {
+//   ubo.lightsCount = m_lightModelIndices.size();
+//
+//   for (int i = 0; i < ubo.lightsCount; i++)
+//   {
+//      ubo.lightPositions[i] = (
+//            m_allModels[m_lightModelIndices[i]]->actualPos
+//      );
+//      ubo.lightColors[i] = m_allModels[m_lightModelIndices[i]]->lightColor;
+//   }
+//}
 
 /*
  * Remember that the correct order is SRT!
@@ -1030,12 +1086,12 @@ glm::mat4 Renderer::getUpdatedProjMatrix(
    return proj;
 }
 
-
+template<typename T>
 void Renderer::updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent,
-         Model& model
+         const std::shared_ptr<T>& model
 ) {
    //static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -1044,10 +1100,10 @@ void Renderer::updateUniformBuffer(
    //      currentTime - startTime
    //).count();
    
-   glm::mat4 modelMat = getUpdatedModelMatrix(
-         model.actualPos,
-         model.actualRot,
-         model.actualSize
+  glm::mat4 modelMat = getUpdatedModelMatrix(
+         model->actualPos,
+         model->actualRot,
+         model->actualSize
    );
 
    glm::mat4 viewMat = getUpdatedViewMatrix(
@@ -1066,28 +1122,80 @@ void Renderer::updateUniformBuffer(
          10.0f
    );
 
-   if (model.isLightModel())
+   switch (model->getType())
    {
-      DescriptorTypes::UniformBufferObject::Light ubo;
+      case ModelType::LIGHT:
+      {
 
-      ubo.model = modelMat;
-      ubo.view = viewMat;
-      ubo.proj = projMat;
-      ubo.lightColor = model.lightColor;
+         DescriptorTypes::UniformBufferObject::Light ubo;
 
-      model.updateUBO(logicalDevice, ubo, currentFrame);
+         ubo.model = modelMat;
+         ubo.view = viewMat;
+         ubo.proj = projMat;
+         //ubo.lightColor = model.lightColor;
 
-   } else
-   {
-      DescriptorTypes::UniformBufferObject::Normal ubo;
+         model->updateUBO(logicalDevice, ubo, currentFrame);
 
-      ubo.model = modelMat;
-      ubo.view = viewMat;
-      ubo.proj = projMat;
-      ubo.cameraPos = m_cameraPos;
-      updateLightData(ubo);
-      updateMaterialData(model, ubo);
+         break;
 
-      model.updateUBO(logicalDevice, ubo, currentFrame);
+      } case ModelType::NORMAL_PBR:
+      {
+
+         DescriptorTypes::UniformBufferObject::NormalPBR ubo;
+
+         ubo.model = modelMat;
+         ubo.view = viewMat;
+         ubo.proj = projMat;
+         ubo.cameraPos = m_cameraPos;
+         //updateLightData(ubo);
+         
+         model->updateUBO(logicalDevice, ubo, currentFrame);
+
+         break;
+
+      } case ModelType::SKYBOX:
+      {
+
+         DescriptorTypes::UniformBufferObject::Skybox ubo;
+
+         modelMat = glm::translate(
+            glm::mat4(1.0f),
+            glm::vec3(m_cameraPos)
+         );
+
+         projMat = getUpdatedProjMatrix(
+            // Different to the original
+            glm::radians(75.0f),
+            extent.width / (float)extent.height,
+            0.01f,
+            40.0f
+         );
+
+         ubo.model = modelMat;
+         ubo.view = viewMat;
+         ubo.proj = projMat;
+
+         model->updateUBO(logicalDevice, ubo, currentFrame);
+
+         break;
+      } case ModelType::NONE:
+
+         break;
    }
+
 }
+
+////////////////////////////////Instances//////////////////////////////////////
+template void Renderer::updateUniformBuffer<NormalPBR>(
+         const VkDevice& logicalDevice,
+         const uint8_t currentFrame,
+         const VkExtent2D extent,
+         const std::shared_ptr<NormalPBR>& model
+);
+template void Renderer::updateUniformBuffer<Skybox>(
+         const VkDevice& logicalDevice,
+         const uint8_t currentFrame,
+         const VkExtent2D extent,
+         const std::shared_ptr<Skybox>& model
+);
+///////////////////////////////////////////////////////////////////////////////

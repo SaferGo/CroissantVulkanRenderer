@@ -1,6 +1,11 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
 #include <vulkan/vulkan.h>
+
+#include <VulkanToyRenderer/Descriptors/DescriptorInfo.h>
 
 namespace config
 {
@@ -12,5 +17,18 @@ namespace config
 
    // Graphic's settings
    inline const int MAX_FRAMES_IN_FLIGHT = 2;
+
+   // Textures - Naming Convention For Cubemaps
+   inline const std::vector<std::string> TEXTURE_CUBEMAP_NAMING_CONV =
+   {
+      "pz",
+      "nz",
+      "py",
+      "ny",
+      "nx",
+      "px"
+   };
+   inline const std::string TEXTURE_CUBEMAP_FORMAT = "png";
+   
 
 };

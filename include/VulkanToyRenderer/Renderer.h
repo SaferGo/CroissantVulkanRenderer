@@ -19,6 +19,7 @@
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
 #include <VulkanToyRenderer/Model/Model.h>
+#include <VulkanToyRenderer/Model/Types/Skybox.h>
 
 class Renderer
 {
@@ -26,52 +27,25 @@ class Renderer
 public:
 
    void run();
-   void addNormalModel(
+   void addObjectPBR(
          const std::string& name,
-         const std::string& meshFile
+         const std::string& modelFileName
    );
-   void addNormalModel(
+   void addSkybox(
          const std::string& name,
-         const std::string& meshFile,
-         const std::string& textureFile
+         const std::string& textureFolderName
    );
-   void addLightModel(
-         const std::string& name,
-         const std::string& meshFile,
-         const glm::fvec4& lightColor
-   );
-   void addLightModel(
-      const std::string& name,
-      const std::string& meshFile,
-      const std::string& textureFile,
-      const glm::fvec4& lightColor
-   ) ;
-
-
 
 private:
 
-   void addModel(
-         const std::string& name,
-         const std::string& meshFile,
-         const std::string& textureFile,
-         const bool isLightModel,
-         const glm::fvec4& lightColor
-   );
    void createGraphicsPipelines();
    void uploadAllData();
-   void updateMaterialData(
-         const Model& model,
-         DescriptorTypes::UniformBufferObject::Normal& ubo
-   );
+   template<typename T>
    void updateUniformBuffer(
          const VkDevice& logicalDevice,
          const uint8_t currentFrame,
          const VkExtent2D extent,
-         Model& model
-   );
-   void updateLightData(
-         DescriptorTypes::UniformBufferObject::Normal& ubo
+         const std::shared_ptr<T>& model
    );
    glm::mat4 getUpdatedModelMatrix(
          const glm::fvec4 actualPos,
@@ -104,6 +78,13 @@ private:
          const VkCommandBuffer& commandBuffer,
          CommandPool& commandPool
    );
+   template <typename T>
+   void bindAllMeshesData(
+         const std::shared_ptr<T>& model,
+         const GraphicsPipeline& graphicsPipeline,
+         const VkCommandBuffer& commandBuffer,
+         const uint32_t currentFrame
+   );
    void drawFrame(uint8_t& currentFrame);
 
    void createVkInstance();
@@ -120,8 +101,6 @@ private:
    std::unique_ptr<Swapchain> m_swapchain;
    RenderPass                 m_renderPass;
    VkDebugUtilsMessengerEXT   m_debugMessenger;
-   GraphicsPipeline           m_graphicsPipelineNormalM;
-   GraphicsPipeline           m_graphicsPipelineLightM;
 
    // Command buffer for main drawing commands.
    CommandPool                m_commandPool;
@@ -140,15 +119,16 @@ private:
    std::vector<size_t> m_lightModelIndices;
    // Models that interact with the light.
    std::vector<size_t> m_normalModelIndices;
-   
-   // The vertices from all the models will be saved on the same memory.
-   VkBuffer       m_vertexBuffer;
-   VkDeviceMemory m_vertexMemory;
-   uint32_t m_lastMemoryVertexOffset;
+   std::vector<size_t> m_skyboxModelIndices;
 
+   
    DescriptorPool             m_descriptorPool;
-   VkDescriptorSetLayout      m_descriptorSetLayoutNormalM;
-   VkDescriptorSetLayout      m_descriptorSetLayoutLightM;
+   GraphicsPipeline           m_graphicsPipelinePBR;
+   GraphicsPipeline           m_graphicsPipelineSkybox;
+   GraphicsPipeline           m_graphicsPipelineLightM;
+   VkDescriptorSetLayout      m_descriptorSetLayoutNormalPBR;
+   VkDescriptorSetLayout      m_descriptorSetLayoutLight;
+   VkDescriptorSetLayout      m_descriptorSetLayoutSkybox;
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    std::vector<VkClearValue> m_clearValues;

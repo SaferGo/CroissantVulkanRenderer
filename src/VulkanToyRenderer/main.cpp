@@ -16,23 +16,23 @@ int main()
       /*
        * Normal Model -> Model that interacts with light.
        * Light Model  -> Model that produces light.
-       * (add at least one light model!)
        */
 
-      app.addNormalModel("Bunny", "stanford-bunny.obj");
-      app.addLightModel(
-            "Light1",
-            "lightSphere.obj",
-            glm::fvec4(0.0f, 0.0f, 1.0f, 1.0f)
-      );
-      app.addLightModel(
-            "Light2",
-            "lightSphere.obj",
-            glm::fvec4(1.0f, 0.0f, 0.0f, 1.0f)
-      );
+      //app.addObject("Bunny", "stanford-bunny.obj");
+      app.addSkybox("Town", "SmallTown");
+      app.addObjectPBR("Gun", "gun.gltf");
+      //app.addLight(
+      //      "Light1",
+      //      "lightSphere.obj",
+      //      glm::fvec4(0.0f, 0.0f, 1.0f, 1.0f)
+      //);
+      //app.addLight(
+      //      "Light2",
+      //      "lightSphere.obj",
+      //      glm::fvec4(1.0f, 0.0f, 0.0f, 1.0f)
+      //);
 
-      //app.addNormalModel("Erato", "erato.obj", "erato.jpg");
-      //app.addNormalModel(
+      //app.addObject(
       //      "Viking room",
       //      "viking_room.obj",
       //      "viking_room.png"
@@ -48,5 +48,5 @@ int main()
       return 0;
    }
 
-    return 0;
+   return 0;
 }

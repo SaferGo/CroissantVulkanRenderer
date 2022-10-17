@@ -4,19 +4,15 @@
 
 #include <vulkan/vulkan.h>
 
-struct DescriptorInfo
-{
-   VkDescriptorType        type;
-   uint32_t                binding;
-   VkShaderStageFlagBits   shaderStage;
-};
+#include <VulkanToyRenderer/Descriptors/DescriptorInfo.h>
 
 namespace descriptorSetLayoutUtils
 {
 
    void createDescriptorSetLayout(
          const VkDevice& logicalDevice,
-         const std::vector<DescriptorInfo>& descriptorsInfo,
+         const std::vector<DescriptorInfo>& uboInfo,
+         const std::vector<DescriptorInfo>& samplersInfo,
          VkDescriptorSetLayout& descriptorSetLayout
    );
    void createDescriptorBindingLayout(

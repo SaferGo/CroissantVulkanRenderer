@@ -20,6 +20,7 @@
 #include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
 #include <VulkanToyRenderer/Model/Model.h>
+#include <VulkanToyRenderer/Model/Types/NormalPBR.h>
 
 GUI::GUI(
       const VkPhysicalDevice& physicalDevice,
@@ -330,7 +331,7 @@ void GUI::draw(
    ImGui::NewFrame();
 
       createModelsWindow(models, normalModelIndices);
-      createLightsWindow(models, lightModelIndices);
+      //createLightsWindow(models, lightModelIndices);
       createCameraWindow("Camera", cameraPos);
 
    ImGui::Render();
@@ -340,30 +341,30 @@ void GUI::createLightsWindow(
       std::vector<std::shared_ptr<Model>> models,
       const std::vector<size_t> indices
 ) {
-   ImGui::Begin("Lights");
-   
-      for (const size_t& j : indices)
-      {
-         auto& model = models[j];
-         const std::string modelName = model.get()->getName();
-
-
-
-         if (ImGui::TreeNode(modelName.c_str()))
-         {
-            ImGui::ColorEdit4(
-                  ("Color###" + modelName).c_str(),
-                  &(model.get()->lightColor.x)
-            );
-
-            createTransformationsInfo(model, modelName);
-
-            ImGui::TreePop();
-            ImGui::Separator();
-         }
-      }
-
-   ImGui::End();
+//   ImGui::Begin("Lights");
+//   
+//      for (const size_t& j : indices)
+//      {
+//         auto& model = models[j];
+//         const std::string modelName = model.get()->getName();
+//
+//
+//
+//         if (ImGui::TreeNode(modelName.c_str()))
+//         {
+//            ImGui::ColorEdit4(
+//                  ("Color###" + modelName).c_str(),
+//                  &(model.get()->lightColor.x)
+//            );
+//
+//            createTransformationsInfo(model, modelName);
+//
+//            ImGui::TreePop();
+//            ImGui::Separator();
+//         }
+//      }
+//
+//   ImGui::End();
 }
 
 void GUI::createModelsWindow(
@@ -374,15 +375,23 @@ void GUI::createModelsWindow(
    
       for (const size_t& j : indices)
       {
-         auto& model = models[j];
-         const std::string modelName = model.get()->getName();
-
-         if (ImGui::TreeNode(modelName.c_str()))
+         // TODO: update to accept more models.
+         if (auto model = std::dynamic_pointer_cast<NormalPBR>(models[j]))
          {
-            createTransformationsInfo(model, modelName);
+            const std::string modelName = model.get()->getName();
 
-            ImGui::TreePop();
-            ImGui::Separator();
+            if (ImGui::TreeNode(modelName.c_str()))
+            {
+               createTransformationsInfo(
+                     model.get()->actualPos,
+                     model.get()->actualRot,
+                     model.get()->actualSize,
+                     modelName
+               );
+
+               ImGui::TreePop();
+               ImGui::Separator();
+            }
          }
       }
 
@@ -499,25 +508,27 @@ void GUI::createSizeSliders(
 }
 
 void GUI::createTransformationsInfo(
-      std::shared_ptr<Model> model,
+      glm::vec4& pos,
+      glm::vec3& rot,
+      glm::vec3& size,
       const std::string& modelName
 ) {
 
    createTranslationSliders(
          modelName,
-         model.get()->actualPos,
+         pos,
          -10.0f,
          10.0f
    );
    createRotationSliders(
          modelName,
-         model.get()->actualRot,
+         rot,
          -5.0f,
          5.0f
    );
    createSizeSliders(
          modelName,
-         model.get()->actualSize,
+         size,
          0.0f,
          1.0f
    );
@@ -531,8 +542,8 @@ void GUI::createCameraWindow(const std::string& name, glm::fvec4& cameraPos)
       createTranslationSliders(
             name,
             cameraPos,
-            -5.0f,
-            5.0f
+            -30.0f,
+            30.0f
       );
 
    ImGui::End();

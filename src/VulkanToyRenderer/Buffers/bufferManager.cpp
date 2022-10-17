@@ -3,9 +3,10 @@
 #include <stdexcept>
 #include <cstring>
 
+#include <stb/stb_image.h>
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Model/Vertex.h>
+#include <VulkanToyRenderer/Model/Attributes.h>
 #include <VulkanToyRenderer/Buffers/bufferUtils.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Commands/commandUtils.h>
@@ -166,15 +167,13 @@ void bufferManager::createBufferAndTransferToDevice(
          CommandPool& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         const std::vector<T>& data,
+         T* data,
+         const size_t size,
          VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
 ) {
-
-   VkDeviceSize size = sizeof(data[0]) * data.size();
-
    VkBuffer stagingBuffer;
    VkDeviceMemory stagingBufferMemory;
    // Creates the staging buffer.
@@ -192,6 +191,8 @@ void bufferManager::createBufferAndTransferToDevice(
    fillBuffer(
          logicalDevice,
          data,
+         0,
+         size,
          stagingBufferMemory
    );
 
@@ -226,18 +227,36 @@ template void bufferManager::createBufferAndTransferToDevice<uint32_t>(
          CommandPool& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         const std::vector<uint32_t>& data,
+         uint32_t* data,
+         const size_t size,
          VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
 );
 
-template void bufferManager::createBufferAndTransferToDevice<Vertex>(
+template void bufferManager::createBufferAndTransferToDevice<
+   Attributes::PBR::Vertex
+>(
          CommandPool& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         const std::vector<Vertex>& data,
+         Attributes::PBR::Vertex* data,
+         const size_t size,
+         VkQueue& graphicsQueue,
+         const VkBufferUsageFlags usageDstBuffer,
+         VkDeviceMemory& memory,
+         VkBuffer& buffer
+);
+
+template void bufferManager::createBufferAndTransferToDevice<
+   Attributes::SKYBOX::Vertex
+>(
+         CommandPool& commandPool,
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         Attributes::SKYBOX::Vertex* data,
+         const size_t size,
          VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
@@ -249,36 +268,54 @@ template void bufferManager::createBufferAndTransferToDevice<Vertex>(
 template<typename T>
 void bufferManager::fillBuffer(
       const VkDevice& logicalDevice,
-      const std::vector<T>& data,
+      T* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
       VkDeviceMemory& memory
 ) {
-   const size_t sizeOfData = sizeof(data[0]) * data.size();
-
    void* memoryMap;
    // Allows us to access a region of the specified memory resource defined by
    // an offset and size.
    vkMapMemory(
          logicalDevice,
          memory,
-         0,
-         sizeOfData,
+         offset,
+         size,
          0,
          &memoryMap
    );
-      std::memcpy(memoryMap, data.data(), sizeOfData);
+      std::memcpy(memoryMap, data, size);
    vkUnmapMemory(logicalDevice, memory);
 }
 //////////////////////////////////Instances////////////////////////////////////
-template void bufferManager::fillBuffer<Vertex>(
+template void bufferManager::fillBuffer<Attributes::PBR::Vertex>(
       const VkDevice& logicalDevice,
-      const std::vector<Vertex>& data,
+      Attributes::PBR::Vertex* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
+      VkDeviceMemory& memory
+);
+template void bufferManager::fillBuffer<Attributes::SKYBOX::Vertex>(
+      const VkDevice& logicalDevice,
+      Attributes::SKYBOX::Vertex* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
       VkDeviceMemory& memory
 );
 template void bufferManager::fillBuffer<uint32_t>(
       const VkDevice& logicalDevice,
-      const std::vector<uint32_t>& data,
+      uint32_t* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
       VkDeviceMemory& memory
-);;
+);
+template void bufferManager::fillBuffer<stbi_uc>(
+      const VkDevice& logicalDevice,
+      stbi_uc* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
+      VkDeviceMemory& memory
+);
 ///////////////////////////////////////////////////////////////////////////////
 
 void bufferManager::destroyBuffer(

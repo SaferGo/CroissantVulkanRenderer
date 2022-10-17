@@ -14,6 +14,7 @@ namespace imageManager{
       const VkImageTiling& tiling,
       const VkImageUsageFlags& usage,
       const VkMemoryPropertyFlags& memoryProperties,
+      const bool isCubemap,
       VkImage& image,
       VkDeviceMemory& memory
    );
@@ -22,11 +23,13 @@ namespace imageManager{
          const VkFormat& format,
          const VkImage& image,
          const VkImageAspectFlags& aspectFlags,
+         const bool isCubemap,
          VkImageView& imageView
    );
    void copyBufferToImage(
          const uint32_t width,
          const uint32_t height,
+         const bool isCubemap,
          VkQueue& graphicsQueue,
          CommandPool& commandPool,
          VkBuffer& buffer,

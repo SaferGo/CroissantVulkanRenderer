@@ -1,13 +1,5 @@
 #version 450
 
-struct Material
-{
-   vec4 ambient;
-   vec4 diffuse;
-   vec4 specular;
-   int shininess;
-};
-
 layout(std140, binding = 0) uniform UniformBufferObject
 {
    mat4 model;
@@ -16,7 +8,6 @@ layout(std140, binding = 0) uniform UniformBufferObject
    vec4 lightPositions[10];
    vec4 lightColors[10];
    vec4 cameraPos;
-   Material material;
    int  lightsCount;
 } ubo;
 

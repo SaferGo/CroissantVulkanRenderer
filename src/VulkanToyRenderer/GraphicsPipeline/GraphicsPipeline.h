@@ -6,6 +6,13 @@
 
 #include <vulkan/vulkan.h>
 
+enum class GraphicsPipelineType
+{
+   PBR = 0,
+   LIGHT = 1,
+   SKYBOX = 2
+};
+
 class GraphicsPipeline
 {
 
@@ -15,15 +22,20 @@ public:
    ~GraphicsPipeline();
    GraphicsPipeline(
          const VkDevice& logicalDevice,
+         const GraphicsPipelineType type,
          const VkExtent2D& extent,
          const VkRenderPass& renderPass,
          const VkDescriptorSetLayout& descriptorSetLayout,
          const std::string& vertexShaderFileName,
          const std::string& fragmentShaderFileName,
+         VkVertexInputBindingDescription vertexBindingDescriptions,
+         std::vector<VkVertexInputAttributeDescription>
+            vertexAttribDescriptions,
          std::vector<size_t>* modelIndices
    );
    const VkPipeline& get() const;
    const VkPipelineLayout& getPipelineLayout() const;
+   const GraphicsPipelineType getType() const;
    const std::vector<size_t>& getModelIndices() const;
    void destroy(const VkDevice& logicalDevice);
 
@@ -84,4 +96,6 @@ private:
 
    // Observer pointer
    std::vector<size_t>* m_opModelIndices;
+
+   GraphicsPipelineType m_type;
 };

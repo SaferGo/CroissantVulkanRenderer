@@ -2,27 +2,39 @@
 
 #include <stdexcept>
 
+#include <VulkanToyRenderer/Descriptors/DescriptorInfo.h>
+
 /*
  * Combines all the different types of descriptors layouts in one
  * descriptor SET layout.
  */
 void descriptorSetLayoutUtils::createDescriptorSetLayout(
       const VkDevice& logicalDevice,
-      const std::vector<DescriptorInfo>& descriptorsInfo,
+      const std::vector<DescriptorInfo>& uboInfo,
+      const std::vector<DescriptorInfo>& samplersInfo,
       VkDescriptorSetLayout& descriptorSetLayout
 ) {
-   if (descriptorsInfo.size() == 0)
-      throw std::runtime_error("Failed to create descriptor set layout!");
-
    // Descriptor bindings layouts
-   std::vector<VkDescriptorSetLayoutBinding> bindings(descriptorsInfo.size());
+   std::vector<VkDescriptorSetLayoutBinding> bindings(
+         uboInfo.size() + samplersInfo.size()
+   );
 
-   for (size_t i = 0; i < bindings.size(); i++)
+   // UBOs
+   for (size_t i = 0; i < uboInfo.size(); i++)
    {
       createDescriptorBindingLayout(
-            descriptorsInfo[i],
+            uboInfo[i],
             {},
             bindings[i]
+      );
+   }
+   // Samplers
+   for (size_t i = 0; i < samplersInfo.size(); i++)
+   {
+      createDescriptorBindingLayout(
+            samplersInfo[i],
+            {},
+            bindings[i + uboInfo.size()]
       );
    }
 
@@ -55,8 +67,8 @@ void descriptorSetLayoutUtils::createDescriptorBindingLayout(
       VkDescriptorSetLayoutBinding& layout
 ) {
    // Binding used in the shader.
-   layout.binding = descriptorInfo.binding;
-   layout.descriptorType = descriptorInfo.type;
+   layout.binding = descriptorInfo.bindingNumber;
+   layout.descriptorType = descriptorInfo.descriptorType;
    layout.descriptorCount = 1;
    layout.stageFlags = descriptorInfo.shaderStage;
    layout.pImmutableSamplers = immutableSamplers.data();

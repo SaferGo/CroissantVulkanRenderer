@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorTypes/Sampler.h>
+#include <VulkanToyRenderer/Descriptors/Types/Sampler.h>
 
 class Texture
 {
@@ -17,9 +17,11 @@ public:
       const VkDevice& logicalDevice,
       const std::string& textureFile,
       const VkFormat& format,
+      const bool isCubemap,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
    );
+   Texture();
    ~Texture();
    
       
@@ -61,4 +63,5 @@ private:
    // Descriptor
    Sampler        m_textureSampler;
 
+   bool           m_isCubemap;
 };

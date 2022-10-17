@@ -21,7 +21,8 @@ namespace bufferManager
          CommandPool& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         const std::vector<T>& data,
+         T* data,
+         size_t size,
          VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
@@ -47,7 +48,9 @@ namespace bufferManager
    template<typename T>
    void fillBuffer(
          const VkDevice& logicalDevice,
-         const std::vector<T>& data,
+         T* data,
+         const VkDeviceSize offset,
+         const VkDeviceSize size,
          VkDeviceMemory& memory
    );
 

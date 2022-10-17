@@ -14,8 +14,8 @@ set(SHADERS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/shaders")
 set(SHADERS_BINARY_DIR "${PROJECT_BIN_DIR}/shaders")
 set(PROJECT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
 set(PROJECT_LIBRARIES_DIR "${CMAKE_SOURCE_DIR}/libs")
-set(TEXTURES_DIR "${CMAKE_SOURCE_DIR}/assets/textures")
-set(MODEL_DIR "${CMAKE_SOURCE_DIR}/assets/obj")
+set(MODEL_DIR "${CMAKE_SOURCE_DIR}/assets/models")
+set(SKYBOX_DIR "${CMAKE_SOURCE_DIR}/assets/skybox")
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
@@ -66,6 +66,7 @@ target_include_directories(
 # -Assimp
 set(ASSIMP_DIR "${PROJECT_LIBRARIES_DIR}/assimp")
 add_subdirectory(${ASSIMP_DIR})
+set(ASSIMP_BUILD_TESTS OFF)
 
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
@@ -81,6 +82,7 @@ add_definitions(-DSHADERS_BINARY_DIR="${SHADERS_BINARY_DIR}")
 ################################Definitions####################################
 add_definitions(-DTEXTURES_DIR="${TEXTURES_DIR}/")
 add_definitions(-DMODEL_DIR="${MODEL_DIR}/")
+add_definitions(-DSKYBOX_DIR="${SKYBOX_DIR}/")
 #################################Executable####################################
 
 add_executable(${PROJECT_NAME} 
@@ -106,16 +108,18 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorSets.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorPool.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorTypes/UBO.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorTypes/Sampler.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorTypes/descriptorTypesUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/UBO.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/Sampler.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/descriptorTypesUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/imageManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Texture.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/DepthBuffer/DepthBuffer.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/DepthBuffer/depthUtils.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Vertex.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/DepthBuffer/depthUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Attributes.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Model.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/NormalPBR.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/Skybox.cpp"
 )
 
 target_include_directories(

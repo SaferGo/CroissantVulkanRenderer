@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/DepthBuffer/depthUtils.h>
+#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/depthUtils.h>
 
 RenderPass::RenderPass() {}
 RenderPass::~RenderPass() {}

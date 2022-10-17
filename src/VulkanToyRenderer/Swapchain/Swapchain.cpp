@@ -8,7 +8,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Images/imageManager.h>
 #include <VulkanToyRenderer/Window/Window.h>
-#include <VulkanToyRenderer/DepthBuffer/DepthBuffer.h>
+#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.h>
 
 Swapchain::Swapchain() {}
 Swapchain::~Swapchain() {}
@@ -185,6 +185,7 @@ void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
             m_imageFormat,
             m_images[i],
             VK_IMAGE_ASPECT_COLOR_BIT,
+            false,
             m_imageViews[i]
       );
    }
@@ -261,6 +262,7 @@ void Swapchain::chooseBestSettings(
 VkSurfaceFormatKHR Swapchain::chooseBestSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR>& availableFormats
 ) {
+   // sRGB -> gamma correction.
    for (const auto& availableFormat : availableFormats)
    {
       if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
