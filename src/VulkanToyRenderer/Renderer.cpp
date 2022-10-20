@@ -32,9 +32,11 @@
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
 #include <VulkanToyRenderer/Model/Types/Skybox.h>
+#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
@@ -45,6 +47,8 @@
 #include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
 #include <VulkanToyRenderer/Model/Attributes.h>
 #include <VulkanToyRenderer/GUI/GUI.h>
+#include <VulkanToyRenderer/Camera/Camera.h>
+#include <VulkanToyRenderer/Camera/Types/Arcball.h>
 
 void Renderer::run()
 {
@@ -69,6 +73,25 @@ void Renderer::run()
    );
 
    initVK();
+
+   // Keyword and mouse settings
+   m_isMouseInMotion = false;
+   
+   m_camera = std::make_shared<Arcball>(
+         m_window.get(),
+         config::FOV,
+         // Aspect Ratio
+         (
+            m_swapchain->getExtent().width /
+            (float) m_swapchain->getExtent().height
+         ),
+         config::Z_NEAR,
+         config::Z_FAR
+   );
+
+   glfwSetWindowUserPointer(m_window.get(), m_camera.get());
+   glfwSetScrollCallback(m_window.get(), scrollCallback);
+
 
    m_GUI = std::make_unique<GUI>(
          m_device.getPhysicalDevice(),
@@ -105,6 +128,16 @@ void Renderer::addObjectPBR(
 ) {
    m_allModels.push_back(std::make_shared<NormalPBR>(name, modelFileName));
    m_normalModelIndices.push_back(m_allModels.size() - 1);
+}
+
+void Renderer::addDirectionalLight(
+      const std::string& name,
+      const std::string& modelFileName
+) {
+   m_allModels.push_back(
+         std::make_shared<DirectionalLight>(name, modelFileName)
+   );
+   m_directionalLightIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::createSyncObjects()
@@ -360,8 +393,7 @@ void Renderer::uploadAllData()
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
          m_commandPool,
-         m_qfHandles.graphicsQueue,
-         VK_FORMAT_R8G8B8A8_SRGB
+         m_qfHandles.graphicsQueue
       );
 
       // Uniform Buffers
@@ -395,11 +427,11 @@ void Renderer::uploadAllData()
             );
 
             break;
-         } case ModelType::LIGHT:
+         } case ModelType::DIRECTIONAL_LIGHT:
          {
             model->createDescriptorSets(
                m_device.getLogicalDevice(),
-               m_descriptorSetLayoutNormalPBR,
+               m_descriptorSetLayoutDirectionalLight,
                m_descriptorPool
             );
 
@@ -446,18 +478,22 @@ void Renderer::createGraphicsPipelines()
          &m_normalModelIndices
    );
 
-   //m_graphicsPipelineLight = GraphicsPipeline(
-   //      m_device.getLogicalDevice(),
-   //      m_swapchain->getExtent(),
-   //      m_renderPass.get(),
-   //      m_descriptorSetLayoutLightM,
-   //      // Filename of the vertex shader.
-   //      "light",
-   //      // Filename of the fragment shader.
-   //      "light",
-   //      // Models assocciated with this graphics pipeline.
-   //      &m_lightModelIndices
-   //);
+
+   m_graphicsPipelineDirectionalLight = GraphicsPipeline(
+         m_device.getLogicalDevice(),
+         GraphicsPipelineType::LIGHT,
+         m_swapchain->getExtent(),
+         m_renderPass.get(),
+         m_descriptorSetLayoutDirectionalLight,
+         // Filename of the vertex shader.
+         "light",
+         // Filename of the fragment shader.
+         "light",
+         Attributes::LIGHT::getBindingDescription(),
+         Attributes::LIGHT::getAttributeDescriptions(),
+         // Models assocciated with this graphics pipeline.
+         &m_directionalLightIndices
+   );
 }
 
 /*
@@ -482,12 +518,12 @@ void Renderer::createDescriptorSetLayouts()
          m_descriptorSetLayoutNormalPBR
    );
    
-   //descriptorSetLayoutUtils::createDescriptorSetLayout(
-   //      m_device.getLogicalDevice(),
-   //      config::LightModels::uboInfo,
-   //      config::LightModels::samplersInfo,
-   //      m_descriptorSetLayoutLightM
-   //);
+   descriptorSetLayoutUtils::createDescriptorSetLayout(
+         m_device.getLogicalDevice(),
+         GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
+         GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
+         m_descriptorSetLayoutDirectionalLight
+   );
 }
 
 void Renderer::initVK()
@@ -529,7 +565,7 @@ void Renderer::initVK()
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                // TODO: Make the size more precise.
-               25
+               30
                //static_cast<uint32_t> (
                //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                //)
@@ -537,7 +573,7 @@ void Renderer::initVK()
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                // TODO: Make the size more precise.
-               25
+               30
                //static_cast<uint32_t> (
                //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                //)
@@ -545,7 +581,7 @@ void Renderer::initVK()
          },
          // Descriptor SETS count.
          // TODO: Make the size more precise.
-         25
+         30
          //m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
    );
 
@@ -635,19 +671,6 @@ void Renderer::bindAllMeshesData(
       );
    }
 }
-template void Renderer::bindAllMeshesData<NormalPBR>(
-      const std::shared_ptr<NormalPBR>& model,
-      const GraphicsPipeline& graphicsPipeline,
-      const VkCommandBuffer& commandBuffer,
-      const uint32_t currentFrame
-);
-
-template void Renderer::bindAllMeshesData<Skybox>(
-      const std::shared_ptr<Skybox>& model,
-      const GraphicsPipeline& graphicsPipeline,
-      const VkCommandBuffer& commandBuffer,
-      const uint32_t currentFrame
-);
 
 void Renderer::recordCommandBuffer(
       const VkFramebuffer& framebuffer,
@@ -729,6 +752,17 @@ void Renderer::recordCommandBuffer(
                            pModel, graphicsPipeline, commandBuffer, currentFrame
                      );
                }
+
+               if (model-> getType() == ModelType::DIRECTIONAL_LIGHT)
+               {
+                  if (
+                     auto pModel =
+                     std::dynamic_pointer_cast<DirectionalLight>(model)
+                  )
+                     bindAllMeshesData<DirectionalLight>(
+                        pModel, graphicsPipeline, commandBuffer, currentFrame
+                     );
+               }
             }
       }
 
@@ -761,26 +795,46 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    //------------------------Updates uniform buffer----------------------------
    for (auto& model : m_allModels)
    {
+
       if (model->getType() == ModelType::SKYBOX)
       {
          if (auto pModel = std::dynamic_pointer_cast<Skybox>(model))
-            updateUniformBuffer<Skybox>(
+            pModel->updateUBO(
                   m_device.getLogicalDevice(),
-                  currentFrame,
+                  m_cameraPos,
                   m_swapchain->getExtent(),
-                  pModel
+                  currentFrame
             );
       }
 
       if (model->getType() == ModelType::NORMAL_PBR)
       {
          if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
-            updateUniformBuffer<NormalPBR>(
+         {
+            pModel->updateUBO(
                   m_device.getLogicalDevice(),
-                  currentFrame,
-                  m_swapchain->getExtent(),
-                  pModel
+                  m_cameraPos,
+                  m_camera->getProjectionM(),
+                  m_allModels,
+                  m_directionalLightIndices,
+                  currentFrame
             );
+         }
+      }
+
+      if (model-> getType() == ModelType::DIRECTIONAL_LIGHT)
+      {
+         if (
+            auto pModel =
+            std::dynamic_pointer_cast<DirectionalLight>(model)
+         )
+            pModel->updateUBO(
+                  m_device.getLogicalDevice(),
+                  m_cameraPos,
+                  m_camera->getProjectionM(),
+                  currentFrame
+            );
+ 
       }
    }
 
@@ -804,6 +858,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_renderPass,
          m_swapchain->getExtent(),
          {
+            m_graphicsPipelineDirectionalLight,
             m_graphicsPipelinePBR,
             // The skybox has to be always the last one.
             m_graphicsPipelineSkybox
@@ -883,6 +938,69 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
 }
 
+void Renderer::scrollCallback(
+      GLFWwindow* window,
+      double xoffset,
+      double yoffset
+) {
+   Camera* camera = static_cast<Camera*>(
+         glfwGetWindowUserPointer(window)
+   );
+
+   float actualFOV = camera->getFOV();
+   float newFOV = actualFOV + yoffset * -1.0f;
+
+   if (newFOV || newFOV)
+      camera->setFOV(newFOV);
+}
+
+void Renderer::handleInput()
+{
+   m_window.pollEvents();
+
+   // Avoids any input when we're touching the IMGUI.
+   if (m_GUI->isCursorPositionInGUI())
+      return;
+
+   if (m_camera->getType() == CameraType::ARCBALL)
+   {
+      if (glfwGetMouseButton(m_window.get(), GLFW_MOUSE_BUTTON_LEFT) ==
+          GLFW_PRESS
+      ) {
+
+         auto pCamera = std::dynamic_pointer_cast<Arcball>(m_camera);
+
+         if (!m_isMouseInMotion)
+         {
+            pCamera->saveCursorPos();
+
+            m_isMouseInMotion = true;
+
+         } else {
+
+            // TODO: Make it dynamic.
+            glm::mat4 newRot = glm::mat4(1.0);
+
+            pCamera->updateCameraPos(
+                  UBOutils::getUpdatedViewMatrix(
+                     glm::vec3(m_cameraPos),
+                     glm::vec3(0.0f, 0.0f, 0.0f),
+                     glm::vec3(0.0f, 1.0f, 0.0f)
+                  ),
+                  newRot
+            );
+
+            m_cameraPos = newRot * m_cameraPos;
+
+         }
+
+      } else
+      {
+         m_isMouseInMotion = false;
+      }
+
+   }
+}
 
 void Renderer::mainLoop()
 {
@@ -891,14 +1009,14 @@ void Renderer::mainLoop()
    uint8_t currentFrame = 0;
    while (m_window.isWindowClosed() == false)
    {
-      m_window.pollEvents();
+      handleInput();
 
       // Draws Imgui
       m_GUI->draw(
             m_allModels,
             m_cameraPos,
             m_normalModelIndices,
-            m_lightModelIndices
+            m_directionalLightIndices
       );
       drawFrame(currentFrame);
    }
@@ -948,6 +1066,7 @@ void Renderer::cleanup()
    // Graphics Pipelines
    m_graphicsPipelinePBR.destroy(m_device.getLogicalDevice());
    m_graphicsPipelineSkybox.destroy(m_device.getLogicalDevice());
+   m_graphicsPipelineDirectionalLight.destroy(m_device.getLogicalDevice());
 
    // Render pass
    m_renderPass.destroy(m_device.getLogicalDevice());
@@ -967,6 +1086,10 @@ void Renderer::cleanup()
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
          m_device.getLogicalDevice(),
          m_descriptorSetLayoutSkybox
+   );
+   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
+         m_device.getLogicalDevice(),
+         m_descriptorSetLayoutDirectionalLight
    );
    
    // Sync objects
@@ -998,204 +1121,4 @@ void Renderer::cleanup()
    m_window.destroyWindow();
 }
 
-//void Renderer::updateLightData(
-//      DescriptorTypes::UniformBufferObject::PBR& ubo
-//) {
-//   ubo.lightsCount = m_lightModelIndices.size();
-//
-//   for (int i = 0; i < ubo.lightsCount; i++)
-//   {
-//      ubo.lightPositions[i] = (
-//            m_allModels[m_lightModelIndices[i]]->actualPos
-//      );
-//      ubo.lightColors[i] = m_allModels[m_lightModelIndices[i]]->lightColor;
-//   }
-//}
 
-/*
- * Remember that the correct order is SRT!
- */
-glm::mat4 Renderer::getUpdatedModelMatrix(
-      const glm::fvec4 actualPos,
-      const glm::fvec3 actualRot,
-      const glm::fvec3 actualSize
-) {
-   glm::mat4 model = glm::mat4(1.0);
-   
-   model = glm::translate(
-         model,
-         glm::vec3(actualPos)
-   );
-
-   model = glm::rotate(
-         model,
-         actualRot.x,
-         glm::vec3(1.0f, 0.0f, 0.0f)
-   );
-
-   model = glm::rotate(
-         model,
-         actualRot.y,
-         glm::vec3(0.0f, 1.0f, 0.0f)
-   );
-
-   model = glm::rotate(
-         model,
-         actualRot.z,
-         glm::vec3(0.0f, 0.0f, 1.0f)
-   );
-
-   model = glm::scale(
-         model,
-         actualSize
-   );
-   
-   return model;
-}
-
-glm::mat4 Renderer::getUpdatedViewMatrix(
-      const glm::fvec3& cameraPos,
-      const glm::fvec3& centerPos,
-      const glm::fvec3& upAxis
-) {
-   return glm::lookAt(
-         cameraPos,
-         centerPos,
-         upAxis
-   );
-}
-
-glm::mat4 Renderer::getUpdatedProjMatrix(
-      const float vfov,
-      const float aspect,
-      const float nearZ,
-      const float farZ
-) {
-   glm::mat4 proj = glm::perspective(
-         vfov,
-         aspect,
-         nearZ,
-         farZ
-   );
-
-   // GLM was designed for OpenGl, where the Y coordinate of the clip coord. is
-   // inverted. To compensate for that, we have to flip the sign on the scaling
-   // factor of the Y axis.
-   proj[1][1] *= -1;
-
-   return proj;
-}
-
-template<typename T>
-void Renderer::updateUniformBuffer(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         const std::shared_ptr<T>& model
-) {
-   //static auto startTime = std::chrono::high_resolution_clock::now();
-
-   //auto currentTime = std::chrono::high_resolution_clock::now();
-   //float time = std::chrono::duration<float, std::chrono::seconds::period>(
-   //      currentTime - startTime
-   //).count();
-   
-  glm::mat4 modelMat = getUpdatedModelMatrix(
-         model->actualPos,
-         model->actualRot,
-         model->actualSize
-   );
-
-   glm::mat4 viewMat = getUpdatedViewMatrix(
-         // Eyes position.
-         glm::vec3(m_cameraPos),
-         // Center Position.
-         glm::vec3(0.0f, 0.0f, 0.0f),
-         // Up axis.
-         glm::vec3(0.0f, 1.0f, 0.0f)
-   );
-
-   glm::mat4 projMat = getUpdatedProjMatrix(
-         glm::radians(45.0f),
-         extent.width / (float)extent.height,
-         0.01f,
-         10.0f
-   );
-
-   switch (model->getType())
-   {
-      case ModelType::LIGHT:
-      {
-
-         DescriptorTypes::UniformBufferObject::Light ubo;
-
-         ubo.model = modelMat;
-         ubo.view = viewMat;
-         ubo.proj = projMat;
-         //ubo.lightColor = model.lightColor;
-
-         model->updateUBO(logicalDevice, ubo, currentFrame);
-
-         break;
-
-      } case ModelType::NORMAL_PBR:
-      {
-
-         DescriptorTypes::UniformBufferObject::NormalPBR ubo;
-
-         ubo.model = modelMat;
-         ubo.view = viewMat;
-         ubo.proj = projMat;
-         ubo.cameraPos = m_cameraPos;
-         //updateLightData(ubo);
-         
-         model->updateUBO(logicalDevice, ubo, currentFrame);
-
-         break;
-
-      } case ModelType::SKYBOX:
-      {
-
-         DescriptorTypes::UniformBufferObject::Skybox ubo;
-
-         modelMat = glm::translate(
-            glm::mat4(1.0f),
-            glm::vec3(m_cameraPos)
-         );
-
-         projMat = getUpdatedProjMatrix(
-            // Different to the original
-            glm::radians(75.0f),
-            extent.width / (float)extent.height,
-            0.01f,
-            40.0f
-         );
-
-         ubo.model = modelMat;
-         ubo.view = viewMat;
-         ubo.proj = projMat;
-
-         model->updateUBO(logicalDevice, ubo, currentFrame);
-
-         break;
-      } case ModelType::NONE:
-
-         break;
-   }
-
-}
-
-////////////////////////////////Instances//////////////////////////////////////
-template void Renderer::updateUniformBuffer<NormalPBR>(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         const std::shared_ptr<NormalPBR>& model
-);
-template void Renderer::updateUniformBuffer<Skybox>(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         const std::shared_ptr<Skybox>& model
-);
-///////////////////////////////////////////////////////////////////////////////

@@ -14,7 +14,7 @@
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
 
 class Skybox : public Model
 {
@@ -34,8 +34,7 @@ public:
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          CommandPool& commandPool,
-         VkQueue& graphicsQueue,
-         const VkFormat& format
+         VkQueue& graphicsQueue
    ) override;
 
    void createDescriptorSets(
@@ -49,6 +48,13 @@ public:
       const VkDevice& logicalDevice,
       const uint32_t& uboCount
    ) override;
+
+   void updateUBO(
+         const VkDevice& logicalDevice,
+         const glm::vec4& cameraPos,
+         const VkExtent2D&  extent,
+         const uint32_t& currentFrame
+   );
 
    void uploadVertexData(
       const VkPhysicalDevice& physicalDevice,

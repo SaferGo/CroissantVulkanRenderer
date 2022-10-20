@@ -9,7 +9,7 @@
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Commands/commandUtils.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Descriptors/Types/Sampler.h>
+#include <VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.h>
 
 Texture::Texture() {}
 
@@ -19,8 +19,7 @@ Texture::Texture() {}
 Texture::Texture(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const std::string& textureFile,
-      const VkFormat& format,
+      const TextureToLoadInfo& textureInfo,
       const bool isCubemap,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
@@ -29,8 +28,9 @@ Texture::Texture(
 
    createTextureImage(
          (isCubemap) ?
-            (std::string(SKYBOX_DIR) + textureFile).c_str() :
-            (std::string(MODEL_DIR) + textureFile).c_str(),
+            (std::string(SKYBOX_DIR) + textureInfo.name).c_str() :
+            (std::string(MODEL_DIR) + textureInfo.name).c_str(),
+         textureInfo.format,
          physicalDevice,
          logicalDevice,
          commandPool,
@@ -39,7 +39,7 @@ Texture::Texture(
 
    createTextureImageView(
          logicalDevice,
-         format
+         textureInfo.format
    );
    createTextureSampler(
          physicalDevice,
@@ -171,6 +171,7 @@ void Texture::createTextureImageView(
 
 void Texture::createTextureImage(
       const char* pathToTexture,
+      const VkFormat& format,
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       CommandPool& commandPool,
@@ -288,7 +289,7 @@ void Texture::createTextureImage(
          logicalDevice,
          texWidth,
          texHeight,
-         VK_FORMAT_R8G8B8A8_SRGB,
+         format,
          VK_IMAGE_TILING_OPTIMAL,
          VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -300,7 +301,7 @@ void Texture::createTextureImage(
    // We will transfer the pixels to the image object with a cmd buffer.
    // (staging buffer to the image obj)
    transitionImageLayout(
-         VK_FORMAT_R8G8B8A8_SRGB,
+         format,
          // Since the image was created with the VK_IMAGE_LAYOUT_UNDEFINED
          VK_IMAGE_LAYOUT_UNDEFINED,
          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -318,7 +319,7 @@ void Texture::createTextureImage(
    );
    // Another transition to sample from the shader.
    transitionImageLayout(
-         VK_FORMAT_R8G8B8A8_SRGB,
+         format,
          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
          commandPool,

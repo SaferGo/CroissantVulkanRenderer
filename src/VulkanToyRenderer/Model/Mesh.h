@@ -22,7 +22,7 @@ struct Mesh
 
    // Textures
    std::vector<Texture> m_textures;
-   std::vector<std::string> m_textureNames;
+   std::vector<TextureToLoadInfo> m_texturesToLoadInfo;
 
    // Descritors
    // (one descriptor set for all the ubo and samplers of a mesh)

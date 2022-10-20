@@ -12,9 +12,10 @@ namespace Attributes
       struct Vertex
       {
          glm::vec3 pos;
-         glm::vec3 color;
          glm::vec2 texCoord;
          glm::vec3 normal;
+         glm::vec3 tangent;
+         glm::vec3 bitangent;
       };
 
       VkVertexInputBindingDescription getBindingDescription();
@@ -33,5 +34,18 @@ namespace Attributes
       std::vector<VkVertexInputAttributeDescription> 
             getAttributeDescriptions();
 
+   };
+
+   namespace LIGHT
+   {
+      struct Vertex
+      {
+         glm::vec3 pos;
+         glm::vec2 texCoord;
+         glm::vec3 normal;
+      };
+      VkVertexInputBindingDescription getBindingDescription();
+      std::vector<VkVertexInputAttributeDescription> 
+            getAttributeDescriptions();
    };
 };

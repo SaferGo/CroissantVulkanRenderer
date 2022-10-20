@@ -20,6 +20,8 @@
 #include <VulkanToyRenderer/Textures/Texture.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/Skybox.h>
+#include <VulkanToyRenderer/Camera/Camera.h>
+#include <VulkanToyRenderer/Camera/Types/Arcball.h>
 
 class Renderer
 {
@@ -28,6 +30,10 @@ public:
 
    void run();
    void addObjectPBR(
+         const std::string& name,
+         const std::string& modelFileName
+   );
+   void addDirectionalLight(
          const std::string& name,
          const std::string& modelFileName
    );
@@ -40,31 +46,9 @@ private:
 
    void createGraphicsPipelines();
    void uploadAllData();
-   template<typename T>
-   void updateUniformBuffer(
-         const VkDevice& logicalDevice,
-         const uint8_t currentFrame,
-         const VkExtent2D extent,
-         const std::shared_ptr<T>& model
-   );
-   glm::mat4 getUpdatedModelMatrix(
-         const glm::fvec4 actualPos,
-         const glm::fvec3 actualRot,
-         const glm::fvec3 actualSize
-   );
-   glm::mat4 getUpdatedViewMatrix(
-         const glm::fvec3& cameraPos,
-         const glm::fvec3& centerPos,
-         const glm::fvec3& upAxis
-   );
-   glm::mat4 getUpdatedProjMatrix(
-      const float vfov,
-      const float aspect,
-      const float nearZ,
-      const float farZ
-   );
-
    void initVK();
+   void handleInput();
+   static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
    void mainLoop();
    void cleanup();
    void createRenderPass();
@@ -112,25 +96,24 @@ private:
    std::vector<VkSemaphore> m_renderFinishedSemaphores;
    std::vector<VkFence>     m_inFlightFences;
 
-   // Models
    std::vector<std::shared_ptr<Model>> m_allModels;
-   // The light models will be saved also in m_allModels but we will
-   // keep track of them in m_lightModels.
-   std::vector<size_t> m_lightModelIndices;
    // Models that interact with the light.
    std::vector<size_t> m_normalModelIndices;
    std::vector<size_t> m_skyboxModelIndices;
+   std::vector<size_t> m_directionalLightIndices;
 
    
    DescriptorPool             m_descriptorPool;
    GraphicsPipeline           m_graphicsPipelinePBR;
    GraphicsPipeline           m_graphicsPipelineSkybox;
-   GraphicsPipeline           m_graphicsPipelineLightM;
+   GraphicsPipeline           m_graphicsPipelineDirectionalLight;
    VkDescriptorSetLayout      m_descriptorSetLayoutNormalPBR;
-   VkDescriptorSetLayout      m_descriptorSetLayoutLight;
+   VkDescriptorSetLayout      m_descriptorSetLayoutDirectionalLight;
    VkDescriptorSetLayout      m_descriptorSetLayoutSkybox;
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    std::vector<VkClearValue> m_clearValues;
    glm::fvec4 m_cameraPos;
+   std::shared_ptr<Camera> m_camera;
+   bool m_isMouseInMotion;
 };

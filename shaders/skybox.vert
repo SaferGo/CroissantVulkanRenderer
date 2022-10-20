@@ -13,11 +13,6 @@ layout(location = 0) out vec3 outTexCoord;
 
 void main()
 {
-   // Book
-   //vec3 pos = mat3(ubo.view * ubo.model) * inPosition;
-   //gl_Position = (
-   //      ubo.proj * vec4(pos, 0.0)
-   //).xyzz;
    gl_Position = (
          ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0)
    ).xyww;

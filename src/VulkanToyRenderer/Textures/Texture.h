@@ -5,7 +5,13 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Descriptors/Types/Sampler.h>
+#include <VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.h>
+
+struct TextureToLoadInfo
+{
+   std::string name;
+   VkFormat format;
+};
 
 class Texture
 {
@@ -15,8 +21,7 @@ public:
    Texture(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const std::string& textureFile,
-      const VkFormat& format,
+      const TextureToLoadInfo& textureInfo,
       const bool isCubemap,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
@@ -34,6 +39,7 @@ private:
 
    void createTextureImage(
          const char* pathToTexture,
+         const VkFormat& format,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          CommandPool& commandPool,

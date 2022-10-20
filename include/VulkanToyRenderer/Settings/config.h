@@ -17,6 +17,9 @@ namespace config
 
    // Graphic's settings
    inline const int MAX_FRAMES_IN_FLIGHT = 2;
+   inline const float FOV = 45.0f;
+   inline const float Z_NEAR = 0.01f;
+   inline const float Z_FAR = 10.0f;
 
    // Textures - Naming Convention For Cubemaps
    inline const std::vector<std::string> TEXTURE_CUBEMAP_NAMING_CONV =

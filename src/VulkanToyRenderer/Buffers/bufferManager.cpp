@@ -250,6 +250,21 @@ template void bufferManager::createBufferAndTransferToDevice<
 );
 
 template void bufferManager::createBufferAndTransferToDevice<
+   Attributes::LIGHT::Vertex
+>(
+         CommandPool& commandPool,
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         Attributes::LIGHT::Vertex* data,
+         const size_t size,
+         VkQueue& graphicsQueue,
+         const VkBufferUsageFlags usageDstBuffer,
+         VkDeviceMemory& memory,
+         VkBuffer& buffer
+);
+
+
+template void bufferManager::createBufferAndTransferToDevice<
    Attributes::SKYBOX::Vertex
 >(
          CommandPool& commandPool,
@@ -312,6 +327,13 @@ template void bufferManager::fillBuffer<uint32_t>(
 template void bufferManager::fillBuffer<stbi_uc>(
       const VkDevice& logicalDevice,
       stbi_uc* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
+      VkDeviceMemory& memory
+);
+template void bufferManager::fillBuffer<Attributes::LIGHT::Vertex>(
+      const VkDevice& logicalDevice,
+      Attributes::LIGHT::Vertex* data,
       const VkDeviceSize offset,
       const VkDeviceSize size,
       VkDeviceMemory& memory

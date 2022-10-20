@@ -1,4 +1,4 @@
-#include <VulkanToyRenderer/Descriptors/Types/Sampler.h>
+#include <VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.h>
 
 #include <stdexcept>
 

@@ -1,6 +1,8 @@
-#include <VulkanToyRenderer/Descriptors/Types/UBO.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
 
 #include <vector>
+
+#include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>

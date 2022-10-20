@@ -34,12 +34,13 @@ void Window::createWindow(
    );
 }
 
+
 const VkSurfaceKHR Window::getSurface() const
 {
    return m_surface;
 }
 
-const GLFWwindow* Window::get() const
+GLFWwindow* Window::get()
 {
    return m_window;
 }

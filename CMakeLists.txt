@@ -108,8 +108,9 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorSets.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorPool.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/UBO.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/Sampler.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/UBO/UBO.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/descriptorTypesUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/imageManager.cpp"
@@ -120,6 +121,9 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Model.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/NormalPBR.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/Skybox.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/DirectionalLight.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Camera.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Types/Arcball.cpp"
 )
 
 target_include_directories(

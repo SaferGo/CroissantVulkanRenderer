@@ -14,14 +14,14 @@
 #include <VulkanToyRenderer/Textures/Texture.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorInfo.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
 
 enum class ModelType
 {
    NONE = 0,
    NORMAL_PBR = 1,
-   LIGHT  = 2,
+   DIRECTIONAL_LIGHT  = 2,
    SKYBOX = 3
 };
 
@@ -39,17 +39,6 @@ public:
 
    virtual void destroy(const VkDevice& logicalDevice) = 0;
 
-   template<typename T>
-   void updateUBO(
-         const VkDevice& logicalDevice,
-         T& newUbo,
-         const uint32_t& currentFrame
-   );
-
-   // TODO: This function is the same in all the childrens but I'd to make
-   // it virtual because it iterates through all the meshes and in this base
-   // class we don't have them because they are a template struct. There has to
-   // be a better way of doing this.
    virtual void uploadVertexData(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
@@ -61,8 +50,7 @@ public:
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          CommandPool& commandPool,
-         VkQueue& graphicsQueue,
-         const VkFormat& format
+         VkQueue& graphicsQueue
    ) = 0;
    virtual void createDescriptorSets(
          const VkDevice& logicalDevice,

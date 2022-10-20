@@ -21,6 +21,7 @@
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
+#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
 
 GUI::GUI(
       const VkPhysicalDevice& physicalDevice,
@@ -95,6 +96,16 @@ GUI::GUI(
    uploadFonts(graphicsQueue);
    
    createFrameBuffers();
+}
+
+const bool GUI::isCursorPositionInGUI() const
+{
+   ImGuiIO& io = ImGui::GetIO();
+
+   if (io.WantCaptureMouse)
+      return true;
+
+   return false;
 }
 
 void GUI::applyStyle()
@@ -320,7 +331,7 @@ const VkCommandBuffer& GUI::getCommandBuffer(const uint32_t index) const
 }
 
 void GUI::draw(
-      std::vector<std::shared_ptr<Model>> models,
+      const std::vector<std::shared_ptr<Model>>& models,
       glm::fvec4& cameraPos,
       const std::vector<size_t> normalModelIndices,
       const std::vector<size_t> lightModelIndices
@@ -331,7 +342,7 @@ void GUI::draw(
    ImGui::NewFrame();
 
       createModelsWindow(models, normalModelIndices);
-      //createLightsWindow(models, lightModelIndices);
+      createLightsWindow(models, lightModelIndices);
       createCameraWindow("Camera", cameraPos);
 
    ImGui::Render();
@@ -341,30 +352,36 @@ void GUI::createLightsWindow(
       std::vector<std::shared_ptr<Model>> models,
       const std::vector<size_t> indices
 ) {
-//   ImGui::Begin("Lights");
-//   
-//      for (const size_t& j : indices)
-//      {
-//         auto& model = models[j];
-//         const std::string modelName = model.get()->getName();
-//
-//
-//
-//         if (ImGui::TreeNode(modelName.c_str()))
-//         {
-//            ImGui::ColorEdit4(
-//                  ("Color###" + modelName).c_str(),
-//                  &(model.get()->lightColor.x)
-//            );
-//
-//            createTransformationsInfo(model, modelName);
-//
-//            ImGui::TreePop();
-//            ImGui::Separator();
-//         }
-//      }
-//
-//   ImGui::End();
+   ImGui::Begin("Lights");
+   
+      for (const size_t& j : indices)
+      {
+         if (auto model =
+             std::dynamic_pointer_cast<DirectionalLight>(models[j])
+         ) {
+            const std::string modelName = model.get()->getName();
+
+            if (ImGui::TreeNode(modelName.c_str()))
+            {
+               ImGui::ColorEdit4(
+                  ("Color###" + modelName).c_str(),
+                  &(model.get()->color.x)
+               );
+
+               createTransformationsInfo(
+                     model.get()->actualPos,
+                     model.get()->actualRot,
+                     model.get()->actualSize,
+                     modelName
+               );
+
+               ImGui::TreePop();
+               ImGui::Separator();
+            }
+         }
+      }
+
+   ImGui::End();
 }
 
 void GUI::createModelsWindow(

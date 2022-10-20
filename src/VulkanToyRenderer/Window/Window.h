@@ -19,7 +19,7 @@ public:
    );
    void createSurface(const VkInstance& instance);
 
-   const GLFWwindow* get() const;
+   GLFWwindow* get();
    const VkSurfaceKHR getSurface() const;
    void getResolutionInPixels(int& width, int& height) const;
 

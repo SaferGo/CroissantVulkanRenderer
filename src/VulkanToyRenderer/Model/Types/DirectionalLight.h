@@ -1,19 +1,18 @@
 #pragma once
 
 #include <VulkanToyRenderer/Model/Model.h>
-#include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 
-class NormalPBR : public Model
+class DirectionalLight : public Model
 {
 
 public:
 
-   NormalPBR(
+   DirectionalLight(
          const std::string& name,
          const std::string& modelFilename
    );
 
-   ~NormalPBR() override;
+   ~DirectionalLight() override;
 
    void destroy(const VkDevice& logicalDevice) override;
 
@@ -47,11 +46,8 @@ public:
          const VkDevice& logicalDevice,
          const glm::vec4& cameraPos,
          const glm::mat4& proj,
-         const std::vector<std::shared_ptr<Model>>& models,
-         const std::vector<size_t> directionalLightIndices,
          const uint32_t& currentFrame
    );
-
          
    // Info to update UBO.
    float extremeX[2];
@@ -60,21 +56,11 @@ public:
    glm::fvec4 actualPos;
    glm::fvec3 actualSize;
    glm::fvec3 actualRot;
+   glm::fvec4 color;
 
-   std::vector<Mesh<Attributes::PBR::Vertex>> m_meshes;
+   std::vector<Mesh<Attributes::LIGHT::Vertex>> m_meshes;
 
 private:
 
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
-   std::string getMaterialTextureName(
-      aiMaterial* material,
-      const aiTextureType& type,
-      const std::string& typeName
-   );
-   void updateLightData(
-         DescriptorTypes::UniformBufferObject::NormalPBR& ubo,
-         const std::vector<std::shared_ptr<Model>>& models,
-         const std::vector<size_t> directionalLightIndices
-   );
-
 };

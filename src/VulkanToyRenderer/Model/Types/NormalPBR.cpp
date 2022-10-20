@@ -2,9 +2,13 @@
 
 #include <iostream>
 
+#include <VulkanToyRenderer/Textures/Texture.h>
+#include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
 
 NormalPBR::NormalPBR(
       const std::string& name,
@@ -15,7 +19,9 @@ NormalPBR::NormalPBR(
 
    for (auto& mesh : m_meshes)
    {
-      mesh.m_textures.resize(GRAPHICS_PIPELINE::PBR::TEXTURES_PER_MESH_COUNT);
+      mesh.m_textures.resize(
+            GRAPHICS_PIPELINE::PBR::TEXTURES_PER_MESH_COUNT
+      );
    }
 
    // TODO: Load scene settings.
@@ -75,6 +81,8 @@ std::string NormalPBR::getMaterialTextureName(
       return str.C_Str();
 
    } else {
+      std::cout << "LEYENDO DEFAULT PORQ NO EXISTE LA TEXTURE\n";
+      std::cout << "NO SE PUDO " << typeName << std::endl;
       // TODO!
       return "textures/default.png";
    }
@@ -99,15 +107,26 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
          mesh->mNormals[i].y,
          mesh->mNormals[i].z
       };
+      vertex.normal = glm::normalize(vertex.normal);
 
       vertex.texCoord = {
          mesh->mTextureCoords[0][i].x,
          mesh->mTextureCoords[0][i].y,
       };
 
+      glm::vec3 tangent = {
+         mesh->mTangents[i].x,
+         mesh->mTangents[i].y,
+         mesh->mTangents[i].z
+      };
+      tangent = glm::normalize(tangent);
+
+      //glm::vec3 bitangent = glm::cross(vertex.normal, tangent);
+      
+      vertex.tangent = tangent;
+
       newMesh.m_vertices.push_back(vertex);
 
-      // TODO: move and scale the mesh.
    }
 
    for (size_t i = 0; i < mesh->mNumFaces; i++)
@@ -120,11 +139,38 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
 
    if (mesh->mMaterialIndex >= 0)
    {
+
       aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
-      newMesh.m_textureNames.push_back(
-            getMaterialTextureName(material, aiTextureType_DIFFUSE, "DIFFUSE")
+      TextureToLoadInfo info;
+
+      info.name = getMaterialTextureName(
+            material,
+            aiTextureType_DIFFUSE,
+            "DIFFUSE"
       );
+      info.format = VK_FORMAT_R8G8B8A8_SRGB;
+
+      newMesh.m_texturesToLoadInfo.push_back(info);
+
+
+      info.name = getMaterialTextureName(
+            material,
+            aiTextureType_UNKNOWN,
+            "METALIC_ROUGHNESS"
+      );
+      info.format = VK_FORMAT_R8G8B8A8_SRGB;
+
+      newMesh.m_texturesToLoadInfo.push_back(info);
+
+      info.name = getMaterialTextureName(
+            material,
+            aiTextureType_NORMALS,
+            "NORMALS"
+      );
+      info.format = VK_FORMAT_R8G8B8A8_UNORM;
+
+      newMesh.m_texturesToLoadInfo.push_back(info);
    }
 
    m_meshes.push_back(newMesh);
@@ -203,8 +249,7 @@ void NormalPBR::createTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       CommandPool& commandPool,
-      VkQueue& graphicsQueue,
-      const VkFormat& format
+      VkQueue& graphicsQueue
 ) {
    for (auto& mesh : m_meshes)
    {
@@ -213,13 +258,67 @@ void NormalPBR::createTextures(
          mesh.m_textures[i] = Texture(
                physicalDevice,
                logicalDevice,
-               mesh.m_textureNames[i],
-               format,
+               mesh.m_texturesToLoadInfo[i],
                // isSkybox
                false,
                commandPool,
                graphicsQueue
          );
+      }
+   }
+}
+
+void NormalPBR::updateUBO(
+      const VkDevice& logicalDevice,
+      const glm::vec4& cameraPos,
+      const glm::mat4& proj,
+      const std::vector<std::shared_ptr<Model>>& models,
+      const std::vector<size_t> directionalLightIndices,
+      const uint32_t& currentFrame
+) {
+
+   DescriptorTypes::UniformBufferObject::NormalPBR newUBO;
+
+   newUBO.model = UBOutils::getUpdatedModelMatrix(
+         actualPos,
+         actualRot,
+         actualSize
+   );
+
+   newUBO.view = UBOutils::getUpdatedViewMatrix(
+         // Eyes position.
+         glm::vec3(cameraPos),
+         // Center Position.
+         glm::vec3(0.0f, 0.0f, 0.0f),
+         // Up axis.
+         glm::vec3(0.0f, 1.0f, 0.0f)
+   );
+
+   newUBO.proj = proj;
+
+   newUBO.cameraPos = cameraPos;
+
+   updateLightData(newUBO, models, directionalLightIndices);
+
+   UBOutils::updateUBO(m_ubo, logicalDevice, newUBO, currentFrame);
+}
+
+void NormalPBR::updateLightData(
+      DescriptorTypes::UniformBufferObject::NormalPBR& ubo,
+      const std::vector<std::shared_ptr<Model>>& models,
+      const std::vector<size_t> directionalLightIndices
+) {
+   ubo.lightsCount = directionalLightIndices.size();
+
+   for (int i = 0; i < ubo.lightsCount; i++)
+   {
+      auto& model = models[directionalLightIndices[i]];
+      if (auto pModel = std::dynamic_pointer_cast<DirectionalLight>(model))
+      {
+         ubo.lightPositions[i] = (
+               pModel->actualPos
+         );
+         ubo.lightColors[i] = pModel->color;
       }
    }
 }

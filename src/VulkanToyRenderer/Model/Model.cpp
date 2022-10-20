@@ -21,45 +21,6 @@ Model::Model(
       const ModelType& type
 ) : m_name(name), m_type(type) {}
 
-template<typename T>
-void Model::updateUBO(
-      const VkDevice& logicalDevice,
-      T& newUbo,
-      const uint32_t& currentFrame
-) {
-   void* data;
-   vkMapMemory(
-         logicalDevice,
-         m_ubo.getUniformBufferMemory(currentFrame),
-         0,
-         sizeof(newUbo),
-         0,
-         &data
-   );
-      memcpy(data, &newUbo, sizeof(newUbo));
-   vkUnmapMemory(
-         logicalDevice,
-         m_ubo.getUniformBufferMemory(currentFrame)
-   );
-}
-//////////////////////////////////Instances////////////////////////////////////
-template void Model::updateUBO<DescriptorTypes::UniformBufferObject::NormalPBR>(
-      const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject::NormalPBR& newUbo,
-      const uint32_t& currentFrame
-);
-template void Model::updateUBO<DescriptorTypes::UniformBufferObject::Light>(
-      const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject::Light& newUbo,
-      const uint32_t& currentFrame
-);
-template void Model::updateUBO<DescriptorTypes::UniformBufferObject::Skybox>(
-      const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject::Skybox& newUbo,
-      const uint32_t& currentFrame
-);
-///////////////////////////////////////////////////////////////////////////////
-
 Model::~Model() {}
 
 const std::string& Model::getName() const
@@ -88,10 +49,27 @@ void Model::processNode(aiNode* node, const aiScene* scene)
 
 void Model::loadModel(const char* pathToModel)
 {
+   unsigned int flags;
+
+   if (m_type == ModelType::NORMAL_PBR)
+   {
+      flags = (
+            aiProcess_Triangulate |
+            aiProcess_FlipUVs |
+            aiProcess_CalcTangentSpace
+      );
+   } else
+   {
+      flags = (
+            aiProcess_Triangulate |
+            aiProcess_FlipUVs
+      );
+   }
+
    Assimp::Importer importer;
-   const auto* scene = importer.ReadFile(
+   auto* scene = importer.ReadFile(
          pathToModel,
-         aiProcess_Triangulate | aiProcess_FlipUVs
+         flags
    );
 
    if (!scene ||

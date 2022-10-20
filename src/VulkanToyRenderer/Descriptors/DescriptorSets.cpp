@@ -126,29 +126,6 @@ void DescriptorSets::createDescriptorWriteInfo(
       descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)&descriptorInfo;
 }
 
-//////////////////////////////////////Instances////////////////////////////////
-
-template void DescriptorSets::createDescriptorWriteInfo<VkDescriptorBufferInfo>(
-      const VkDescriptorBufferInfo& descriptorInfo,
-      const VkDescriptorSet& descriptorSet,
-      const uint32_t& dstBinding,
-      const uint32_t& dstArrayElement,
-      const VkDescriptorType& type,
-      VkWriteDescriptorSet& descriptorWrite
-);
-
-template void DescriptorSets::createDescriptorWriteInfo<VkDescriptorImageInfo>(
-      const VkDescriptorImageInfo& descriptorInfo,
-      const VkDescriptorSet& descriptorSet,
-      const uint32_t& dstBinding,
-      const uint32_t& dstArrayElement,
-      const VkDescriptorType& type,
-      VkWriteDescriptorSet& descriptorWrite
-);
-
-
-///////////////////////////////////////////////////////////////////////////////
-
 const VkDescriptorSet& DescriptorSets::get(
       const uint32_t index
 ) const {

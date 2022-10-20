@@ -1,52 +1,40 @@
-#include <VulkanToyRenderer/Model/Types/Skybox.h>
+#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
 
-#include <string>
-#include <vector>
-#include <cstring>
-#include <iostream>
-
-#include <vulkan/vulkan.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
-#include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
-#include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
-#include <VulkanToyRenderer/Textures/Texture.h>
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
-#include <VulkanToyRenderer/Model/Attributes.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
+#include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Model/Attributes.h>
+#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
+#include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 
-Skybox::Skybox(
+DirectionalLight::DirectionalLight(
       const std::string& name,
-      const std::string& textureFolderName
-) : Model(name, ModelType::SKYBOX)
-{
-   loadModel((std::string(MODEL_DIR) + "Cube.gltf").c_str());
+      const std::string& modelFileName
+) : Model(name, ModelType::DIRECTIONAL_LIGHT) {
 
-   // It just contain one mesh with one texture(cubemap) but the for-loop is
-   // just to respect consistency between the children of Model's class.
+   loadModel((std::string(MODEL_DIR) + modelFileName).c_str());
+
    for (auto& mesh : m_meshes)
    {
       mesh.m_textures.resize(
-            GRAPHICS_PIPELINE::SKYBOX::TEXTURES_PER_MESH_COUNT
+            GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT
       );
       mesh.m_texturesToLoadInfo.push_back(
             {
-               textureFolderName,
+               "textures/default.png",
                VK_FORMAT_R8G8B8A8_SRGB
             }
       );
    }
+
+   // TODO: Load scene settings.
+   actualPos = glm::fvec4(0.0f);
+   actualSize = glm::fvec3(1.0f);
+   actualRot = glm::fvec3(0.0f);
 }
 
-void Skybox::destroy(const VkDevice& logicalDevice)
+DirectionalLight::~DirectionalLight() {}
+
+void DirectionalLight::destroy(const VkDevice& logicalDevice)
 {
    m_ubo.destroyUniformBuffersAndMemories(logicalDevice);
 
@@ -73,30 +61,41 @@ void Skybox::destroy(const VkDevice& logicalDevice)
             mesh.m_indexMemory
       );
    }
-
 }
 
-void Skybox::processMesh(aiMesh* mesh, const aiScene* scene)
+void DirectionalLight::processMesh(aiMesh* mesh, const aiScene* scene)
 {
-   Mesh<Attributes::SKYBOX::Vertex> newMesh;
+   Mesh<Attributes::LIGHT::Vertex> newMesh;
 
    for (size_t i = 0; i < mesh->mNumVertices; i++)
    {
-      Attributes::SKYBOX::Vertex vertex{};
-   
+      Attributes::LIGHT::Vertex vertex{};
+
       vertex.pos = {
          mesh->mVertices[i].x,
          mesh->mVertices[i].y,
          mesh->mVertices[i].z
       };
-   
+
+      vertex.normal = {
+         mesh->mNormals[i].x,
+         mesh->mNormals[i].y,
+         mesh->mNormals[i].z
+      };
+      vertex.normal = glm::normalize(vertex.normal);
+
+      vertex.texCoord = {
+         mesh->mTextureCoords[0][i].x,
+         mesh->mTextureCoords[0][i].y,
+      };
+
       newMesh.m_vertices.push_back(vertex);
+
    }
-   
+
    for (size_t i = 0; i < mesh->mNumFaces; i++)
    {
       auto face = mesh->mFaces[i];
-
       for (size_t j = 0; j < face.mNumIndices; j++)
          newMesh.m_indices.push_back(face.mIndices[j]);
    }
@@ -104,28 +103,7 @@ void Skybox::processMesh(aiMesh* mesh, const aiScene* scene)
    m_meshes.push_back(newMesh);
 }
 
-Skybox::~Skybox() {}
-
-void Skybox::createDescriptorSets(
-      const VkDevice& logicalDevice,
-      const VkDescriptorSetLayout& descriptorSetLayout,
-      DescriptorPool& descriptorPool
-) {
-   for (auto& mesh : m_meshes)
-   {
-      mesh.m_descriptorSets.createDescriptorSets(
-            logicalDevice,
-            GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
-            GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO,
-            mesh.m_textures,
-            m_ubo.getUniformBuffers(),
-            descriptorSetLayout,
-            descriptorPool
-      );
-   }
-}
-
-void Skybox::createUniformBuffers(
+void DirectionalLight::createUniformBuffers(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const uint32_t& uboCount
@@ -134,11 +112,30 @@ void Skybox::createUniformBuffers(
          physicalDevice,
          logicalDevice,
          uboCount,
-         sizeof(DescriptorTypes::UniformBufferObject::Skybox)
+         sizeof(DescriptorTypes::UniformBufferObject::Light)
    );
 }
 
-void Skybox::uploadVertexData(
+void DirectionalLight::createDescriptorSets(
+      const VkDevice& logicalDevice,
+      const VkDescriptorSetLayout& descriptorSetLayout,
+      DescriptorPool& descriptorPool
+) {
+   for (auto& mesh : m_meshes)
+   {
+      mesh.m_descriptorSets.createDescriptorSets(
+            logicalDevice,
+            GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
+            GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
+            mesh.m_textures,
+            m_ubo.getUniformBuffers(),
+            descriptorSetLayout,
+            descriptorPool
+      );
+   }
+}
+
+void DirectionalLight::uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       VkQueue& graphicsQueue,
@@ -175,7 +172,7 @@ void Skybox::uploadVertexData(
    }
 }
 
-void Skybox::createTextures(
+void DirectionalLight::createTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       CommandPool& commandPool,
@@ -190,7 +187,7 @@ void Skybox::createTextures(
                logicalDevice,
                mesh.m_texturesToLoadInfo[i],
                // isSkybox
-               true,
+               false,
                commandPool,
                graphicsQueue
          );
@@ -198,18 +195,19 @@ void Skybox::createTextures(
    }
 }
 
-void Skybox::updateUBO(
+void DirectionalLight::updateUBO(
       const VkDevice& logicalDevice,
       const glm::vec4& cameraPos,
-      const VkExtent2D&  extent,
+      const glm::mat4& proj,
       const uint32_t& currentFrame
 ) {
 
-   DescriptorTypes::UniformBufferObject::Skybox newUBO;
-   
-   newUBO.model = glm::translate(
-      glm::mat4(1.0f),
-      glm::vec3(cameraPos)
+   DescriptorTypes::UniformBufferObject::Light newUBO;
+
+   newUBO.model = UBOutils::getUpdatedModelMatrix(
+         actualPos,
+         actualRot,
+         actualSize
    );
 
    newUBO.view = UBOutils::getUpdatedViewMatrix(
@@ -220,16 +218,10 @@ void Skybox::updateUBO(
          // Up axis.
          glm::vec3(0.0f, 1.0f, 0.0f)
    );
-   
-   newUBO.proj = UBOutils::getUpdatedProjMatrix(
-      // Different to the original
-      glm::radians(75.0f),
-      extent.width / (float)extent.height,
-      0.01f,
-      40.0f
-   );
-   
+
+   newUBO.proj = proj;
+
+   newUBO.lightColor = color;
+
    UBOutils::updateUBO(m_ubo, logicalDevice, newUBO, currentFrame);
 }
-
-
