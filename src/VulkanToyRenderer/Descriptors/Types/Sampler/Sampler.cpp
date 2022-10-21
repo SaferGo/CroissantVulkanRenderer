@@ -9,7 +9,8 @@ Sampler::~Sampler() {}
 
 void Sampler::createSampler(
       const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice
+      const VkDevice& logicalDevice,
+      const uint32_t mipLevels
 ) {
    VkSamplerCreateInfo samplerInfo{};
    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -44,7 +45,11 @@ void Sampler::createSampler(
    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
    samplerInfo.mipLodBias = 0.0f;
    samplerInfo.minLod = 0.0f;
-   samplerInfo.maxLod = 0.0f;
+
+   if (mipLevels > 1)
+      samplerInfo.maxLod = (float)mipLevels;
+   else
+      samplerInfo.maxLod = 0.0f;
 
    auto status = vkCreateSampler(
          logicalDevice,

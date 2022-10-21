@@ -32,6 +32,7 @@ void DepthBuffer::createDepthBuffer(
          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
          false,
+         1,
          m_depthImage,
          m_depthImageMemory
    );
@@ -42,6 +43,7 @@ void DepthBuffer::createDepthBuffer(
          m_depthImage,
          VK_IMAGE_ASPECT_DEPTH_BIT,
          false,
+         1,
          m_depthImageView
    );
 }

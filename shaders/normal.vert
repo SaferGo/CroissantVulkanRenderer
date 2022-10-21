@@ -32,10 +32,11 @@ void main()
    outPosition = vec3(ubo.model * vec4(inPosition, 1.0));
    outTexCoord = inTexCoord;
 
-   mat3 normalM = transpose(inverse(mat3(ubo.model)));
-   outTangent   = normalize(normalM * inTangent);
-   outNormal    = normalize(normalM * inNormal);
+   outTangent   = normalize(mat3(ubo.model) * inTangent);
+   outNormal    = normalize(mat3(ubo.model) * inNormal);
 
+   // Gram-Schmidt -> reorthogonalization
    outTangent = normalize(outTangent - dot(outTangent, outNormal) * outNormal);
+
    outBitangent = cross(outNormal, outTangent);
 }

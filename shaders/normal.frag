@@ -29,91 +29,142 @@ const float PI = 3.14159265359;
 float normalDistribution(vec3 normalD, vec3 halfwayD, float a);
 float geometry(vec3 normalD, vec3 viewD, vec3 lightD, float k);
 vec3 fresnel(vec3 halfwayD, vec3 viewD, vec3 F0);
+///////////////////////////////////////////////////////////////////////////////
+
+vec3 calculateDirLight();
+vec3 calculateSpotLight();
 
 void main()
 {
-   //vec3 albedo = vec3(texture(baseColorSampler, inTexCoord));
-   //float metallic = texture(metallicRoughnessSampler, inTexCoord).r;
-   //float roughness = texture(metallicRoughnessSampler, inTexCoord).g;
-   //vec3 normal = calculateNormal();
-
-   //vec3 F0 = vec3(0.04);
-   //F0 = mix(F0, albedo, metallic);
-   //vec3 view   = normalize(vec3(ubo.cameraPos - inPosition));
-   //
-   //// reflectance equation
-   //vec3 Lo = vec3(0.0);
-   //for (int i = 0; i < ubo.lightsCount; i++)
-   //{
-   //  vec3 lightDir = vec3(normalize(ubo.lightPositions[i] - inPosition));
-   //  vec3 halfwayDir = vec3(normalize(view + lightDir));
-
-   //  float distance = length(ubo.lightPositions[i] - inPosition);
-   //  float attenuation = 1.0 / (distance * distance);
-   //  vec3 radiance = ubo.lightColors[i] * attenuation;
-
-   //  // Cook-torrance brdf
-   //  float NDF = normalDistribution(normal, halfwayDir, roughness);
-   //  float G = geometry(normal, view, lightDir, roughness);
-   //  vec3 F = fresnel(halfwayDir, view, F0);
-
-   //  vec3 kS = F;
-   //  vec3 kD = vec3(1.0) - kS;
-   //  kD *= 1.0 - metallic;
-
-   //  vec3 numerator = NDF * G * F;
-   //  float denominator = (
-   //        4.0 *
-   //        max(dot(normal, view), 0.0) *
-   //        max(dot(normal, lightDir), 0.0) +
-   //        0.0001
-   //   );
-   //  vec3 specular = numerator / denominator;
-
-   //  // outgoing radiance Lo
-   //  float NdotL = max(dot(normal, lightDir), 0.0);
-   //  Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-   //   
-   //}
-   //vec3 ambient = vec3(0.03) * albedo;
-   //vec3 color = ambient + Lo;
-
-   //outColor = clamp(vec4(finalColor, 1.0), 0.0, 1.0);
-   //outColor = vec4(color, 1.0);
-   
-
    mat3 TBN = transpose(mat3(inTangent, inBitangent, inNormal));
 
    vec3 normal = normalize(
-         texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0
+         TBN * (texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0)
    );
 
-   vec3 finalColor = vec3(0.0);
-   for (int i = 0; i < ubo.lightsCount; i++)
-   {
-      vec3 lightDir = normalize(
-            (TBN * vec3(ubo.lightPositions[i])) -
-            (TBN * inPosition)
-      );
+   vec3 albedo = vec3(texture(baseColorSampler, inTexCoord));
+   float metallic = texture(metallicRoughnessSampler, inTexCoord).r;
+   float roughness = texture(metallicRoughnessSampler, inTexCoord).g;
 
-      vec3 ambient = ubo.lightColors[i].rgb * 0.5;
-      vec3 diffuse = (
-         max(
-               0.0,
-               dot(normal, lightDir)
-         ) * ubo.lightColors[i].rgb * 0.5
-      );
+   vec3 ambient = vec3(0.5) * albedo;
+   vec3 Lo = calculateDirLight();
+   Lo += calculateSpotLight();
 
-      finalColor += (
-            (ambient + diffuse) *
-            texture(baseColorSampler, inTexCoord).rgb
-      );
-   }
+   vec3 color = ambient + Lo;
 
-   outColor = vec4(finalColor, 1.0);
+   outColor = vec4(color, 1.0);
 }
 
-///////////////////////////////Helper functions////////////////////////////////
+vec3 calculateDirLight()
+{
+   mat3 TBN = transpose(mat3(inTangent, inBitangent, inNormal));
+
+   vec3 normal = normalize(
+         TBN * (texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0)
+   );
+
+   vec3 albedo = vec3(texture(baseColorSampler, inTexCoord));
+   float metallic = texture(metallicRoughnessSampler, inTexCoord).r;
+   float roughness = texture(metallicRoughnessSampler, inTexCoord).g;
+
+   vec3 F0 = vec3(0.04);
+   F0 = mix(F0, albedo, metallic);
+   vec3 view = normalize(vec3(ubo.cameraPos)- inPosition);
+   
+   // reflectance equation
+   vec3 Lo = vec3(0.0);
+   for (int i = 0; i < ubo.lightsCount; i++)
+   {
+     vec3 lightDir = vec3(normalize(vec3(ubo.lightPositions[i]) - inPosition));
+     vec3 halfwayDir = vec3(normalize(view + lightDir));
+
+     float nDotV = max(dot(normal, view), 0.0);
+     float nDotL = max(dot(normal, lightDir), 0.0);
+     vec3 radiance = ubo.lightColors[i].rgb;
+
+     // Cook-torrance brdf
+     float NDF = normalDistribution(normal, halfwayDir, roughness);
+     float G = geometry(normal, view, lightDir, roughness);
+     vec3 F = fresnel(halfwayDir, view, F0);
+
+     // Specular and Diffuse
+     vec3 kS = F;
+     vec3 kD = vec3(1.0) - kS;
+     kD *= 1.0 - metallic;
+
+     vec3 numerator = NDF * G * F;
+     float denominator = (
+           4.0 *
+           nDotV *
+           nDotL
+     );
+     vec3 specular = numerator / max(denominator, 0.0001);
+
+     // Lo -> radiance
+     Lo += (kD * (albedo / PI) + specular) * radiance * nDotL;
+   }
+
+   return Lo;
+}
+
+vec3 calculateSpotLight()
+{
+   mat3 TBN = transpose(mat3(inTangent, inBitangent, inNormal));
+
+   vec3 normal = normalize(
+         TBN * (texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0)
+   );
+
+   vec3 albedo = vec3(texture(baseColorSampler, inTexCoord));
+   float metallic = texture(metallicRoughnessSampler, inTexCoord).r;
+   float roughness = texture(metallicRoughnessSampler, inTexCoord).g;
+
+   vec3 F0 = vec3(0.04);
+   F0 = mix(F0, albedo, metallic);
+   vec3 view = normalize(vec3(ubo.cameraPos)- inPosition);
+   
+   // reflectance equation
+   vec3 Lo = vec3(0.0);
+   for (int i = 0; i < ubo.lightsCount; i++)
+   {
+     vec3 lightDir = vec3(normalize(vec3(ubo.lightPositions[i]) - inPosition));
+     vec3 halfwayDir = vec3(normalize(view + lightDir));
+
+     float nDotV = max(dot(normal, view), 0.0);
+     float nDotL = max(dot(normal, lightDir), 0.0);
+     vec3 color = ubo.lightColors[i].rgb * 100.0;
+     float radius = 100.0;
+     float distance = length(vec3(ubo.lightPositions[i]) - inPosition);
+    float attenuation = pow(clamp(1 - pow((distance / radius), 4.0), 0.0, 1.0), 2.0)/(1.0  + (distance * distance) );
+    vec3 radianceIn = color * attenuation;
+
+     // Cook-torrance brdf
+     float NDF = normalDistribution(normal, halfwayDir, roughness);
+     float G = geometry(normal, view, lightDir, roughness);
+     vec3 F = fresnel(halfwayDir, view, F0);
+
+     // Specular and Diffuse
+     vec3 kS = F;
+     vec3 kD = vec3(1.0) - kS;
+     kD *= 1.0 - metallic;
+
+     vec3 numerator = NDF * G * F;
+     float denominator = (
+           4.0 *
+           nDotV *
+           nDotL
+     );
+     vec3 specular = numerator / max(denominator, 0.0000001);
+
+     // Lo -> radiance
+     Lo += (kD * (albedo / PI) + specular) * radianceIn * nDotL;
+   }
+
+   return Lo;
+}
+
+
+///////////////////////////////PBR - Helper functions//////////////////////////
 
 /*
  * Trowbridge-Reitz GGX approximation.

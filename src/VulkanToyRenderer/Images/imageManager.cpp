@@ -16,6 +16,7 @@ void imageManager::createImage(
       const VkImageUsageFlags& usage,
       const VkMemoryPropertyFlags& memoryProperties,
       const bool isCubemap,
+      const uint32_t mipLevels,
       VkImage& image,
       VkDeviceMemory& memory
 ) {
@@ -27,7 +28,7 @@ void imageManager::createImage(
    imageInfo.extent.width = width;
    imageInfo.extent.height = height;
    imageInfo.extent.depth = 1;
-   imageInfo.mipLevels = 1;
+   imageInfo.mipLevels = mipLevels;
 
    if (isCubemap)
    {
@@ -109,6 +110,7 @@ void imageManager::createImageView(
       const VkImage& image,
       const VkImageAspectFlags& aspectFlags,
       const bool isCubemap,
+      const uint32_t mipLevels,
       VkImageView& imageView
 ) {
 
@@ -140,7 +142,7 @@ void imageManager::createImageView(
    // (E.g: with mipmapping leves or multiple layers)
    createInfo.subresourceRange.aspectMask = aspectFlags;
    createInfo.subresourceRange.baseMipLevel = 0;
-   createInfo.subresourceRange.levelCount = 1;
+   createInfo.subresourceRange.levelCount = mipLevels;
    createInfo.subresourceRange.baseArrayLayer = 0;
    
    const auto status = vkCreateImageView(

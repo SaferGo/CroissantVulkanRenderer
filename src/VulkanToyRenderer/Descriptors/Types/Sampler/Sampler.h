@@ -12,7 +12,8 @@ public:
 
    void createSampler(
       const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice
+      const VkDevice& logicalDevice,
+      const uint32_t mipLevels
    );
    
    const VkSampler& getSampler() const;

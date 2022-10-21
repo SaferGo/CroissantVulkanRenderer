@@ -115,6 +115,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/imageManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Texture.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/mipmapUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/DepthBuffer/depthUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Attributes.cpp"

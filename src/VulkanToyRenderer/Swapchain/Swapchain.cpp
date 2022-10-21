@@ -186,6 +186,7 @@ void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
             m_images[i],
             VK_IMAGE_ASPECT_COLOR_BIT,
             false,
+            1,
             m_imageViews[i]
       );
    }
