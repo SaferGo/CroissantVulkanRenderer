@@ -8,13 +8,12 @@ class Sampler
 public:
 
    Sampler();
-   ~Sampler();
-
-   void createSampler(
+   Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const uint32_t mipLevels
    );
+   ~Sampler();
    
    const VkSampler& getSampler() const;
    void destroySampler(const VkDevice& logicalDevice);

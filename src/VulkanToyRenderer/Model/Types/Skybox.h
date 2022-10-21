@@ -44,14 +44,15 @@ public:
    ) override;
 
    void createUniformBuffers(
-      const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice,
-      const uint32_t& uboCount
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         const uint32_t& uboCount
    ) override;
 
    void updateUBO(
          const VkDevice& logicalDevice,
          const glm::vec4& cameraPos,
+         const glm::mat4& view,
          const VkExtent2D&  extent,
          const uint32_t& currentFrame
    );
@@ -67,9 +68,6 @@ public:
    float extremeX[2];
    float extremeY[2];
    float extremeZ[2];
-   glm::fvec4 actualPos;
-   glm::fvec3 actualSize;
-   glm::fvec3 actualRot;
 
    std::vector<Mesh<Attributes::SKYBOX::Vertex>> m_meshes;
 

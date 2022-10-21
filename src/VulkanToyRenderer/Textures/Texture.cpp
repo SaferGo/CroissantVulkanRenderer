@@ -165,7 +165,7 @@ void Texture::createTextureSampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice
 ) {
-   m_textureSampler.createSampler(
+   m_textureSampler = Sampler(
          physicalDevice,
          logicalDevice,
          m_mipLevels

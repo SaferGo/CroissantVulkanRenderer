@@ -201,6 +201,7 @@ void Skybox::createTextures(
 void Skybox::updateUBO(
       const VkDevice& logicalDevice,
       const glm::vec4& cameraPos,
+      const glm::mat4& view,
       const VkExtent2D&  extent,
       const uint32_t& currentFrame
 ) {
@@ -212,14 +213,7 @@ void Skybox::updateUBO(
       glm::vec3(cameraPos)
    );
 
-   newUBO.view = UBOutils::getUpdatedViewMatrix(
-         // Eyes position.
-         glm::vec3(cameraPos),
-         // Center Position.
-         glm::vec3(0.0f, 0.0f, 0.0f),
-         // Up axis.
-         glm::vec3(0.0f, 1.0f, 0.0f)
-   );
+   newUBO.view = view;
    
    newUBO.proj = UBOutils::getUpdatedProjMatrix(
       // Different to the original

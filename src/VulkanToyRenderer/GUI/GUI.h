@@ -35,14 +35,15 @@ public:
    void draw(
          const std::vector<std::shared_ptr<Model>>& models,
          glm::fvec4& cameraPos,
-         const std::vector<size_t> normalModelIndices,
-         const std::vector<size_t> lightModelIndices
+         const std::vector<size_t>& normalModelIndices,
+         const std::vector<size_t>& lightModelIndices
    );
    const VkCommandBuffer& getCommandBuffer(const uint32_t index) const;
    const bool isCursorPositionInGUI() const;
    void destroy(const VkDevice& logicalDevice);
 
 private:
+
       
    void createLightsWindow(
          std::vector<std::shared_ptr<Model>> models,

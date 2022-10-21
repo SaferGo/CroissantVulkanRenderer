@@ -10,7 +10,10 @@ public:
 
    NormalPBR(
          const std::string& name,
-         const std::string& modelFilename
+         const std::string& modelFilename,
+         const glm::fvec4& pos = glm::fvec4(0.0f),
+         const glm::fvec3& rot = glm::fvec3(0.0f),
+         const glm::fvec3& size = glm::fvec3(1.0f)
    );
 
    ~NormalPBR() override;
@@ -46,6 +49,7 @@ public:
    void updateUBO(
          const VkDevice& logicalDevice,
          const glm::vec4& cameraPos,
+         const glm::mat4& view,
          const glm::mat4& proj,
          const std::vector<std::shared_ptr<Model>>& models,
          const std::vector<size_t> directionalLightIndices,
@@ -57,9 +61,6 @@ public:
    float extremeX[2];
    float extremeY[2];
    float extremeZ[2];
-   glm::fvec4 actualPos;
-   glm::fvec3 actualSize;
-   glm::fvec3 actualRot;
 
    std::vector<Mesh<Attributes::PBR::Vertex>> m_meshes;
 

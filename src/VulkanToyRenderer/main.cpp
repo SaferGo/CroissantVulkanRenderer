@@ -11,17 +11,26 @@ int main()
 
    try
    {
-      // Adds the light and normal models.
-      
-      /*
-       * Normal Model -> Model that interacts with light.
-       * Light Model  -> Model that produces light.
-       */
 
-      //app.addObject("Bunny", "stanford-bunny.obj");
-      app.addSkybox("Town", "SmallTown");
-      app.addObjectPBR("Gun", "gun.gltf");
-      app.addDirectionalLight("DirectionaLight1", "lightSphere.obj");
+      // SCENE 1
+      {
+         app.addSkybox("Town", "SmallTown");
+         app.addObjectPBR(
+               "Gun",
+               "gun.gltf",
+               glm::fvec3(0.0f),
+               glm::fvec3(0.0f),
+               glm::fvec3(0.036f)
+         );
+         app.addDirectionalLight(
+               "DirectionaLight1",
+               "lightSphere.obj",
+               glm::fvec3(1.0f),
+               glm::fvec3(0.0f, 0.678f, 2.881f),
+               glm::fvec3(0.0f),
+               glm::fvec3(0.125f)
+         );
+      }
       
       
       app.run();

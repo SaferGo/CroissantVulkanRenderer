@@ -333,8 +333,8 @@ const VkCommandBuffer& GUI::getCommandBuffer(const uint32_t index) const
 void GUI::draw(
       const std::vector<std::shared_ptr<Model>>& models,
       glm::fvec4& cameraPos,
-      const std::vector<size_t> normalModelIndices,
-      const std::vector<size_t> lightModelIndices
+      const std::vector<size_t>& normalModelIndices,
+      const std::vector<size_t>& lightModelIndices
 ) {
 
    ImGui_ImplVulkan_NewFrame();
@@ -361,23 +361,34 @@ void GUI::createLightsWindow(
          ) {
             const std::string modelName = model.get()->getName();
 
+            glm::fvec4 newPos = model.get()->getPos();
+            glm::fvec3 newRot = model.get()->getRot();
+            glm::fvec3 newSize = model.get()->getSize();
+            glm::fvec4 color = model.get()->getColor();
+
             if (ImGui::TreeNode(modelName.c_str()))
             {
                ImGui::ColorEdit4(
                   ("Color###" + modelName).c_str(),
-                  &(model.get()->color.x)
+                  &(color.x)
                );
 
                createTransformationsInfo(
-                     model.get()->actualPos,
-                     model.get()->actualRot,
-                     model.get()->actualSize,
+                     newPos,
+                     newRot,
+                     newSize,
                      modelName
                );
 
                ImGui::TreePop();
                ImGui::Separator();
-            }
+           }
+
+           model.get()->setPos(newPos);
+           model.get()->setRot(newRot);
+           model.get()->setSize(newSize);
+           model.get()->setColor(color);
+ 
          }
       }
 
@@ -397,18 +408,26 @@ void GUI::createModelsWindow(
          {
             const std::string modelName = model.get()->getName();
 
+            glm::fvec4 newPos = model.get()->getPos();
+            glm::fvec3 newRot = model.get()->getRot();
+            glm::fvec3 newSize = model.get()->getSize();
+
             if (ImGui::TreeNode(modelName.c_str()))
             {
                createTransformationsInfo(
-                     model.get()->actualPos,
-                     model.get()->actualRot,
-                     model.get()->actualSize,
+                     newPos,
+                     newRot,
+                     newSize,
                      modelName
                );
 
                ImGui::TreePop();
                ImGui::Separator();
             }
+
+            model.get()->setPos(newPos);
+            model.get()->setRot(newRot);
+            model.get()->setSize(newSize);
          }
       }
 

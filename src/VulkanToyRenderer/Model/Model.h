@@ -32,7 +32,10 @@ public:
 
    Model(
          const std::string& name,
-         const ModelType& type
+         const ModelType& type,
+         const glm::fvec4& pos = glm::fvec4(0.0f),
+         const glm::fvec3& rot = glm::fvec3(0.0f),
+         const glm::fvec3& size = glm::fvec3(1.0f)
    );
 
    virtual ~Model() = 0;
@@ -66,14 +69,17 @@ public:
          
    const std::string& getName() const;
    const ModelType& getType() const;
+   const glm::fvec4& getPos() const;
+   const glm::fvec3& getRot() const;
+   const glm::fvec3& getSize() const;
+   void setPos(const glm::fvec4& newPos);
+   void setRot(const glm::fvec3& newRot);
+   void setSize(const glm::fvec3& newSize);
 
    // Info to update UBO.
    float extremeX[2];
    float extremeY[2];
    float extremeZ[2];
-   glm::fvec4 actualPos;
-   glm::fvec3 actualSize;
-   glm::fvec3 actualRot;
 
 protected:
 
@@ -83,6 +89,11 @@ protected:
    std::string m_name;
    ModelType m_type;
    UBO m_ubo;
+
+   glm::fvec4 m_pos;
+   glm::fvec3 m_rot;
+   glm::fvec3 m_size;
+
 
 private:
 

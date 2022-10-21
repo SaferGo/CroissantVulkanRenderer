@@ -31,11 +31,18 @@ public:
    void run();
    void addObjectPBR(
          const std::string& name,
-         const std::string& modelFileName
+         const std::string& modelFileName,
+         const glm::fvec3& pos = glm::fvec4(0.0f),
+         const glm::fvec3& rot = glm::fvec3(0.0f),
+         const glm::fvec3& size = glm::fvec3(1.0f)
    );
    void addDirectionalLight(
          const std::string& name,
-         const std::string& modelFileName
+         const std::string& modelFileName,
+         const glm::fvec3& color,
+         const glm::fvec3& pos = glm::fvec4(0.0f),
+         const glm::fvec3& rot = glm::fvec3(0.0f),
+         const glm::fvec3& size = glm::fvec3(1.0f)
    );
    void addSkybox(
          const std::string& name,
@@ -113,7 +120,6 @@ private:
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    std::vector<VkClearValue> m_clearValues;
-   glm::fvec4 m_cameraPos;
    std::shared_ptr<Camera> m_camera;
    bool m_isMouseInMotion;
 };

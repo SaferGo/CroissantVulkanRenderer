@@ -2,6 +2,8 @@
 
 #include <VulkanToyRenderer/Model/Model.h>
 
+#include <GLFW/glfw3.h>
+
 class DirectionalLight : public Model
 {
 
@@ -9,7 +11,11 @@ public:
 
    DirectionalLight(
          const std::string& name,
-         const std::string& modelFilename
+         const std::string& modelFilename,
+         const glm::fvec4& lightColor,
+         const glm::fvec4& pos = glm::fvec4(0.0f),
+         const glm::fvec3& rot = glm::fvec3(0.0f),
+         const glm::fvec3& size = glm::fvec3(1.0f)
    );
 
    ~DirectionalLight() override;
@@ -45,22 +51,24 @@ public:
    void updateUBO(
          const VkDevice& logicalDevice,
          const glm::vec4& cameraPos,
+         const glm::mat4& view,
          const glm::mat4& proj,
          const uint32_t& currentFrame
    );
+
+   const glm::fvec4& getColor() const;
+   void setColor(const glm::fvec4& newColor);
          
    // Info to update UBO.
    float extremeX[2];
    float extremeY[2];
    float extremeZ[2];
-   glm::fvec4 actualPos;
-   glm::fvec3 actualSize;
-   glm::fvec3 actualRot;
-   glm::fvec4 color;
 
    std::vector<Mesh<Attributes::LIGHT::Vertex>> m_meshes;
 
 private:
 
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
+
+   glm::fvec4 m_color;
 };

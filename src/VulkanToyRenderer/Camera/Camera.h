@@ -13,9 +13,9 @@ class Camera
 
 public:
 
-   Camera();
    Camera(
          GLFWwindow* window,
+         const glm::fvec4& pos,
          const CameraType& type,
          const float FOV,
          const float ratio,
@@ -25,7 +25,9 @@ public:
    virtual ~Camera() = 0;
    const CameraType getType() const;
    const glm::mat4& getProjectionM() const;
+   const glm::mat4& getViewM();
    const float& getFOV() const;
+   glm::fvec4& getPos();
    void setFOV(const float newFOV);
 
 protected:
@@ -38,9 +40,12 @@ protected:
    float m_ratio;
    float m_zNear;
    float m_zFar;
+   glm::fvec4 m_pos;
 
+   glm::mat4 m_view;
    glm::mat4 m_proj;
 
 private:
+
 
 };

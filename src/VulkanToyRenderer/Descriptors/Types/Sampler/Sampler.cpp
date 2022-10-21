@@ -5,9 +5,8 @@
 #include <vulkan/vulkan.h>
 
 Sampler::Sampler() {}
-Sampler::~Sampler() {}
 
-void Sampler::createSampler(
+Sampler::Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const uint32_t mipLevels
@@ -62,6 +61,7 @@ void Sampler::createSampler(
       throw std::runtime_error("Failed to create texture sampler!");
 }
 
+Sampler::~Sampler() {}
 
 const VkSampler& Sampler::getSampler() const
 {

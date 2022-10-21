@@ -12,6 +12,7 @@ public:
 
    Arcball(
          GLFWwindow* window,
+         const glm::fvec4& pos,
          const float FOV,
          const float ratio,
          const float zNear,
@@ -21,7 +22,7 @@ public:
 
    void saveCursorPos();
 
-   void updateCameraPos(const glm::mat4& view, glm::mat4& newRot);
+   void updateCameraPos(glm::mat4& newRot);
 
 private: 
 

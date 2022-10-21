@@ -10,12 +10,14 @@
 
 Arcball::Arcball(
       GLFWwindow* window,
+      const glm::fvec4& pos,
       const float FOV,
       const float ratio,
       const float zNear,
       const float zFar
 ) : Camera(
    window,
+   pos,
    CameraType::ARCBALL,
    FOV,
    ratio,
@@ -52,7 +54,7 @@ glm::fvec3 Arcball::getArcballVector(const float x, const float y)
  * Algorithm from:
  * https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
  */
-void Arcball::updateCameraPos(const glm::mat4& view, glm::mat4& newRot)
+void Arcball::updateCameraPos(glm::mat4& newRot)
 {
    double x, y;
    glfwGetCursorPos(m_opWindow, &x, &y);
@@ -68,7 +70,7 @@ void Arcball::updateCameraPos(const glm::mat4& view, glm::mat4& newRot)
 
       glm::vec3 axisInCameraCoord = glm::cross(v1, v2);
       glm::mat3 camera2object = glm::inverse(
-            glm::mat3(view) * glm::mat3(newRot)
+            glm::mat3(m_view) * glm::mat3(newRot)
       );
       glm::vec3 axisInObjectCoord = camera2object * axisInCameraCoord;
 
@@ -79,6 +81,8 @@ void Arcball::updateCameraPos(const glm::mat4& view, glm::mat4& newRot)
       );
 
       m_lastCursorPos = m_currentCursorPos;
+
+      m_pos = newRot * m_pos;
    }
 }
 

@@ -12,8 +12,11 @@
 
 NormalPBR::NormalPBR(
       const std::string& name,
-      const std::string& modelFileName
-) : Model(name, ModelType::NORMAL_PBR) {
+      const std::string& modelFileName,
+      const glm::fvec4& pos,
+      const glm::fvec3& rot,
+      const glm::fvec3& size
+) : Model(name, ModelType::NORMAL_PBR, pos, rot, size) {
 
    loadModel((std::string(MODEL_DIR) + modelFileName).c_str());
 
@@ -23,11 +26,6 @@ NormalPBR::NormalPBR(
             GRAPHICS_PIPELINE::PBR::TEXTURES_PER_MESH_COUNT
       );
    }
-
-   // TODO: Load scene settings.
-   actualPos = glm::fvec4(0.0f);
-   actualSize = glm::fvec3(1.0f);
-   actualRot = glm::fvec3(0.0f);
 }
 
 NormalPBR::~NormalPBR() {}
@@ -271,6 +269,7 @@ void NormalPBR::createTextures(
 void NormalPBR::updateUBO(
       const VkDevice& logicalDevice,
       const glm::vec4& cameraPos,
+      const glm::mat4& view,
       const glm::mat4& proj,
       const std::vector<std::shared_ptr<Model>>& models,
       const std::vector<size_t> directionalLightIndices,
@@ -280,20 +279,11 @@ void NormalPBR::updateUBO(
    DescriptorTypes::UniformBufferObject::NormalPBR newUBO;
 
    newUBO.model = UBOutils::getUpdatedModelMatrix(
-         actualPos,
-         actualRot,
-         actualSize
+         m_pos,
+         m_rot,
+         m_size
    );
-
-   newUBO.view = UBOutils::getUpdatedViewMatrix(
-         // Eyes position.
-         glm::vec3(cameraPos),
-         // Center Position.
-         glm::vec3(0.0f, 0.0f, 0.0f),
-         // Up axis.
-         glm::vec3(0.0f, 1.0f, 0.0f)
-   );
-
+   newUBO.view = view;
    newUBO.proj = proj;
 
    newUBO.cameraPos = cameraPos;
@@ -316,9 +306,9 @@ void NormalPBR::updateLightData(
       if (auto pModel = std::dynamic_pointer_cast<DirectionalLight>(model))
       {
          ubo.lightPositions[i] = (
-               pModel->actualPos
+               pModel->getPos()
          );
-         ubo.lightColors[i] = pModel->color;
+         ubo.lightColors[i] = pModel->getColor();
       }
    }
 }
