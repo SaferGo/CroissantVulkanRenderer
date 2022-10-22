@@ -62,7 +62,8 @@ void NormalPBR::destroy(const VkDevice& logicalDevice)
 std::string NormalPBR::getMaterialTextureName(
       aiMaterial* material,
       const aiTextureType& type,
-      const std::string& typeName
+      const std::string& typeName,
+      const std::string& defaultTextureFile
 ) {
    if (material->GetTextureCount(type) > 0)
    {
@@ -79,10 +80,8 @@ std::string NormalPBR::getMaterialTextureName(
       return str.C_Str();
 
    } else {
-      std::cout << "LEYENDO DEFAULT PORQ NO EXISTE LA TEXTURE\n";
-      std::cout << "NO SE PUDO " << typeName << std::endl;
-      // TODO!
-      return "textures/default.png";
+      // TODO: Improve this
+      return defaultTextureFile;
    }
 }
 
@@ -145,7 +144,8 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       info.name = getMaterialTextureName(
             material,
             aiTextureType_DIFFUSE,
-            "DIFFUSE"
+            "DIFFUSE",
+            "textures/default.png"
       );
       info.format = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -155,7 +155,8 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       info.name = getMaterialTextureName(
             material,
             aiTextureType_UNKNOWN,
-            "METALIC_ROUGHNESS"
+            "METALIC_ROUGHNESS",
+            "textures/default.png"
       );
       info.format = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -164,7 +165,8 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       info.name = getMaterialTextureName(
             material,
             aiTextureType_NORMALS,
-            "NORMALS"
+            "NORMALS",
+            "textures/default.png"
       );
       info.format = VK_FORMAT_R8G8B8A8_UNORM;
 
@@ -246,6 +248,7 @@ void NormalPBR::uploadVertexData(
 void NormalPBR::createTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
+      const VkSampleCountFlagBits& samplesCount,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
 ) {
@@ -259,6 +262,7 @@ void NormalPBR::createTextures(
                mesh.m_texturesToLoadInfo[i],
                // isSkybox
                false,
+               samplesCount,
                commandPool,
                graphicsQueue
          );

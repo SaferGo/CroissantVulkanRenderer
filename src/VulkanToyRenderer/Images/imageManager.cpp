@@ -17,6 +17,7 @@ void imageManager::createImage(
       const VkMemoryPropertyFlags& memoryProperties,
       const bool isCubemap,
       const uint32_t mipLevels,
+      const VkSampleCountFlagBits& numSamples,
       VkImage& image,
       VkDeviceMemory& memory
 ) {
@@ -52,8 +53,7 @@ void imageManager::createImage(
    // transfer operations).
    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
    // Related to multisampling.
-   imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-   
+   imageInfo.samples = numSamples;
 
    auto status = vkCreateImage(
          logicalDevice,

@@ -23,6 +23,7 @@ public:
       const VkDevice& logicalDevice,
       const TextureToLoadInfo& textureInfo,
       const bool isCubemap,
+      const VkSampleCountFlagBits& samplesCount,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
    );
@@ -70,13 +71,13 @@ private:
          VkQueue& graphicsQueue
    );
 
-   VkImage        m_textureImage;
-   VkDeviceMemory m_textureImageMemory;
-   VkImageView    m_textureImageView;
+   VkImage               m_textureImage;
+   VkDeviceMemory        m_textureImageMemory;
+   VkImageView           m_textureImageView;
 
-   Sampler        m_textureSampler;
+   Sampler               m_textureSampler;
 
-   bool           m_isCubemap;
-
-   uint32_t       m_mipLevels;
+   bool                  m_isCubemap;
+   uint32_t              m_mipLevels;
+   VkSampleCountFlagBits m_samplesCount;
 };

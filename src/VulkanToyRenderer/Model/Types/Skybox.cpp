@@ -178,6 +178,7 @@ void Skybox::uploadVertexData(
 void Skybox::createTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
+      const VkSampleCountFlagBits& samplesCount,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
 ) {
@@ -191,6 +192,7 @@ void Skybox::createTextures(
                mesh.m_texturesToLoadInfo[i],
                // isSkybox
                true,
+               samplesCount,
                commandPool,
                graphicsQueue
          );

@@ -8,7 +8,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Images/imageManager.h>
 #include <VulkanToyRenderer/Window/Window.h>
-#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.h>
+#include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
 
 Swapchain::Swapchain() {}
 Swapchain::~Swapchain() {}
@@ -195,7 +195,8 @@ void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
 void Swapchain::createFramebuffers(
       const VkDevice& logicalDevice,
       const VkRenderPass& renderPass,
-      const DepthBuffer& depthBuffer
+      const renderTarget::DepthBuffer& depthBuffer,
+      const renderTarget::MSAA& msaa
 ) {
    m_framebuffers.resize(m_imageViews.size());
 
@@ -203,8 +204,9 @@ void Swapchain::createFramebuffers(
    for (size_t i = 0; i < m_imageViews.size(); i++)
    {
       std::vector<VkImageView> attachments = {
-         m_imageViews[i],
-         depthBuffer.getDepthImageView()
+         msaa.getImageView(),
+         depthBuffer.getImageView(),
+         m_imageViews[i]
       };
 
       VkFramebufferCreateInfo framebufferInfo{};
@@ -234,7 +236,6 @@ const VkImageView& Swapchain::getImageView(const uint32_t index) const {
    return m_imageViews[index];
 }
 
-// Verificar si el order esta bien
 void Swapchain::chooseBestSettings(
       const Window& window,
       const SwapchainSupportedProperties& supportedProperties,

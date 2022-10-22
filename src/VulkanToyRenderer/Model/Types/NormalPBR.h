@@ -42,6 +42,7 @@ public:
    void createTextures(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
+         const VkSampleCountFlagBits& samplesCount,
          CommandPool& commandPool,
          VkQueue& graphicsQueue
    ) override;
@@ -70,7 +71,8 @@ private:
    std::string getMaterialTextureName(
       aiMaterial* material,
       const aiTextureType& type,
-      const std::string& typeName
+      const std::string& typeName,
+      const std::string& defaultTextureFile
    );
    void updateLightData(
          DescriptorTypes::UniformBufferObject::NormalPBR& ubo,

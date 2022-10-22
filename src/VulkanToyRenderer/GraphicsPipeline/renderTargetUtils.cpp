@@ -1,13 +1,30 @@
-#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/depthUtils.h>
+#include <VulkanToyRenderer/GraphicsPipeline/renderTargetUtils.h>
 
 #include <vector>
 #include <stdexcept>
 
-#include <vulkan/vulkan.h>
+VkSampleCountFlagBits renderTargetUtils::msaa::getMaxUsableSampleCount(
+      const VkPhysicalDevice& physicalDevice
+) {
+   VkPhysicalDeviceProperties physicalDeviceProperties;
+   vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
 
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
+   VkSampleCountFlags counts = (
+         physicalDeviceProperties.limits.framebufferColorSampleCounts &
+         physicalDeviceProperties.limits.framebufferDepthSampleCounts
+   );
 
-VkFormat depthUtils::findSupportedFormat(
+   if (counts & VK_SAMPLE_COUNT_64_BIT) return VK_SAMPLE_COUNT_64_BIT;
+   if (counts & VK_SAMPLE_COUNT_32_BIT) return VK_SAMPLE_COUNT_32_BIT;
+   if (counts & VK_SAMPLE_COUNT_16_BIT) return VK_SAMPLE_COUNT_16_BIT;
+   if (counts & VK_SAMPLE_COUNT_8_BIT) return VK_SAMPLE_COUNT_8_BIT;
+   if (counts & VK_SAMPLE_COUNT_4_BIT) return VK_SAMPLE_COUNT_4_BIT;
+   if (counts & VK_SAMPLE_COUNT_2_BIT) return VK_SAMPLE_COUNT_2_BIT;
+
+   return VK_SAMPLE_COUNT_1_BIT;
+}
+
+VkFormat renderTargetUtils::depthBuffer::findSupportedFormat(
       const VkPhysicalDevice& physicalDevice,
       const std::vector<VkFormat>& candidates,
       const VkImageTiling tiling,
@@ -31,7 +48,7 @@ VkFormat depthUtils::findSupportedFormat(
    throw std::runtime_error("Failed to find supported format!");
 }
 
- void depthUtils::createDepthStencilStateInfo(
+ void renderTargetUtils::depthBuffer::createDepthStencilStateInfo(
        const GraphicsPipelineType& type,
        VkPipelineDepthStencilStateCreateInfo& depthStencil
 ) {

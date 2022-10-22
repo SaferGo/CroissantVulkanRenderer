@@ -22,9 +22,10 @@ Texture::Texture(
       const VkDevice& logicalDevice,
       const TextureToLoadInfo& textureInfo,
       const bool isCubemap,
+      const VkSampleCountFlagBits& samplesCount,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
-) : m_isCubemap(isCubemap)
+) : m_isCubemap(isCubemap), m_samplesCount(samplesCount)
 {
 
    if (m_isCubemap)
@@ -261,6 +262,7 @@ void Texture::createTextureImage(
          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
          false,
          m_mipLevels,
+         m_samplesCount,
          m_textureImage,
          m_textureImageMemory
    );
@@ -396,6 +398,7 @@ void Texture::createTextureImageCubemap(
          VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
          true,
          m_mipLevels,
+         m_samplesCount,
          m_textureImage,
          m_textureImageMemory
    );

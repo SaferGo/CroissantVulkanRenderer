@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Window/Window.h>
-#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.h>
+#include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
 
 struct SwapchainSupportedProperties
 {
@@ -41,7 +41,8 @@ public:
    void createFramebuffers(
          const VkDevice& logicalDevice,
          const VkRenderPass& renderPass,
-         const DepthBuffer& depthBuffer
+         const renderTarget::DepthBuffer& depthBuffer,
+         const renderTarget::MSAA& msaa
    );
 
    void destroyFramebuffers(const VkDevice& logicalDevice);

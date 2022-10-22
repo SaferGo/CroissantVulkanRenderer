@@ -9,14 +9,16 @@
  */
 void subPassUtils::createSubPassDescription(
       const VkPipelineBindPoint& pipelineBindPoint,
-      const std::vector<VkAttachmentReference>& colorAttachRefs,
+      const VkAttachmentReference* colorAttachRef,
       const VkAttachmentReference* depthStencilAttachRef,
+      const VkAttachmentReference* colorResolveAttachmentRef,
       VkSubpassDescription& subPassDescription
 ) {
    subPassDescription.pipelineBindPoint = pipelineBindPoint;
-   subPassDescription.colorAttachmentCount = colorAttachRefs.size();
-   subPassDescription.pColorAttachments = colorAttachRefs.data();
+   subPassDescription.colorAttachmentCount = 1;
+   subPassDescription.pColorAttachments = colorAttachRef;
    subPassDescription.pDepthStencilAttachment = depthStencilAttachRef;
+   subPassDescription.pResolveAttachments = colorResolveAttachmentRef;
 }
 
 /*

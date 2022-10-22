@@ -12,6 +12,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
+#include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Device/Device.h>
@@ -96,7 +97,8 @@ private:
    // Command buffer for main drawing commands.
    CommandPool                m_commandPool;
 
-   DepthBuffer                m_depthBuffer;
+   renderTarget::DepthBuffer  m_depthBuffer;
+   renderTarget::MSAA         m_msaa;
 
    // Sync objects(for each frame)
    std::vector<VkSemaphore> m_imageAvailableSemaphores;
@@ -122,4 +124,5 @@ private:
    std::vector<VkClearValue> m_clearValues;
    std::shared_ptr<Camera> m_camera;
    bool m_isMouseInMotion;
+
 };

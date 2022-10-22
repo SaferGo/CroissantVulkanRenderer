@@ -40,8 +40,8 @@
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
-#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/DepthBuffer.h>
-#include <VulkanToyRenderer/GraphicsPipeline/DepthBuffer/depthUtils.h>
+#include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
+#include <VulkanToyRenderer/GraphicsPipeline/renderTargetUtils.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
 #include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
@@ -292,11 +292,12 @@ void Renderer::createVkInstance()
 void Renderer::createRenderPass()
 {
    // -Attachments
+
    // Color Attachment
    VkAttachmentDescription colorAttachment{};
    attachmentUtils::createAttachmentDescription(
          m_swapchain->getImageFormat(),
-         VK_SAMPLE_COUNT_1_BIT,
+         m_msaa.getSamplesCount(),
          VK_ATTACHMENT_LOAD_OP_CLEAR,
          VK_ATTACHMENT_STORE_OP_STORE,
          VK_IMAGE_LAYOUT_UNDEFINED,
@@ -305,20 +306,10 @@ void Renderer::createRenderPass()
    );
 
    // Depth Attachment
-   VkFormat depthFormat = depthUtils::findSupportedFormat(
-         m_device.getPhysicalDevice(),
-         {
-          VK_FORMAT_D32_SFLOAT,
-          VK_FORMAT_D32_SFLOAT_S8_UINT,
-          VK_FORMAT_D24_UNORM_S8_UINT
-         },
-         VK_IMAGE_TILING_OPTIMAL,
-         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-   );
    VkAttachmentDescription depthAttachment{};
    attachmentUtils::createAttachmentDescriptionWithStencil(
-         depthFormat,
-         VK_SAMPLE_COUNT_1_BIT,
+         m_depthBuffer.getFormat(),
+         m_msaa.getSamplesCount(),
          VK_ATTACHMENT_LOAD_OP_CLEAR,
          // We don't care about storing the depth data, because it will not be
          // used after drawing has finished.
@@ -332,7 +323,27 @@ void Renderer::createRenderPass()
          depthAttachment
    );
 
+   // Color Resolve Attachment(needed by MSAA)
+   VkAttachmentDescription colorResolveAttachment{};
+   attachmentUtils::createAttachmentDescriptionWithStencil(
+         m_swapchain->getImageFormat(),
+         VK_SAMPLE_COUNT_1_BIT,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_IMAGE_LAYOUT_UNDEFINED,
+         // Here is not
+         // 'VK_IMAGE_LAYOUT_PRESENT_SRC_KHR'
+         // because the GUI will be the last and the one
+         // to present.
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+         colorResolveAttachment
+   );
+
+
    // Attachment references
+
    VkAttachmentReference colorAttachmentRef{};
    attachmentUtils::createAttachmentReference(
          0,
@@ -347,15 +358,20 @@ void Renderer::createRenderPass()
          depthAttachmentRef
    );
 
+   VkAttachmentReference colorResolveAttachmentRef{};
+   attachmentUtils::createAttachmentReference(
+         2,
+         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+         colorResolveAttachmentRef
+   );
+
    // Subpasses
-   std::vector<VkAttachmentReference> allAttachments = {
-      colorAttachmentRef
-   };
    VkSubpassDescription subPassDescript{};
    subPassUtils::createSubPassDescription(
          VK_PIPELINE_BIND_POINT_GRAPHICS,
-         allAttachments,
+         &colorAttachmentRef,
          &depthAttachmentRef,
+         &colorResolveAttachmentRef,
          subPassDescript
    );
 
@@ -388,7 +404,7 @@ void Renderer::createRenderPass()
 
    m_renderPass = RenderPass(
          m_device.getLogicalDevice(),
-         {colorAttachment, depthAttachment},
+         {colorAttachment, depthAttachment, colorResolveAttachment},
          {subPassDescript},
          {dependency}
    );
@@ -414,6 +430,7 @@ void Renderer::uploadAllData()
       model->createTextures(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
+         VK_SAMPLE_COUNT_1_BIT,
          m_commandPool,
          m_qfHandles.graphicsQueue
       );
@@ -479,6 +496,7 @@ void Renderer::createGraphicsPipelines()
          m_descriptorSetLayoutSkybox,
          "skybox",
          "skybox",
+         m_msaa.getSamplesCount(),
          Attributes::SKYBOX::getBindingDescription(),
          Attributes::SKYBOX::getAttributeDescriptions(),
          &m_skyboxModelIndices
@@ -494,6 +512,7 @@ void Renderer::createGraphicsPipelines()
          "normal",
          // Filename of the fragment shader.
          "normal",
+         m_msaa.getSamplesCount(),
          Attributes::PBR::getBindingDescription(),
          Attributes::PBR::getAttributeDescriptions(),
          // Models assocciated with this graphics pipeline.
@@ -511,6 +530,7 @@ void Renderer::createGraphicsPipelines()
          "light",
          // Filename of the fragment shader.
          "light",
+         m_msaa.getSamplesCount(),
          Attributes::LIGHT::getBindingDescription(),
          Attributes::LIGHT::getAttributeDescriptions(),
          // Models assocciated with this graphics pipeline.
@@ -574,8 +594,6 @@ void Renderer::initVK()
    );
 
    m_swapchain->createAllImageViews(m_device.getLogicalDevice());
-
-   createRenderPass();
    
    // Descriptor Pool
    // (Calculates the total size of the pool depending of the descriptors
@@ -609,19 +627,30 @@ void Renderer::initVK()
 
    createDescriptorSetLayouts();
    
-   createGraphicsPipelines();
-
-   m_depthBuffer.createDepthBuffer(
+   m_msaa = renderTarget::MSAA(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
-         m_swapchain->getExtent()
+         m_swapchain->getExtent(),
+         m_swapchain->getImageFormat()
    );
+
+   m_depthBuffer = renderTarget::DepthBuffer(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         m_swapchain->getExtent(),
+         m_msaa.getSamplesCount()
+   );
+
+   createRenderPass();
 
    m_swapchain->createFramebuffers(
          m_device.getLogicalDevice(),
          m_renderPass.get(),
-         m_depthBuffer
+         m_depthBuffer,
+         m_msaa
    );
+
+   createGraphicsPipelines();
 
    m_commandPool = CommandPool(
          m_device.getLogicalDevice(),
@@ -1063,8 +1092,11 @@ void Renderer::destroySyncObjects()
 void Renderer::cleanup()
 {
 
+   // MSAA
+   m_msaa.destroy(m_device.getLogicalDevice());
+
    // DepthBuffer
-   m_depthBuffer.destroyDepthBuffer(m_device.getLogicalDevice());
+   m_depthBuffer.destroy(m_device.getLogicalDevice());
 
    // ImGui
    m_GUI->destroy(m_device.getLogicalDevice());

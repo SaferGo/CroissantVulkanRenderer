@@ -177,6 +177,7 @@ void DirectionalLight::uploadVertexData(
 void DirectionalLight::createTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
+      const VkSampleCountFlagBits& samplesCount,
       CommandPool& commandPool,
       VkQueue& graphicsQueue
 ) {
@@ -190,6 +191,7 @@ void DirectionalLight::createTextures(
                mesh.m_texturesToLoadInfo[i],
                // isSkybox
                false,
+               samplesCount,
                commandPool,
                graphicsQueue
          );

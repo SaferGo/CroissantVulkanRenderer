@@ -247,17 +247,13 @@ void GUI::createRenderPass()
          colorAttachment
    );
 
-   // This vector is neccessary because if not, it will crash.
-   // (some mysterious bug....)
-   std::vector<VkAttachmentReference> allAttachments = {
-      colorAttachment
-   };
 
    // - Subpass
    VkSubpassDescription subpass = {};
    subPassUtils::createSubPassDescription(
          VK_PIPELINE_BIND_POINT_GRAPHICS,
-         allAttachments,
+         &colorAttachment,
+         nullptr,
          nullptr,
          subpass
    );

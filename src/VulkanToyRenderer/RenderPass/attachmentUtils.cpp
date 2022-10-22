@@ -29,7 +29,6 @@ void attachmentUtils::createAttachmentDescription(
    VkAttachmentDescription& attachmentDescription
 ) {
    attachmentDescription.format = imageFormat;
-   // We won't configure the multisample yet.
    attachmentDescription.samples = samplesCount;
    // Determines what to do with the data in the attachment before rendering.
    //    - VK_ATTACHMENT_LOAD_OP_CLEAR: Specifies that the contents within the
@@ -41,8 +40,7 @@ void attachmentUtils::createAttachmentDescription(
    //    memory and can be read later.
    attachmentDescription.storeOp = colorDepthStoreOp;
 
-      // Image Layouts configuration
-   // (anotar mejor su funcionamiento y para que estan)
+   // -Image Layouts configuration
    //
    // Specifies which layout the image will have before the render pass begins.
    //    - VK_IMAGE_LAYOUT_UNDEFINED: It means that we don't care what previous
@@ -63,7 +61,6 @@ void attachmentUtils::createAttachmentDescription(
    //    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
    attachmentDescription.finalLayout = finalLayout;
 }
-
 
 void attachmentUtils::createAttachmentDescriptionWithStencil(
    const VkFormat& imageFormat,

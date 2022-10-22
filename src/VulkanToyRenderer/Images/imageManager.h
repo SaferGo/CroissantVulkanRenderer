@@ -16,6 +16,7 @@ namespace imageManager{
       const VkMemoryPropertyFlags& memoryProperties,
       const bool isCubemap,
       const uint32_t mipLevels,
+      const VkSampleCountFlagBits& numSamples,
       VkImage& image,
       VkDeviceMemory& memory
    );

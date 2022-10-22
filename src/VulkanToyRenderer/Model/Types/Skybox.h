@@ -33,6 +33,7 @@ public:
    void createTextures(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
+         const VkSampleCountFlagBits& samplesCount,
          CommandPool& commandPool,
          VkQueue& graphicsQueue
    ) override;

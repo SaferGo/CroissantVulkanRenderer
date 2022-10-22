@@ -28,6 +28,7 @@ public:
          const VkDescriptorSetLayout& descriptorSetLayout,
          const std::string& vertexShaderFileName,
          const std::string& fragmentShaderFileName,
+         const VkSampleCountFlagBits& samplesCount,
          VkVertexInputBindingDescription vertexBindingDescriptions,
          std::vector<VkVertexInputAttributeDescription>
             vertexAttribDescriptions,
@@ -77,6 +78,7 @@ private:
       VkPipelineRasterizationStateCreateInfo& rasterizerInfo
    );
    void createMultisamplingInfo(
+      const VkSampleCountFlagBits& samplesCount,
       VkPipelineMultisampleStateCreateInfo& multisamplingInfo
    );
    void createColorBlendingAttachment(
