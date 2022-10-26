@@ -28,5 +28,7 @@ struct Mesh
    // (one descriptor set for all the ubo and samplers of a mesh)
    // (the same descriptor set for each frame in flight)
    DescriptorSets m_descriptorSets;
+
+   bool m_hasTextureCoords;
 };
 

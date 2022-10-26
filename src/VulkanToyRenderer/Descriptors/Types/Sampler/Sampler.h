@@ -11,11 +11,12 @@ public:
    Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const uint32_t mipLevels
+      const uint32_t mipLevels,
+      const VkSamplerAddressMode& addressMode
    );
    ~Sampler();
    
-   const VkSampler& getSampler() const;
+   const VkSampler& get() const;
    void destroySampler(const VkDevice& logicalDevice);
 
 private:

@@ -5,10 +5,9 @@ layout(std140, binding = 0) uniform UniformBufferObject
    mat4 model;
    mat4 view;
    mat4 proj;
-   vec4 lightPositions[10];
-   vec4 lightColors[10];
    vec4 cameraPos;
    int  lightsCount;
+
 } ubo;
 
 layout(location = 0) in vec3 inPosition;

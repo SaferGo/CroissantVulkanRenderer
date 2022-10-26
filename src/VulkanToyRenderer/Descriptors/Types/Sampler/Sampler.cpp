@@ -9,7 +9,8 @@ Sampler::Sampler() {}
 Sampler::Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const uint32_t mipLevels
+      const uint32_t mipLevels,
+      const VkSamplerAddressMode& addressMode
 ) {
    VkSamplerCreateInfo samplerInfo{};
    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -18,9 +19,9 @@ Sampler::Sampler(
    // Minification -> when undersampling.
    samplerInfo.magFilter = VK_FILTER_LINEAR;
    samplerInfo.minFilter = VK_FILTER_LINEAR;
-   samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-   samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-   samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+   samplerInfo.addressModeU = addressMode;
+   samplerInfo.addressModeV = addressMode;
+   samplerInfo.addressModeW = addressMode;
    samplerInfo.anisotropyEnable = VK_TRUE;
 
    // Limits the amount of texel samples that can be used to calculate the
@@ -63,7 +64,7 @@ Sampler::Sampler(
 
 Sampler::~Sampler() {}
 
-const VkSampler& Sampler::getSampler() const
+const VkSampler& Sampler::get() const
 {
    return m_sampler;
 }

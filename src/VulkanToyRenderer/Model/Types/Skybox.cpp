@@ -111,14 +111,17 @@ void Skybox::createDescriptorSets(
       const VkDescriptorSetLayout& descriptorSetLayout,
       DescriptorPool& descriptorPool
 ) {
+
+   std::vector<UBO*> opUBOs = {&m_ubo};
+
    for (auto& mesh : m_meshes)
    {
-      mesh.m_descriptorSets.createDescriptorSets(
+      mesh.m_descriptorSets = DescriptorSets(
             logicalDevice,
             GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
             GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO,
             mesh.m_textures,
-            m_ubo.getUniformBuffers(),
+            opUBOs,
             descriptorSetLayout,
             descriptorPool
       );
@@ -225,7 +228,8 @@ void Skybox::updateUBO(
       40.0f
    );
    
-   UBOutils::updateUBO(m_ubo, logicalDevice, newUBO, currentFrame);
+   const size_t size = sizeof(newUBO);
+   UBOutils::updateUBO(logicalDevice, m_ubo, size, &newUBO, currentFrame);
 }
 
 

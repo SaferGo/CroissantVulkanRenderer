@@ -81,11 +81,11 @@ glm::mat4 UBOutils::getUpdatedProjMatrix(
    return proj;
 }
 
-template<typename T>
 void UBOutils::updateUBO(
-      UBO& ubo,
       const VkDevice& logicalDevice,
-      T& newUbo,
+      UBO& ubo,
+      const size_t size,
+      void* dataToSend,
       const uint32_t& currentFrame
 ) {
    void* data;
@@ -93,41 +93,13 @@ void UBOutils::updateUBO(
          logicalDevice,
          ubo.getUniformBufferMemory(currentFrame),
          0,
-         sizeof(newUbo),
+         size,
          0,
          &data
    );
-      memcpy(data, &newUbo, sizeof(newUbo));
+      memcpy(data, dataToSend, size);
    vkUnmapMemory(
          logicalDevice,
          ubo.getUniformBufferMemory(currentFrame)
    );
 }
-//////////////////////////////////Instances////////////////////////////////////
-template void UBOutils::updateUBO<
-   DescriptorTypes::UniformBufferObject::NormalPBR
->(
-      UBO& ubo,
-      const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject::NormalPBR& newUbo,
-      const uint32_t& currentFrame
-);
-template void UBOutils::updateUBO<
-   DescriptorTypes::UniformBufferObject::Light
->(
-      UBO& ubo,
-      const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject::Light& newUbo,
-      const uint32_t& currentFrame
-);
-template void UBOutils::updateUBO<
-   DescriptorTypes::UniformBufferObject::Skybox
->(
-      UBO& ubo,
-      const VkDevice& logicalDevice,
-      DescriptorTypes::UniformBufferObject::Skybox& newUbo,
-      const uint32_t& currentFrame
-);
-///////////////////////////////////////////////////////////////////////////////
-
-

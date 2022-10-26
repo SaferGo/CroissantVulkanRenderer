@@ -53,6 +53,13 @@ private:
          std::vector<std::shared_ptr<Model>> models,
          const std::vector<size_t> indices
    );
+   void createSlider(
+         const std::string& subMenuName,
+         const std::string& sliceName,
+         const float& maxV,
+         const float& minV,
+         float& value
+   );
    void createCameraWindow(const std::string& name, glm::fvec4& cameraPos);
    void createTransformationsInfo(
          glm::vec4& pos,

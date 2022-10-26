@@ -8,7 +8,7 @@
 #include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
-#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
+#include <VulkanToyRenderer/Model/Types/Light.h>
 
 NormalPBR::NormalPBR(
       const std::string& name,
@@ -33,6 +33,7 @@ NormalPBR::~NormalPBR() {}
 void NormalPBR::destroy(const VkDevice& logicalDevice)
 {
    m_ubo.destroyUniformBuffersAndMemories(logicalDevice);
+   m_uboLights.destroyUniformBuffersAndMemories(logicalDevice);
 
    for (auto& mesh : m_meshes)
    {
@@ -80,6 +81,8 @@ std::string NormalPBR::getMaterialTextureName(
       return str.C_Str();
 
    } else {
+      if (typeName == "NORMALS")
+         std::cout << " NSADSADSADSA NO HAY NORMALS\n";
       // TODO: Improve this
       return defaultTextureFile;
    }
@@ -99,29 +102,49 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
          mesh->mVertices[i].z
       };
 
-      vertex.normal = {
-         mesh->mNormals[i].x,
-         mesh->mNormals[i].y,
-         mesh->mNormals[i].z
-      };
-      vertex.normal = glm::normalize(vertex.normal);
+      if (mesh->mNormals != NULL)
+      {
+         vertex.normal = glm::normalize(
+               glm::fvec3(
+                  mesh->mNormals[i].x,
+                  mesh->mNormals[i].y,
+                  mesh->mNormals[i].z
+               )
+         );
+      } else {
+         std::cout << " NO HAY NORMALS !\n";
+         vertex.normal = glm::fvec3(1.0f);
+      }
 
-      vertex.texCoord = {
-         mesh->mTextureCoords[0][i].x,
-         mesh->mTextureCoords[0][i].y,
-      };
+      if (mesh->mTextureCoords[0] != NULL)
+      {
 
-      glm::vec3 tangent = {
-         mesh->mTangents[i].x,
-         mesh->mTangents[i].y,
-         mesh->mTangents[i].z
-      };
-      tangent = glm::normalize(tangent);
+         vertex.texCoord = {
+            mesh->mTextureCoords[0][i].x,
+            mesh->mTextureCoords[0][i].y,
+         };
+         newMesh.m_hasTextureCoords = true;
+
+      } else
+      {
+         vertex.texCoord = glm::fvec3(1.0f);
+         newMesh.m_hasTextureCoords = false;
+      }
+
+      if (mesh->mTangents != NULL)
+      {
+         vertex.tangent = glm::normalize(
+               glm::fvec3(
+                  mesh->mTangents[i].x,
+                  mesh->mTangents[i].y,
+                  mesh->mTangents[i].z
+               )
+         );
+      } else
+         vertex.tangent = glm::fvec3(1.0f);
 
       //glm::vec3 bitangent = glm::cross(vertex.normal, tangent);
       
-      vertex.tangent = tangent;
-
       newMesh.m_vertices.push_back(vertex);
 
    }
@@ -187,6 +210,12 @@ void NormalPBR::createUniformBuffers(
          uboCount,
          sizeof(DescriptorTypes::UniformBufferObject::NormalPBR)
    );
+   m_uboLights.createUniformBuffers(
+         physicalDevice,
+         logicalDevice,
+         uboCount,
+         sizeof(DescriptorTypes::UniformBufferObject::LightInfo) * 10
+   );
 }
 
 void NormalPBR::createDescriptorSets(
@@ -194,14 +223,16 @@ void NormalPBR::createDescriptorSets(
       const VkDescriptorSetLayout& descriptorSetLayout,
       DescriptorPool& descriptorPool
 ) {
+   std::vector<UBO*> opUBOs = {&m_ubo, &m_uboLights};
+
    for (auto& mesh : m_meshes)
    {
-      mesh.m_descriptorSets.createDescriptorSets(
+      mesh.m_descriptorSets = DescriptorSets(
             logicalDevice,
             GRAPHICS_PIPELINE::PBR::UBOS_INFO,
             GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
             mesh.m_textures,
-            m_ubo.getUniformBuffers(),
+            opUBOs,
             descriptorSetLayout,
             descriptorPool
       );
@@ -254,6 +285,10 @@ void NormalPBR::createTextures(
 ) {
    for (auto& mesh : m_meshes)
    {
+      // TODO: Improve this.
+      if (!mesh.m_hasTextureCoords)
+         continue;
+
       for (size_t i = 0; i < mesh.m_textures.size(); i++)
       {
          mesh.m_textures[i] = Texture(
@@ -275,44 +310,53 @@ void NormalPBR::updateUBO(
       const glm::vec4& cameraPos,
       const glm::mat4& view,
       const glm::mat4& proj,
+      const int& lightsCount,
       const std::vector<std::shared_ptr<Model>>& models,
-      const std::vector<size_t> directionalLightIndices,
       const uint32_t& currentFrame
 ) {
 
-   DescriptorTypes::UniformBufferObject::NormalPBR newUBO;
-
-   newUBO.model = UBOutils::getUpdatedModelMatrix(
+   m_basicInfo.model = UBOutils::getUpdatedModelMatrix(
          m_pos,
          m_rot,
          m_size
    );
-   newUBO.view = view;
-   newUBO.proj = proj;
+   m_basicInfo.view = view;
+   m_basicInfo.proj = proj;
 
-   newUBO.cameraPos = cameraPos;
+   m_basicInfo.cameraPos = cameraPos;
+   m_basicInfo.lightsCount = lightsCount;
 
-   updateLightData(newUBO, models, directionalLightIndices);
-
-   UBOutils::updateUBO(m_ubo, logicalDevice, newUBO, currentFrame);
+   size_t size = sizeof(m_basicInfo);
+   UBOutils::updateUBO(logicalDevice, m_ubo, size, &m_basicInfo, currentFrame);
 }
 
-void NormalPBR::updateLightData(
-      DescriptorTypes::UniformBufferObject::NormalPBR& ubo,
+void NormalPBR::updateUBOlightsInfo(
+      const VkDevice& logicalDevice,
+      const std::vector<size_t> lightModelIndices,
       const std::vector<std::shared_ptr<Model>>& models,
-      const std::vector<size_t> directionalLightIndices
+      const uint32_t& currentFrame
 ) {
-   ubo.lightsCount = directionalLightIndices.size();
-
-   for (int i = 0; i < ubo.lightsCount; i++)
+   for (size_t i = 0; i < lightModelIndices.size(); i++)
    {
-      auto& model = models[directionalLightIndices[i]];
-      if (auto pModel = std::dynamic_pointer_cast<DirectionalLight>(model))
+      size_t j = lightModelIndices[i];
+
+      if (auto pModel = std::dynamic_pointer_cast<Light>(models[j]))
       {
-         ubo.lightPositions[i] = (
-               pModel->getPos()
-         );
-         ubo.lightColors[i] = pModel->getColor();
+         m_lightsInfo[i].pos = pModel->getPos();
+         m_lightsInfo[i].color = pModel->getColor();
+         m_lightsInfo[i].attenuation = pModel->getAttenuation();
+         m_lightsInfo[i].radius = pModel->getRadius();
+         m_lightsInfo[i].type = (int)pModel->getLightType();
       }
    }
+
+   size_t size = sizeof(m_lightsInfo[0]) * 10;
+
+   UBOutils::updateUBO(
+         logicalDevice,
+         m_uboLights,
+         size,
+         &m_lightsInfo,
+         currentFrame
+   );
 }

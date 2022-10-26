@@ -21,7 +21,7 @@
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
-#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
+#include <VulkanToyRenderer/Model/Types/Light.h>
 
 GUI::GUI(
       const VkPhysicalDevice& physicalDevice,
@@ -36,7 +36,7 @@ GUI::GUI(
    // - Descriptor Pool
    // (calculates the total size of the pool depending of the descriptors
    // we send as parameter and the number of descriptor SETS defined)
-   m_descriptorPool.createDescriptorPool(
+   m_descriptorPool = DescriptorPool(
          logicalDevice,
          // Type of descriptors / Count of each type of descriptor in the pool.
          {
@@ -349,11 +349,11 @@ void GUI::createLightsWindow(
       const std::vector<size_t> indices
 ) {
    ImGui::Begin("Lights");
-   
+
       for (const size_t& j : indices)
       {
          if (auto model =
-             std::dynamic_pointer_cast<DirectionalLight>(models[j])
+             std::dynamic_pointer_cast<Light>(models[j])
          ) {
             const std::string modelName = model.get()->getName();
 
@@ -361,6 +361,9 @@ void GUI::createLightsWindow(
             glm::fvec3 newRot = model.get()->getRot();
             glm::fvec3 newSize = model.get()->getSize();
             glm::fvec4 color = model.get()->getColor();
+            float attenuation = model.get()->getAttenuation();
+            float radius = model.get()->getRadius();
+            bool isHided = model.get()->isHided();
 
             if (ImGui::TreeNode(modelName.c_str()))
             {
@@ -369,6 +372,8 @@ void GUI::createLightsWindow(
                   &(color.x)
                );
 
+	            ImGui::Checkbox("Hide", &isHided);
+
                createTransformationsInfo(
                      newPos,
                      newRot,
@@ -376,19 +381,77 @@ void GUI::createLightsWindow(
                      modelName
                );
 
+               if (model.get()->getLightType() != LightType::DIRECTIONAL_LIGHT)
+               {
+                  // Attenuation
+
+                  std::string subMenuName = (
+                        "Attenuation###LightProperty::Attenuation" + modelName
+                  );
+                  std::string sliderName = (
+                        "###Attenuation::" + modelName
+                  );
+
+                  createSlider(
+                        subMenuName,
+                        sliderName,
+                        1.0f,
+                        0.0f,
+                        attenuation
+                  );
+
+                  // Radius
+                  subMenuName = (
+                        "Radius###LightProperty::Radius" + modelName
+                  );
+                  sliderName = (
+                        "###Radius::" + modelName
+                  );
+
+                  createSlider(
+                        subMenuName,
+                        sliderName,
+                        50.0f,
+                        0.0f,
+                        radius
+                  );
+               }
+
                ImGui::TreePop();
                ImGui::Separator();
            }
-
            model.get()->setPos(newPos);
            model.get()->setRot(newRot);
            model.get()->setSize(newSize);
            model.get()->setColor(color);
- 
+           model.get()->setAttenuation(attenuation);
+           model.get()->setRadius(radius);
+           model.get()->setHideStatus(isHided);
          }
       }
 
    ImGui::End();
+}
+
+void GUI::createSlider(
+      const std::string& subMenuName,
+      const std::string& sliceName,
+      const float& maxV,
+      const float& minV,
+      float& value
+) {
+   if (ImGui::TreeNode(subMenuName.c_str()) 
+   ){
+      ImGui::SliderFloat(
+         sliceName.c_str(),
+         &value,
+         minV,
+         maxV
+      );
+
+      ImGui::TreePop();
+      ImGui::Separator();
+   }
 }
 
 void GUI::createModelsWindow(
@@ -407,9 +470,12 @@ void GUI::createModelsWindow(
             glm::fvec4 newPos = model.get()->getPos();
             glm::fvec3 newRot = model.get()->getRot();
             glm::fvec3 newSize = model.get()->getSize();
+            bool isHided = model.get()->isHided();
 
             if (ImGui::TreeNode(modelName.c_str()))
             {
+	            ImGui::Checkbox("Hide", &isHided);
+
                createTransformationsInfo(
                      newPos,
                      newRot,
@@ -424,6 +490,7 @@ void GUI::createModelsWindow(
             model.get()->setPos(newPos);
             model.get()->setRot(newRot);
             model.get()->setSize(newSize);
+            model.get()->setHideStatus(isHided);
          }
       }
 

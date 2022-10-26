@@ -22,7 +22,13 @@ Model::Model(
       const glm::fvec4& pos,
       const glm::fvec3& rot,
       const glm::fvec3& size
-) : m_name(name), m_type(type), m_pos(pos), m_rot(rot), m_size(size) {}
+) : m_name(name),
+    m_type(type),
+    m_pos(pos),
+    m_rot(rot),
+    m_size(size),
+    m_hideStatus(false)
+{}
 
 Model::~Model() {}
 
@@ -34,6 +40,11 @@ const std::string& Model::getName() const
 const ModelType& Model::getType() const
 {
    return m_type;
+}
+
+const bool Model::isHided() const
+{
+   return m_hideStatus;
 }
 
 void Model::processNode(aiNode* node, const aiScene* scene)
@@ -116,4 +127,9 @@ void Model::setRot(const glm::fvec3& newRot)
 void Model::setSize(const glm::fvec3& newSize)
 {
    m_size = newSize;
+}
+
+void Model::setHideStatus(const bool status)
+{
+   m_hideStatus = status;
 }

@@ -32,7 +32,7 @@
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
 #include <VulkanToyRenderer/Model/Types/Skybox.h>
-#include <VulkanToyRenderer/Model/Types/DirectionalLight.h>
+#include <VulkanToyRenderer/Model/Types/Light.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
 #include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
@@ -49,6 +49,7 @@
 #include <VulkanToyRenderer/GUI/GUI.h>
 #include <VulkanToyRenderer/Camera/Camera.h>
 #include <VulkanToyRenderer/Camera/Types/Arcball.h>
+#include <VulkanToyRenderer/Features/ShadowMap.h>
 
 void Renderer::run()
 {
@@ -138,7 +139,7 @@ void Renderer::addObjectPBR(
             size
          )
    );
-   m_normalModelIndices.push_back(m_allModels.size() - 1);
+   m_objectModelIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::addDirectionalLight(
@@ -146,20 +147,73 @@ void Renderer::addDirectionalLight(
       const std::string& modelFileName,
       const glm::fvec3& color,
       const glm::fvec3& pos,
-      const glm::fvec3& rot,
       const glm::fvec3& size
 ) {
    m_allModels.push_back(
-         std::make_shared<DirectionalLight>(
+         std::make_shared<Light>(
             name,
             modelFileName,
+            LightType::DIRECTIONAL_LIGHT,
+            glm::fvec4(color, 1.0f),
+            glm::fvec4(pos, 1.0f),
+            glm::fvec3(0.0f),
+            size,
+            0.0f,
+            0.0f
+         )
+   );
+   m_lightModelIndices.push_back(m_allModels.size() - 1);
+}
+
+void Renderer::addPointLight(
+      const std::string& name,
+      const std::string& modelFileName,
+      const glm::fvec3& color,
+      const glm::fvec3& pos,
+      const glm::fvec3& size,
+      const float attenuation,
+      const float radius
+) {
+   m_allModels.push_back(
+         std::make_shared<Light>(
+            name,
+            modelFileName,
+            LightType::POINT_LIGHT,
+            glm::fvec4(color, 1.0f),
+            glm::fvec4(pos, 1.0f),
+            glm::fvec3(0.0f),
+            size,
+            attenuation,
+            radius
+         )
+   );
+   m_lightModelIndices.push_back(m_allModels.size() - 1);
+}
+
+void Renderer::addSpotLight(
+      const std::string& name,
+      const std::string& modelFileName,
+      const glm::fvec3& color,
+      const glm::fvec3& pos,
+      const glm::fvec3& rot,
+      const glm::fvec3& size,
+      const float attenuation,
+      const float radius
+) {
+   m_allModels.push_back(
+         std::make_shared<Light>(
+            name,
+            modelFileName,
+            LightType::SPOT_LIGHT,
             glm::fvec4(color, 1.0f),
             glm::fvec4(pos, 1.0f),
             rot,
-            size
+            size,
+            attenuation,
+            radius
          )
    );
-   m_directionalLightIndices.push_back(m_allModels.size() - 1);
+   m_lightModelIndices.push_back(m_allModels.size() - 1);
 }
 
 void Renderer::createSyncObjects()
@@ -293,6 +347,20 @@ void Renderer::createRenderPass()
 {
    // -Attachments
 
+   // ShadowMap
+   //VkAttachmentDescription shadowMapAttachment{};
+   //attachmentUtils::createAttachmentDescriptionWithStencil(
+   //      m_depthBuffer.getFormat(),
+   //      VK_SAMPLE_COUNT_1_BIT,
+   //      VK_ATTACHMENT_LOAD_OP_CLEAR,
+   //      VK_ATTACHMENT_STORE_OP_STORE,
+   //      VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+   //      VK_ATTACHMENT_STORE_OP_DONT_CARE,
+   //      VK_IMAGE_LAYOUT_UNDEFINED,
+   //      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+   //      shadowMapAttachment
+   //);
+
    // Color Attachment
    VkAttachmentDescription colorAttachment{};
    attachmentUtils::createAttachmentDescription(
@@ -343,6 +411,9 @@ void Renderer::createRenderPass()
 
 
    // Attachment references
+   
+   //VkAttachmentReference shadowMapAttachmentRef{};
+   //attachmentUtils::createAttachmentReference
 
    VkAttachmentReference colorAttachmentRef{};
    attachmentUtils::createAttachmentReference(
@@ -466,11 +537,11 @@ void Renderer::uploadAllData()
             );
 
             break;
-         } case ModelType::DIRECTIONAL_LIGHT:
+         } case ModelType::LIGHT:
          {
             model->createDescriptorSets(
                m_device.getLogicalDevice(),
-               m_descriptorSetLayoutDirectionalLight,
+               m_descriptorSetLayoutLight,
                m_descriptorPool
             );
 
@@ -516,16 +587,16 @@ void Renderer::createGraphicsPipelines()
          Attributes::PBR::getBindingDescription(),
          Attributes::PBR::getAttributeDescriptions(),
          // Models assocciated with this graphics pipeline.
-         &m_normalModelIndices
+         &m_objectModelIndices
    );
 
 
-   m_graphicsPipelineDirectionalLight = GraphicsPipeline(
+   m_graphicsPipelineLight = GraphicsPipeline(
          m_device.getLogicalDevice(),
          GraphicsPipelineType::LIGHT,
          m_swapchain->getExtent(),
          m_renderPass.get(),
-         m_descriptorSetLayoutDirectionalLight,
+         m_descriptorSetLayoutLight,
          // Filename of the vertex shader.
          "light",
          // Filename of the fragment shader.
@@ -534,7 +605,7 @@ void Renderer::createGraphicsPipelines()
          Attributes::LIGHT::getBindingDescription(),
          Attributes::LIGHT::getAttributeDescriptions(),
          // Models assocciated with this graphics pipeline.
-         &m_directionalLightIndices
+         &m_lightModelIndices
    );
 }
 
@@ -545,6 +616,8 @@ void Renderer::createGraphicsPipelines()
 void Renderer::createDescriptorSetLayouts()
 {
    
+   // ---------------------------------Models----------------------------------
+
    descriptorSetLayoutUtils::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
          GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
@@ -564,8 +637,18 @@ void Renderer::createDescriptorSetLayouts()
          m_device.getLogicalDevice(),
          GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
          GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
-         m_descriptorSetLayoutDirectionalLight
+         m_descriptorSetLayoutLight
    );
+
+
+   // ---------------------------------Features--------------------------------
+
+   //descriptorSetLayoutUtils::createDescriptorSetLayout(
+   //      m_device.getLogicalDevice(),
+   //      GRAPHICS_PIPELINE::SHADOWMAP::UBOS_INFO,
+   //      GRAPHICS_PIPELINE::SHADOWMAP::SAMPLERS_INFO,
+   //      m_descriptorSetLayoutShadowMap
+   //);
 }
 
 void Renderer::initVK()
@@ -598,14 +681,14 @@ void Renderer::initVK()
    // Descriptor Pool
    // (Calculates the total size of the pool depending of the descriptors
    // we send as parameter and the number of descriptor SETS defined)
-   m_descriptorPool.createDescriptorPool(
+   m_descriptorPool = DescriptorPool (
          m_device.getLogicalDevice(),
          // Type of descriptors / Count of each type of descriptor in the pool.
          {
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                // TODO: Make the size more precise.
-               30
+               800
                //static_cast<uint32_t> (
                //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                //)
@@ -613,7 +696,7 @@ void Renderer::initVK()
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                // TODO: Make the size more precise.
-               30
+               800
                //static_cast<uint32_t> (
                //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                //)
@@ -621,12 +704,13 @@ void Renderer::initVK()
          },
          // Descriptor SETS count.
          // TODO: Make the size more precise.
-         30
+         800
          //m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
    );
 
    createDescriptorSetLayouts();
    
+   // -----------------------------------Features------------------------------
    m_msaa = renderTarget::MSAA(
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
@@ -640,6 +724,16 @@ void Renderer::initVK()
          m_swapchain->getExtent(),
          m_msaa.getSamplesCount()
    );
+
+   //m_shadowMap = ShadowMap(
+   //      m_device.getPhysicalDevice(),
+   //      m_device.getLogicalDevice(),
+   //      m_swapchain->getExtent().width,
+   //      m_swapchain->getExtent().height,
+   //      m_depthBuffer.getFormat(),
+   //      m_msaa.getSamplesCount(),
+   //      m_descriptorSetLayoutShadowMap
+   //);
 
    createRenderPass();
 
@@ -799,20 +893,29 @@ void Renderer::recordCommandBuffer(
                if (model->getType() == ModelType::NORMAL_PBR)
                {
                   if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
+                  {
+                     if (pModel.get()->isHided())
+                        continue;
+
                      bindAllMeshesData<NormalPBR>(
                            pModel, graphicsPipeline, commandBuffer, currentFrame
                      );
+                  }
                }
 
-               if (model-> getType() == ModelType::DIRECTIONAL_LIGHT)
+               if (model-> getType() == ModelType::LIGHT)
                {
                   if (
                      auto pModel =
-                     std::dynamic_pointer_cast<DirectionalLight>(model)
-                  )
-                     bindAllMeshesData<DirectionalLight>(
+                     std::dynamic_pointer_cast<Light>(model)
+                  ) {
+                     if (pModel.get()->isHided())
+                        continue;
+
+                     bindAllMeshesData<Light>(
                         pModel, graphicsPipeline, commandBuffer, currentFrame
                      );
+                  }
                }
             }
       }
@@ -868,18 +971,24 @@ void Renderer::drawFrame(uint8_t& currentFrame)
                   m_camera->getPos(),
                   m_camera->getViewM(),
                   m_camera->getProjectionM(),
+                  m_lightModelIndices.size(),
                   m_allModels,
-                  m_directionalLightIndices,
+                  currentFrame
+            );
+            pModel->updateUBOlightsInfo(
+                  m_device.getLogicalDevice(),
+                  m_lightModelIndices,
+                  m_allModels,
                   currentFrame
             );
          }
       }
 
-      if (model-> getType() == ModelType::DIRECTIONAL_LIGHT)
+      if (model-> getType() == ModelType::LIGHT)
       {
          if (
             auto pModel =
-            std::dynamic_pointer_cast<DirectionalLight>(model)
+            std::dynamic_pointer_cast<Light>(model)
          )
             pModel->updateUBO(
                   m_device.getLogicalDevice(),
@@ -912,11 +1021,10 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_renderPass,
          m_swapchain->getExtent(),
          {
-            m_graphicsPipelineDirectionalLight,
+            m_graphicsPipelineLight,
             m_graphicsPipelinePBR,
             // The skybox has to be always the last one.
             m_graphicsPipelineSkybox
-            /*, m_graphicsPipelineLightM*/
          },
          currentFrame,
          m_commandPool.getCommandBuffer(currentFrame),
@@ -944,12 +1052,12 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    // These two commands specify which command buffers to actualy submit for
    // execution.
    
-   // ImGUI added
-   std::array<VkCommandBuffer, 2> submitCommandBuffers = {
+   std::vector<VkCommandBuffer> submitCommandBuffers = {
       m_commandPool.getCommandBuffer(currentFrame),
       m_GUI->getCommandBuffer(currentFrame)
    };
-   submitInfo.commandBufferCount = 2;
+
+   submitInfo.commandBufferCount = submitCommandBuffers.size();
    submitInfo.pCommandBuffers = submitCommandBuffers.data();
    // Specifies which semaphores to signal once the command buffer/s have
    // finished execution.
@@ -1059,8 +1167,8 @@ void Renderer::mainLoop()
       m_GUI->draw(
             m_allModels,
             m_camera->getPos(),
-            m_normalModelIndices,
-            m_directionalLightIndices
+            m_objectModelIndices,
+            m_lightModelIndices
       );
       drawFrame(currentFrame);
    }
@@ -1113,7 +1221,7 @@ void Renderer::cleanup()
    // Graphics Pipelines
    m_graphicsPipelinePBR.destroy(m_device.getLogicalDevice());
    m_graphicsPipelineSkybox.destroy(m_device.getLogicalDevice());
-   m_graphicsPipelineDirectionalLight.destroy(m_device.getLogicalDevice());
+   m_graphicsPipelineLight.destroy(m_device.getLogicalDevice());
 
    // Render pass
    m_renderPass.destroy(m_device.getLogicalDevice());
@@ -1136,7 +1244,7 @@ void Renderer::cleanup()
    );
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
          m_device.getLogicalDevice(),
-         m_descriptorSetLayoutDirectionalLight
+         m_descriptorSetLayoutLight
    );
    
    // Sync objects

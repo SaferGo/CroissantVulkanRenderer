@@ -8,9 +8,8 @@
 #include <vulkan/vulkan.h>
 
 DescriptorPool::DescriptorPool() {}
-DescriptorPool::~DescriptorPool() {}
 
-void DescriptorPool::createDescriptorPool(
+DescriptorPool::DescriptorPool(
       const VkDevice& logicalDevice,
       const std::vector<VkDescriptorPoolSize> poolSizes,
       const uint32_t descriptorSetsCount
@@ -35,6 +34,8 @@ if (poolSizes.size() == 0)
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to create descriptor pool!");
 }
+
+DescriptorPool::~DescriptorPool() {}
 
 const VkDescriptorPool& DescriptorPool::getDescriptorPool() const
 {

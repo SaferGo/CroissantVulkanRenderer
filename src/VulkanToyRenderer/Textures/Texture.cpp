@@ -1,5 +1,7 @@
 #include <VulkanToyRenderer/Textures/Texture.h>
 
+#include <iostream>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include <vulkan/vulkan.h>
@@ -169,7 +171,8 @@ void Texture::createTextureSampler(
    m_textureSampler = Sampler(
          physicalDevice,
          logicalDevice,
-         m_mipLevels
+         m_mipLevels,
+         VK_SAMPLER_ADDRESS_MODE_REPEAT
    );
 }
 
@@ -453,7 +456,7 @@ const VkImageView& Texture::getTextureImageView() const
 
 const VkSampler& Texture::getTextureSampler() const
 {
-   return m_textureSampler.getSampler();
+   return m_textureSampler.get();
 }
 
 void Texture::destroyTexture(const VkDevice& logicalDevice)

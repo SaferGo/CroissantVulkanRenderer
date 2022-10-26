@@ -122,9 +122,10 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Model.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/NormalPBR.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/Skybox.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/DirectionalLight.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/Light.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Camera.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Types/Arcball.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/ShadowMap.cpp"
 )
 
 target_include_directories(
