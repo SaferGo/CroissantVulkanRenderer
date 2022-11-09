@@ -116,6 +116,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/descriptorTypesUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/imageManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/Image.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Texture.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/mipmapUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Attributes.cpp"
@@ -126,6 +127,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Camera.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Types/Arcball.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/ShadowMap.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Framebuffer/framebufferUtils.cpp"
 )
 
 target_include_directories(

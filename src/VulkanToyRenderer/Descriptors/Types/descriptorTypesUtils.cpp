@@ -14,11 +14,11 @@ void descriptorTypesUtils::createDescriptorBufferInfo(
 }
 
 void descriptorTypesUtils::createDescriptorImageInfo(
-      const VkImageView& textureImageView,
-      const VkSampler& textureSampler,
+      const VkImageView& imageView,
+      const VkSampler& sampler,
       VkDescriptorImageInfo& imageInfo
 ) {
    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-   imageInfo.imageView = textureImageView;
-   imageInfo.sampler = textureSampler;
+   imageInfo.imageView = imageView;
+   imageInfo.sampler = sampler;
 }

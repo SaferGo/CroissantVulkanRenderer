@@ -4,6 +4,7 @@
 #include <string>
 #include <array>
 #include <optional>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
@@ -16,6 +17,7 @@
 #include <VulkanToyRenderer/Descriptors/DescriptorInfo.h>
 #include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
+#include <VulkanToyRenderer/Features/ShadowMap.h>
 
 enum class ModelType
 {
@@ -59,6 +61,7 @@ public:
    virtual void createDescriptorSets(
          const VkDevice& logicalDevice,
          const VkDescriptorSetLayout& descriptorSetLayout,
+         const ShadowMap* shadowMap,
          DescriptorPool& descriptorPool
    ) = 0;
 
@@ -99,9 +102,12 @@ protected:
 
    bool m_hideStatus;
 
+   std::vector<std::shared_ptr<Texture>> m_texturesLoaded;
+   std::unordered_map<std::string, size_t> m_texturesID;
+
 
 private:
 
    void processNode(aiNode* node, const aiScene* scene);
 
-};
+  };

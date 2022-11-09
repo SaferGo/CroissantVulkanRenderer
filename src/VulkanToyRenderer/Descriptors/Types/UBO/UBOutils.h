@@ -11,11 +11,6 @@ namespace UBOutils
          const glm::fvec3 actualRot,
          const glm::fvec3 actualSize
    );
-   glm::mat4 getUpdatedViewMatrix(
-         const glm::fvec3& cameraPos,
-         const glm::fvec3& centerPos,
-         const glm::fvec3& upAxis
-   );
    glm::mat4 getUpdatedProjMatrix(
       const float vfov,
       const float aspect,

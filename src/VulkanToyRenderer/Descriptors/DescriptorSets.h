@@ -19,17 +19,9 @@ public:
          const VkDevice logicalDevice,
          const std::vector<DescriptorInfo>& bindingUBOs,
          const std::vector<DescriptorInfo>& bindingSamplers,
-         const std::vector<Texture>& texture,
-         std::vector<UBO*>& UBOs,
-         const VkDescriptorSetLayout& descriptorSetLayout,
-         DescriptorPool& descriptorPool
-   );
-   DescriptorSets(
-         const VkDevice logicalDevice,
-         const std::vector<DescriptorInfo>& uboInfo,
-         const std::vector<DescriptorInfo>& samplersInfo,
-         const std::vector<VkImageView>& imageViews,
-         const std::vector<Sampler>& imageSamplers,
+         const std::vector<std::shared_ptr<Texture>>& textures,
+         const VkImageView* shadowMapImageView,
+         const VkSampler* shadowMapSampler,
          std::vector<UBO*>& UBOs,
          const VkDescriptorSetLayout& descriptorSetLayout,
          DescriptorPool& descriptorPool

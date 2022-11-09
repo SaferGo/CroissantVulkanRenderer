@@ -1,6 +1,7 @@
 #pragma once
 
 #include <VulkanToyRenderer/Model/Model.h>
+#include <VulkanToyRenderer/Features/ShadowMap.h>
 
 #include <GLFW/glfw3.h>
 
@@ -22,6 +23,7 @@ public:
          const LightType& lightType,
          const glm::fvec4& lightColor,
          const glm::fvec4& pos = glm::fvec4(0.0f),
+         const glm::fvec4& endPos = glm::fvec4(1.0f),
          const glm::fvec3& rot = glm::fvec3(0.0f),
          const glm::fvec3& size = glm::fvec3(1.0f),
          const float attenuation = 1.0f,
@@ -35,6 +37,7 @@ public:
    void createDescriptorSets(
          const VkDevice& logicalDevice,
          const VkDescriptorSetLayout& descriptorSetLayout,
+         const ShadowMap* shadowMap,
          DescriptorPool& descriptorPool
    ) override;
 
@@ -68,6 +71,7 @@ public:
    );
 
    const glm::fvec4& getColor() const;
+   const glm::fvec4& getEndPos() const;
    const float& getAttenuation() const;
    const float& getRadius() const;
    const LightType& getLightType() const;
@@ -86,6 +90,8 @@ private:
 
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
 
+   // To get the direction of directional and spot lights(m_endPos - m_Pos);
+   glm::fvec4 m_endPos;
    float m_attenuation;
    float m_radius;
    glm::fvec4 m_color;

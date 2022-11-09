@@ -30,7 +30,7 @@ GUI::GUI(
       const Swapchain& swapchain,
       const uint32_t& graphicsFamilyIndex,
       const VkQueue& graphicsQueue,
-      Window& window
+      const std::shared_ptr<Window>& window
 ) : m_opSwapchain(&swapchain), m_opLogicalDevice(&logicalDevice) {
 
    // - Descriptor Pool
@@ -69,7 +69,7 @@ GUI::GUI(
    //ImGui::StyleColorsDark();
    applyStyle();
 
-   ImGui_ImplGlfw_InitForVulkan(window.m_window, true);
+   ImGui_ImplGlfw_InitForVulkan(window->m_window, true);
    ImGui_ImplVulkan_InitInfo initInfo = {};
    initInfo.Instance = vkInstance;
    initInfo.PhysicalDevice = physicalDevice;
@@ -278,6 +278,7 @@ void GUI::createRenderPass()
          // are waiting in srcStageMask).
          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
          VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+         (VkDependencyFlagBits)0,
          dependency
    );
 

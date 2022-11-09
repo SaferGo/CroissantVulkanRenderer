@@ -9,8 +9,8 @@ namespace descriptorTypesUtils{
       VkDescriptorBufferInfo& bufferInfo
    );
    void createDescriptorImageInfo(
-      const VkImageView& textureImageView,
-      const VkSampler& textureSampler,
+      const VkImageView& imageView,
+      const VkSampler& sampler,
       VkDescriptorImageInfo& imageInfo
    );
 

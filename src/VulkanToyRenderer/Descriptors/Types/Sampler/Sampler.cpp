@@ -10,15 +10,16 @@ Sampler::Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const uint32_t mipLevels,
-      const VkSamplerAddressMode& addressMode
+      const VkSamplerAddressMode& addressMode,
+      const VkFilter& filter
 ) {
    VkSamplerCreateInfo samplerInfo{};
    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
    // Specifies how to interpolate texels that are magnified or minified.
    // Manification -> when oversampling.
    // Minification -> when undersampling.
-   samplerInfo.magFilter = VK_FILTER_LINEAR;
-   samplerInfo.minFilter = VK_FILTER_LINEAR;
+   samplerInfo.magFilter = filter;
+   samplerInfo.minFilter = filter;
    samplerInfo.addressModeU = addressMode;
    samplerInfo.addressModeV = addressMode;
    samplerInfo.addressModeW = addressMode;

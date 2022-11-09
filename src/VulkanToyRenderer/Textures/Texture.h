@@ -6,6 +6,7 @@
 
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.h>
+#include <VulkanToyRenderer/Images/Image.h>
 
 struct TextureToLoadInfo
 {
@@ -27,7 +28,6 @@ public:
       CommandPool& commandPool,
       VkQueue& graphicsQueue
    );
-   Texture();
    ~Texture();
    
       
@@ -71,12 +71,7 @@ private:
          VkQueue& graphicsQueue
    );
 
-   VkImage               m_textureImage;
-   VkDeviceMemory        m_textureImageMemory;
-   VkImageView           m_textureImageView;
-
-   Sampler               m_textureSampler;
-
+   Image                 m_image;
    bool                  m_isCubemap;
    uint32_t              m_mipLevels;
    VkSampleCountFlagBits m_samplesCount;

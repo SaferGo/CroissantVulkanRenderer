@@ -10,13 +10,12 @@ class Window
 {
 public:
 
-   Window();
-   ~Window();
-   void createWindow(
+   Window(
          const uint16_t width,
          const uint16_t height,
          const char* title
    );
+   ~Window();
    void createSurface(const VkInstance& instance);
 
    GLFWwindow* get();

@@ -12,31 +12,20 @@ Light::Light(
       const LightType& lightType,
       const glm::fvec4& lightColor,
       const glm::fvec4& pos,
+      const glm::fvec4& endPos,
       const glm::fvec3& rot,
       const glm::fvec3& size,
       const float attenuation,
       const float radius
 ) : Model(name, ModelType::LIGHT, pos, rot, size),
+    m_endPos(endPos),
     m_color(lightColor),
     m_lightType(lightType),
     m_attenuation(attenuation),
     m_radius(radius)
 {
-
    loadModel((std::string(MODEL_DIR) + modelFileName).c_str());
 
-   for (auto& mesh : m_meshes)
-   {
-      mesh.m_textures.resize(
-            GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT
-      );
-      mesh.m_texturesToLoadInfo.push_back(
-            {
-               "textures/default.png",
-               VK_FORMAT_R8G8B8A8_SRGB
-            }
-      );
-   }
    m_rot = glm::fvec3(0.0f);
 }
 
@@ -46,11 +35,11 @@ void Light::destroy(const VkDevice& logicalDevice)
 {
    m_ubo.destroyUniformBuffersAndMemories(logicalDevice);
 
+   for (auto& texture : m_texturesLoaded)
+      texture->destroyTexture(logicalDevice);
+
    for (auto& mesh : m_meshes)
    {
-      for (auto& texture : mesh.m_textures) 
-         texture.destroyTexture(logicalDevice);
-
       bufferManager::destroyBuffer(
             logicalDevice,
             mesh.m_vertexBuffer
@@ -127,6 +116,7 @@ void Light::createUniformBuffers(
 void Light::createDescriptorSets(
       const VkDevice& logicalDevice,
       const VkDescriptorSetLayout& descriptorSetLayout,
+      const ShadowMap* shadowMap,
       DescriptorPool& descriptorPool
 ) {
    std::vector<UBO*> opUBOs = {&m_ubo};
@@ -138,6 +128,8 @@ void Light::createDescriptorSets(
             GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
             GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
             mesh.m_textures,
+            nullptr,
+            nullptr,
             opUBOs,
             descriptorSetLayout,
             descriptorPool
@@ -189,20 +181,42 @@ void Light::createTextures(
       CommandPool& commandPool,
       VkQueue& graphicsQueue
 ) {
+   const size_t nTextures = GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT;
+   const TextureToLoadInfo info = {
+      "textures/default.png",
+      VK_FORMAT_R8G8B8A8_SRGB
+   };
+
    for (auto& mesh : m_meshes)
    {
-      for (size_t i = 0; i < mesh.m_textures.size(); i++)
+      for (size_t i = 0; i < nTextures; i++)
       {
-         mesh.m_textures[i] = Texture(
-               physicalDevice,
-               logicalDevice,
-               mesh.m_texturesToLoadInfo[i],
-               // isSkybox
-               false,
-               samplesCount,
-               commandPool,
-               graphicsQueue
+         auto it = (
+               m_texturesID.find(info.name)
          );
+
+         if (it == m_texturesID.end())
+         {
+            mesh.m_textures.push_back(
+                  std::make_shared<Texture>(
+                     physicalDevice,
+                     logicalDevice,
+                     info,
+                     // isSkybox
+                     false,
+                     samplesCount,
+                     commandPool,
+                     graphicsQueue
+                  )
+            );
+
+            m_texturesLoaded.push_back(mesh.m_textures[i]);
+            m_texturesID[info.name] = (
+                  m_texturesLoaded.size() - 1
+            );
+         } else
+            mesh.m_textures.push_back(m_texturesLoaded[it->second]);
+
       }
    }
 }
@@ -234,6 +248,11 @@ void Light::updateUBO(
 const glm::fvec4& Light::getColor() const
 {
    return m_color;
+}
+
+const glm::fvec4& Light::getEndPos() const
+{
+   return m_endPos;
 }
 
 const float& Light::getAttenuation() const

@@ -27,15 +27,19 @@ namespace imageManager{
          const VkImageAspectFlags& aspectFlags,
          const bool isCubemap,
          const uint32_t mipLevels,
+         const VkComponentSwizzle& componentMapR,
+         const VkComponentSwizzle& componentMapG,
+         const VkComponentSwizzle& componentMapB,
+         const VkComponentSwizzle& componentMapA,
          VkImageView& imageView
    );
    void copyBufferToImage(
          const uint32_t width,
          const uint32_t height,
          const bool isCubemap,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
+         const VkBuffer& buffer,
          CommandPool& commandPool,
-         VkBuffer& buffer,
-         VkImage& image
+         const VkImage& image
    );
 };

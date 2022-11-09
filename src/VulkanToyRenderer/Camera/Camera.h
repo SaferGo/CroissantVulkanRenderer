@@ -28,6 +28,7 @@ public:
    const glm::mat4& getViewM();
    const float& getFOV() const;
    glm::fvec4& getPos();
+   const float& getAspect() const;
    void setFOV(const float newFOV);
 
 protected:

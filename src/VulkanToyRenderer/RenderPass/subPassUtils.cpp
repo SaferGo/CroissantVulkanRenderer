@@ -31,6 +31,7 @@ void subPassUtils::createSubPassDependency(
       const uint32_t& dstSubpass,
       const VkPipelineStageFlags& dstStageFlags,
       const VkAccessFlags& dstAccessMask,
+      const VkDependencyFlagBits& dependencyFlags,
       VkSubpassDependency& dependency
 ) {
    // Defines the indices of the dependency and the dependent
@@ -51,4 +52,5 @@ void subPassUtils::createSubPassDependency(
    // when we want to start writing colors to it.
    dependency.dstStageMask = dstStageFlags;
    dependency.dstAccessMask = dstAccessMask;
+   dependency.dependencyFlags = dependencyFlags;
 }

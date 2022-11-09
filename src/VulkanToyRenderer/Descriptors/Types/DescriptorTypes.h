@@ -10,6 +10,7 @@ namespace DescriptorTypes
       struct alignas(16) LightInfo
       {
          glm::vec4 pos;
+         glm::vec4 dir;
          glm::vec4 color;
          float attenuation;
          float radius;
@@ -42,10 +43,8 @@ namespace DescriptorTypes
 
       struct alignas(16) ShadowMap
       {
-         glm::mat4 shadowModel;
          glm::mat4 model;
-         glm::mat4 view;
-         glm::mat4 proj;
+         glm::mat4 lightSpace;
       };
    }
 };

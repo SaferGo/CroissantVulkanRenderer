@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include <VulkanToyRenderer/Images/Image.h>
+
 namespace renderTarget
 {
 
@@ -20,13 +22,12 @@ namespace renderTarget
       ~DepthBuffer();
       const VkImageView& getImageView() const;
       const VkFormat& getFormat() const;
+
       void destroy(const VkDevice& logicalDevice);
    
    private:
    
-      VkImage m_image;
-      VkDeviceMemory m_imageMemory;
-      VkImageView m_imageView;
+      Image m_image;
       VkFormat m_format;
    
    };
@@ -54,9 +55,7 @@ namespace renderTarget
    
    private:
    
-      VkImage        m_image;
-      VkDeviceMemory m_imageMemory;
-      VkImageView    m_imageView;
+      Image                 m_image;
       VkSampleCountFlagBits m_samplesCount;
    
    };

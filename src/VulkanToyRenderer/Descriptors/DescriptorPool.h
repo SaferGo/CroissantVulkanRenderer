@@ -19,8 +19,8 @@ public:
    const VkDescriptorPool& getDescriptorPool() const;
    void allocDescriptorSets(
          const VkDevice& logicalDevice,
-         std::vector<VkDescriptorSet>& descriptorSets,
-         std::vector<VkDescriptorSetLayout>& descriptorSetLayouts
+         const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
+         std::vector<VkDescriptorSet>& descriptorSets
    );
    void destroyDescriptorPool(const VkDevice& logicalDevice);
 

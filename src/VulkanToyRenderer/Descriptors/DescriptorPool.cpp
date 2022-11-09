@@ -47,8 +47,8 @@ const VkDescriptorPool& DescriptorPool::getDescriptorPool() const
  */
 void DescriptorPool::allocDescriptorSets(
       const VkDevice& logicalDevice,
-      std::vector<VkDescriptorSet>& descriptorSets,
-      std::vector<VkDescriptorSetLayout>& descriptorSetLayouts
+      const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
+      std::vector<VkDescriptorSet>& descriptorSets
 ) {
    VkDescriptorSetAllocateInfo allocInfo{};
    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

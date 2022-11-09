@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <optional>
+#include <memory>
 
 #include <vulkan/vulkan.h>
 
@@ -33,7 +34,7 @@ public:
    Swapchain(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const Window& window,
+      const std::shared_ptr<Window>& window,
       const SwapchainSupportedProperties& supportedProperties
    );
    ~Swapchain();
@@ -68,7 +69,7 @@ public:
 private:
 
    void chooseBestSettings(
-      const Window& window,
+      const std::shared_ptr<Window>& window,
       const SwapchainSupportedProperties& supportedProperties,
       VkSurfaceFormatKHR& surfaceFormat,
       VkPresentModeKHR& presentMode,
@@ -86,7 +87,7 @@ private:
 
    VkExtent2D chooseBestExtent(
          const VkSurfaceCapabilitiesKHR& capabilities,
-         const Window& window
+         const std::shared_ptr<Window>& window
    );
 
 

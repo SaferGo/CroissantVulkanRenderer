@@ -1,7 +1,9 @@
 #pragma once
 
+#include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Features/ShadowMap.h>
 
 class NormalPBR : public Model
 {
@@ -23,6 +25,7 @@ public:
    void createDescriptorSets(
          const VkDevice& logicalDevice,
          const VkDescriptorSetLayout& descriptorSetLayout,
+         const ShadowMap* shadowMap,
          DescriptorPool& descriptorPool
    ) override;
 
@@ -62,6 +65,7 @@ public:
          const std::vector<std::shared_ptr<Model>>& models,
          const uint32_t& currentFrame
    );
+   const glm::mat4& getModelM() const;
 
          
    // Info to update UBO.
@@ -69,6 +73,7 @@ public:
    float extremeY[2];
    float extremeZ[2];
 
+   // TODO: make it private
    std::vector<Mesh<Attributes::PBR::Vertex>> m_meshes;
 
 private:
@@ -84,5 +89,5 @@ private:
    UBO m_uboLights;
 
    DescriptorTypes::UniformBufferObject::NormalPBR m_basicInfo;
-   DescriptorTypes::UniformBufferObject::LightInfo m_lightsInfo[10];
+   DescriptorTypes::UniformBufferObject::LightInfo m_lightsInfo[config::LIGHTS_COUNT];
 };

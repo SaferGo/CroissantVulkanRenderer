@@ -20,7 +20,7 @@ Camera::Camera(
     m_zNear(zNear),
     m_zFar(zFar)
 {
-   m_view = UBOutils::getUpdatedViewMatrix(
+   m_view = glm::lookAt(
          // Eyes position.
          glm::vec3(m_pos),
          // Center position
@@ -48,11 +48,16 @@ const glm::mat4& Camera::getProjectionM() const
    return m_proj;
 }
 
+const float& Camera::getAspect() const
+{
+   return m_ratio;
+}
+
 const glm::mat4& Camera::getViewM()
 {
    // First we update the view matrix if the camera position changed.
    // TODO: verify if it changed it.
-   m_view = UBOutils::getUpdatedViewMatrix(
+   m_view = glm::lookAt(
          // Eyes position.
          glm::vec3(m_pos),
          // Center position

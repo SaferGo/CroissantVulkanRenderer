@@ -34,4 +34,6 @@ namespace config
    inline const std::string TEXTURE_CUBEMAP_FORMAT = "png";
    
 
+   // Scene
+   inline const uint32_t LIGHTS_COUNT = 10;
 };

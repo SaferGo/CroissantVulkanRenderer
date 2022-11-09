@@ -10,8 +10,8 @@
 void mipmapUtils::generateMipmaps(
    const VkPhysicalDevice& physicalDevice,
    CommandPool& commandPool,
-   VkQueue& graphicsQueue,
-   VkImage& image,
+   const VkQueue& graphicsQueue,
+   const VkImage& image,
    const int32_t width,
    const int32_t height,
    const VkFormat& format,

@@ -9,6 +9,7 @@
 #include <VulkanToyRenderer/Images/imageManager.h>
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
+#include <VulkanToyRenderer/Framebuffer/framebufferUtils.h>
 
 Swapchain::Swapchain() {}
 Swapchain::~Swapchain() {}
@@ -16,7 +17,7 @@ Swapchain::~Swapchain() {}
 Swapchain::Swapchain(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const Window& window,
+      const std::shared_ptr<Window>& window,
       const SwapchainSupportedProperties& supportedProperties
 ) {
 
@@ -56,7 +57,7 @@ Swapchain::Swapchain(
 
    VkSwapchainCreateInfoKHR createInfo{};
    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-   createInfo.surface = window.getSurface();
+   createInfo.surface = window->getSurface();
    createInfo.minImageCount = imageCount;
    createInfo.imageFormat = surfaceFormat.format;
    createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -89,7 +90,7 @@ Swapchain::Swapchain(
    QueueFamilyIndices indices;
    indices.getIndicesOfRequiredQueueFamilies(
          physicalDevice,
-         window.getSurface()
+         window->getSurface()
    );
    uint32_t queueFamilyIndices[] = {
       indices.graphicsFamily.value(),
@@ -187,6 +188,10 @@ void Swapchain::createAllImageViews(const VkDevice& logicalDevice)
             VK_IMAGE_ASPECT_COLOR_BIT,
             false,
             1,
+            VK_COMPONENT_SWIZZLE_IDENTITY,
+            VK_COMPONENT_SWIZZLE_IDENTITY,
+            VK_COMPONENT_SWIZZLE_IDENTITY,
+            VK_COMPONENT_SWIZZLE_IDENTITY,
             m_imageViews[i]
       );
    }
@@ -203,32 +208,22 @@ void Swapchain::createFramebuffers(
    // Iterates through each image view and creates the framebuffers.
    for (size_t i = 0; i < m_imageViews.size(); i++)
    {
+      // Images in which we'll write in.
       std::vector<VkImageView> attachments = {
          msaa.getImageView(),
          depthBuffer.getImageView(),
          m_imageViews[i]
       };
 
-      VkFramebufferCreateInfo framebufferInfo{};
-      framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-      framebufferInfo.renderPass = renderPass;
-      framebufferInfo.attachmentCount = static_cast<uint32_t>(
-            attachments.size()
-      );
-      framebufferInfo.pAttachments = attachments.data();
-      framebufferInfo.width = m_extent.width;
-      framebufferInfo.height = m_extent.height;
-      framebufferInfo.layers = 1;
-
-      auto status = vkCreateFramebuffer(
+      framebufferUtils::createFramebuffer(
             logicalDevice,
-            &framebufferInfo,
-            nullptr,
-            &m_framebuffers[i]
+            renderPass,
+            attachments,
+            m_extent.width,
+            m_extent.height,
+            1,
+            m_framebuffers[i]
       );
-
-      if (status != VK_SUCCESS)
-         throw std::runtime_error("Failed to create framebuffer!");
    }
 }
 
@@ -237,7 +232,7 @@ const VkImageView& Swapchain::getImageView(const uint32_t index) const {
 }
 
 void Swapchain::chooseBestSettings(
-      const Window& window,
+      const std::shared_ptr<Window>& window,
       const SwapchainSupportedProperties& supportedProperties,
       VkSurfaceFormatKHR& surfaceFormat,
       VkPresentModeKHR& presentMode,
@@ -312,13 +307,13 @@ VkPresentModeKHR Swapchain::chooseBestPresentMode(
  */
 VkExtent2D Swapchain::chooseBestExtent(
       const VkSurfaceCapabilitiesKHR& capabilities,
-      const Window& window
+      const std::shared_ptr<Window>& window
 ) {
-   if (window.isAllowedToModifyTheResolution(capabilities) == false)
+   if (window->isAllowedToModifyTheResolution(capabilities) == false)
       return capabilities.currentExtent;
 
    int width, height;
-   window.getResolutionInPixels(width,height);
+   window->getResolutionInPixels(width,height);
 
    VkExtent2D actualExtent =
    {

@@ -24,7 +24,7 @@ public:
          const Swapchain& swapchain,
          const uint32_t& graphicsFamilyIndex,
          const VkQueue& graphicsQueue,
-         Window& window
+         const std::shared_ptr<Window>& window
    );
    ~GUI();
    void recordCommandBuffer(

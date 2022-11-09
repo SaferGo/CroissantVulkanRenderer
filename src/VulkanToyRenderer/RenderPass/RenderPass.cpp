@@ -22,7 +22,7 @@ RenderPass::RenderPass(
    info.pAttachments = attachments.data();
    info.subpassCount = 1;
    info.pSubpasses = subpasses.data();
-   info.dependencyCount = 1;
+   info.dependencyCount = static_cast<uint32_t>(dependencies.size());
    info.pDependencies = dependencies.data();
 
    auto status = vkCreateRenderPass(

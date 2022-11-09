@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Images/imageManager.h>
+#include <VulkanToyRenderer/Images/Image.h>
 #include <VulkanToyRenderer/GraphicsPipeline/renderTargetUtils.h>
 
 
@@ -20,7 +21,7 @@ renderTarget::MSAA::MSAA(
          physicalDevice
    );
 
-   imageManager::createImage(
+   m_image = Image(
          physicalDevice,
          logicalDevice,
          swapchainExtent.width,
@@ -35,20 +36,12 @@ renderTarget::MSAA::MSAA(
          false,
          1,
          m_samplesCount,
-         m_image,
-         m_imageMemory
-   );
-
- 
-   imageManager::createImageView(
-         logicalDevice,
-         swapchainFormat,
-         m_image,
          VK_IMAGE_ASPECT_COLOR_BIT,
-         false,
-         1,
-         m_imageView
-   ); 
+         VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY
+   );
 }
 
 renderTarget::MSAA::~MSAA() {}
@@ -62,14 +55,12 @@ const VkSampleCountFlagBits& renderTarget::MSAA::getSamplesCount() const
 void renderTarget::MSAA::destroy(
       const VkDevice& logicalDevice
 ) {
-   vkDestroyImageView(logicalDevice, m_imageView, nullptr);
-   vkDestroyImage(logicalDevice, m_image, nullptr);
-   vkFreeMemory(logicalDevice, m_imageMemory, nullptr);
+   m_image.destroy(logicalDevice);
 }
 
 const VkImageView& renderTarget::MSAA::getImageView() const
 {
-   return m_imageView;
+   return m_image.getImageView();
 }
 
 /////////////////////////////////Depth buffer//////////////////////////////////
@@ -93,7 +84,7 @@ renderTarget::DepthBuffer::DepthBuffer(
          VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
    );
 
-   imageManager::createImage(
+   m_image = Image(
          physicalDevice,
          logicalDevice,
          swapchainExtent.width,
@@ -105,18 +96,11 @@ renderTarget::DepthBuffer::DepthBuffer(
          false,
          1,
          samplesCount,
-         m_image,
-         m_imageMemory
-   );
-
-   imageManager::createImageView(
-         logicalDevice,
-         m_format,
-         m_image,
          VK_IMAGE_ASPECT_DEPTH_BIT,
-         false,
-         1,
-         m_imageView
+         VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY,
+         VK_COMPONENT_SWIZZLE_IDENTITY
    );
 }
 
@@ -124,7 +108,7 @@ renderTarget::DepthBuffer::~DepthBuffer() {}
 
 const VkImageView& renderTarget::DepthBuffer::getImageView() const
 {
-   return m_imageView;
+   return m_image.getImageView();
 }
 
 const VkFormat& renderTarget::DepthBuffer::getFormat() const
@@ -135,7 +119,5 @@ const VkFormat& renderTarget::DepthBuffer::getFormat() const
 void renderTarget::DepthBuffer::destroy(
       const VkDevice& logicalDevice
 ) {
-   vkDestroyImageView(logicalDevice, m_imageView, nullptr);
-   vkDestroyImage(logicalDevice, m_image, nullptr);
-   vkFreeMemory(logicalDevice, m_imageMemory, nullptr);
+   m_image.destroy(logicalDevice);
 }

@@ -15,13 +15,6 @@ int main()
       // SCENE 1
       {
          app.addSkybox("Night", "NightSky");
-         //app.addObjectPBR(
-         //      "Gun",
-         //      "gun.gltf",
-         //      glm::fvec3(0.0f),
-         //      glm::fvec3(0.0f),
-         //      glm::fvec3(0.036f)
-         //);
          app.addObjectPBR(
                "Scene",
                "scene.gltf",
@@ -29,22 +22,23 @@ int main()
                glm::fvec3(-1.6f, 0.0f, 0.633f),
                glm::fvec3(0.350f)
          );
-         //app.addDirectionalLight(
-         //      "DirectionaLight1",
-         //      "lightSphere.obj",
-         //      glm::fvec3(1.0f),
-         //      glm::fvec3(0.0f, 1.678f, 2.881f),
-         //      glm::fvec3(0.125f)
-         //);
-         app.addPointLight(
-               "PointLight1",
+         app.addDirectionalLight(
+               "Sun",
                "lightSphere.obj",
                glm::fvec3(1.0f),
-               glm::fvec3(0.0f, 0.1, 2.881f),
-               glm::fvec3(0.125f),
-               0.5f,
-               3.0f
+               glm::fvec3(1.0f),
+               glm::fvec3(0.0f),
+               glm::fvec3(0.125f)
          );
+         //app.addPointLight(
+         //      "PointLight1",
+         //      "lightSphere.obj",
+         //      glm::fvec3(1.0f),
+         //      glm::fvec3(0.0f, 0.1, 2.881f),
+         //      glm::fvec3(0.125f),
+         //      0.5f,
+         //      3.0f
+         //);
       }
       
       

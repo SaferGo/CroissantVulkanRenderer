@@ -48,4 +48,15 @@ namespace Attributes
       std::vector<VkVertexInputAttributeDescription> 
             getAttributeDescriptions();
    };
+
+   namespace SHADOWMAP
+   {
+      struct Vertex
+      {
+         glm::vec3 pos;
+      };
+      VkVertexInputBindingDescription getBindingDescription();
+      std::vector<VkVertexInputAttributeDescription> 
+            getAttributeDescriptions();
+   };
 };

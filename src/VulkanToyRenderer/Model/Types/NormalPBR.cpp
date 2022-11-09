@@ -19,13 +19,6 @@ NormalPBR::NormalPBR(
 ) : Model(name, ModelType::NORMAL_PBR, pos, rot, size) {
 
    loadModel((std::string(MODEL_DIR) + modelFileName).c_str());
-
-   for (auto& mesh : m_meshes)
-   {
-      mesh.m_textures.resize(
-            GRAPHICS_PIPELINE::PBR::TEXTURES_PER_MESH_COUNT
-      );
-   }
 }
 
 NormalPBR::~NormalPBR() {}
@@ -35,10 +28,11 @@ void NormalPBR::destroy(const VkDevice& logicalDevice)
    m_ubo.destroyUniformBuffersAndMemories(logicalDevice);
    m_uboLights.destroyUniformBuffersAndMemories(logicalDevice);
 
+   for (auto& texture : m_texturesLoaded) 
+      texture->destroyTexture(logicalDevice);
+
    for (auto& mesh : m_meshes)
    {
-      for (auto& texture : mesh.m_textures) 
-         texture.destroyTexture(logicalDevice);
 
       bufferManager::destroyBuffer(
             logicalDevice,
@@ -174,7 +168,6 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
 
       newMesh.m_texturesToLoadInfo.push_back(info);
 
-
       info.name = getMaterialTextureName(
             material,
             aiTextureType_UNKNOWN,
@@ -221,22 +214,26 @@ void NormalPBR::createUniformBuffers(
 void NormalPBR::createDescriptorSets(
       const VkDevice& logicalDevice,
       const VkDescriptorSetLayout& descriptorSetLayout,
+      const ShadowMap* shadowMap,
       DescriptorPool& descriptorPool
 ) {
    std::vector<UBO*> opUBOs = {&m_ubo, &m_uboLights};
 
-   for (auto& mesh : m_meshes)
+  for (auto& mesh : m_meshes)
    {
       mesh.m_descriptorSets = DescriptorSets(
             logicalDevice,
             GRAPHICS_PIPELINE::PBR::UBOS_INFO,
             GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
             mesh.m_textures,
+            &shadowMap->getShadowMapView(),
+            &shadowMap->getSampler(),
             opUBOs,
             descriptorSetLayout,
             descriptorPool
       );
    }
+
 }
 
 void NormalPBR::uploadVertexData(
@@ -276,6 +273,9 @@ void NormalPBR::uploadVertexData(
    }
 }
 
+/*
+ * Creates and loads all the samplers used in the shader of each mesh.
+ */
 void NormalPBR::createTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
@@ -283,26 +283,47 @@ void NormalPBR::createTextures(
       CommandPool& commandPool,
       VkQueue& graphicsQueue
 ) {
+
+   const size_t nTextures = GRAPHICS_PIPELINE::PBR::TEXTURES_PER_MESH_COUNT;
+
    for (auto& mesh : m_meshes)
    {
-      // TODO: Improve this.
-      if (!mesh.m_hasTextureCoords)
-         continue;
-
-      for (size_t i = 0; i < mesh.m_textures.size(); i++)
+      // Samplers of textures.
+      for (size_t i = 0; i < nTextures; i++)
       {
-         mesh.m_textures[i] = Texture(
-               physicalDevice,
-               logicalDevice,
-               mesh.m_texturesToLoadInfo[i],
-               // isSkybox
-               false,
-               samplesCount,
-               commandPool,
-               graphicsQueue
+         auto it = (
+               m_texturesID.find(mesh.m_texturesToLoadInfo[i].name)
          );
+
+         if (it == m_texturesID.end())
+         {
+            mesh.m_textures.push_back(
+                  std::make_shared<Texture>(
+                     physicalDevice,
+                     logicalDevice,
+                     mesh.m_texturesToLoadInfo[i],
+                     // isSkybox
+                     false,
+                     samplesCount,
+                     commandPool,
+                     graphicsQueue
+                  )
+            );
+
+            m_texturesLoaded.push_back(mesh.m_textures[i]);
+            m_texturesID[mesh.m_texturesToLoadInfo[i].name] = (
+                  m_texturesLoaded.size() - 1
+            );
+         } else
+            mesh.m_textures.push_back(m_texturesLoaded[it->second]);
       }
+
    }
+}
+
+const glm::mat4& NormalPBR::getModelM() const
+{
+   return m_basicInfo.model;
 }
 
 void NormalPBR::updateUBO(
@@ -343,6 +364,7 @@ void NormalPBR::updateUBOlightsInfo(
       if (auto pModel = std::dynamic_pointer_cast<Light>(models[j]))
       {
          m_lightsInfo[i].pos = pModel->getPos();
+         m_lightsInfo[i].dir = pModel->getPos() - pModel->getEndPos();
          m_lightsInfo[i].color = pModel->getColor();
          m_lightsInfo[i].attenuation = pModel->getAttenuation();
          m_lightsInfo[i].radius = pModel->getRadius();
