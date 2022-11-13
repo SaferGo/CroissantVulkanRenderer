@@ -23,7 +23,7 @@ public:
          const LightType& lightType,
          const glm::fvec4& lightColor,
          const glm::fvec4& pos = glm::fvec4(0.0f),
-         const glm::fvec4& endPos = glm::fvec4(1.0f),
+         const glm::fvec4& targetPos = glm::fvec4(1.0f),
          const glm::fvec3& rot = glm::fvec3(0.0f),
          const glm::fvec3& size = glm::fvec3(1.0f),
          const float attenuation = 1.0f,
@@ -71,13 +71,16 @@ public:
    );
 
    const glm::fvec4& getColor() const;
-   const glm::fvec4& getEndPos() const;
+   const glm::fvec4& getTargetPos() const;
    const float& getAttenuation() const;
    const float& getRadius() const;
+   const float& getIntensity() const;
    const LightType& getLightType() const;
    void setColor(const glm::fvec4& newColor);
    void setAttenuation(const float& attenuation);
+   void setIntensity(const float& intensity);
    void setRadius(const float& radius);
+   void setTargetPos(const glm::fvec4& pos);
          
    // Info to update UBO.
    float extremeX[2];
@@ -91,9 +94,12 @@ private:
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
 
    // To get the direction of directional and spot lights(m_endPos - m_Pos);
-   glm::fvec4 m_endPos;
+   glm::fvec4 m_targetPos;
    float m_attenuation;
    float m_radius;
+   float m_intensity;
    glm::fvec4 m_color;
    LightType m_lightType;
+
+   DescriptorTypes::UniformBufferObject::Light m_dataInShader;
 };

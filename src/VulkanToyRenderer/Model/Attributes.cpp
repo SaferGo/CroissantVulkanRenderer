@@ -41,7 +41,7 @@ VkVertexInputBindingDescription Attributes::PBR::getBindingDescription()
 std::vector<VkVertexInputAttributeDescription> 
    Attributes::PBR::getAttributeDescriptions() 
 {
-   std::vector<VkVertexInputAttributeDescription> attributeDescriptions(5);
+   std::vector<VkVertexInputAttributeDescription> attributeDescriptions(6);
 
    // -Vertex Attribute: Position
 
@@ -92,6 +92,13 @@ std::vector<VkVertexInputAttributeDescription>
    //         PBR::Vertex, TBNtransposed, i
    //   );
    //}
+
+   // - Vertex Attribute: posInLightSpace
+
+   attributeDescriptions[5].binding = 0;
+   attributeDescriptions[5].location = 5;
+   attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+   attributeDescriptions[5].offset = offsetof(PBR::Vertex, posInLightSpace);
 
    return attributeDescriptions;
 }

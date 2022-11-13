@@ -357,16 +357,15 @@ void GraphicsPipeline::createRasterizerInfo(
    // Alters the depth values by adding a constant value or biasing them based
    // on a fragment's slope. Used sometimes for shadow mapping.
    if (m_type == GraphicsPipelineType::SHADOWMAP)
+   {
       rasterizerInfo.depthBiasEnable = VK_TRUE;
-   else
+      rasterizerInfo.depthBiasConstantFactor = 4.0f;
+      rasterizerInfo.depthBiasSlopeFactor = 1.5f;
+   } else
       rasterizerInfo.depthBiasEnable = VK_FALSE;
 
    // Optional
-   rasterizerInfo.depthBiasConstantFactor = 0.0f;
-   // Optional
-   rasterizerInfo.depthBiasClamp = 0.0f;
-   // Optional
-   rasterizerInfo.depthBiasSlopeFactor = 0.0f;
+   //rasterizerInfo.depthBiasClamp = 0.0f;
 }
 
 void GraphicsPipeline::createMultisamplingInfo(

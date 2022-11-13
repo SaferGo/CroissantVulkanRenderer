@@ -138,6 +138,8 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
          vertex.tangent = glm::fvec3(1.0f);
 
       //glm::vec3 bitangent = glm::cross(vertex.normal, tangent);
+
+      vertex.posInLightSpace = glm::fvec4(1.0f);
       
       newMesh.m_vertices.push_back(vertex);
 
@@ -323,7 +325,7 @@ void NormalPBR::createTextures(
 
 const glm::mat4& NormalPBR::getModelM() const
 {
-   return m_basicInfo.model;
+   return m_dataInShader.model;
 }
 
 void NormalPBR::updateUBO(
@@ -331,24 +333,32 @@ void NormalPBR::updateUBO(
       const glm::vec4& cameraPos,
       const glm::mat4& view,
       const glm::mat4& proj,
+      const glm::mat4& lightSpace,
       const int& lightsCount,
       const std::vector<std::shared_ptr<Model>>& models,
       const uint32_t& currentFrame
 ) {
 
-   m_basicInfo.model = UBOutils::getUpdatedModelMatrix(
+   m_dataInShader.model = UBOutils::getUpdatedModelMatrix(
          m_pos,
          m_rot,
          m_size
    );
-   m_basicInfo.view = view;
-   m_basicInfo.proj = proj;
+   m_dataInShader.view = view;
+   m_dataInShader.proj = proj;
+   m_dataInShader.lightSpace = lightSpace;
 
-   m_basicInfo.cameraPos = cameraPos;
-   m_basicInfo.lightsCount = lightsCount;
+   m_dataInShader.cameraPos = cameraPos;
+   m_dataInShader.lightsCount = lightsCount;
 
-   size_t size = sizeof(m_basicInfo);
-   UBOutils::updateUBO(logicalDevice, m_ubo, size, &m_basicInfo, currentFrame);
+   size_t size = sizeof(m_dataInShader);
+   UBOutils::updateUBO(
+         logicalDevice,
+         m_ubo,
+         size,
+         &m_dataInShader,
+         currentFrame
+   );
 }
 
 void NormalPBR::updateUBOlightsInfo(
@@ -364,10 +374,11 @@ void NormalPBR::updateUBOlightsInfo(
       if (auto pModel = std::dynamic_pointer_cast<Light>(models[j]))
       {
          m_lightsInfo[i].pos = pModel->getPos();
-         m_lightsInfo[i].dir = pModel->getPos() - pModel->getEndPos();
+         m_lightsInfo[i].dir = pModel->getTargetPos() - pModel->getPos();
          m_lightsInfo[i].color = pModel->getColor();
          m_lightsInfo[i].attenuation = pModel->getAttenuation();
          m_lightsInfo[i].radius = pModel->getRadius();
+         m_lightsInfo[i].intensity = pModel->getIntensity();
          m_lightsInfo[i].type = (int)pModel->getLightType();
       }
    }

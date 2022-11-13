@@ -80,32 +80,12 @@ void ShadowMap::updateUBO(
    // TODO:
    // The model? and projection matrix don't need to be updated every frame.
    m_basicInfo.model = modelM;
-   glm::mat4 proj = glm::ortho(
-         -aspect,
-         aspect,
+   glm::mat4 proj = glm::perspective(
+         glm::radians(config::FOV),
          1.0f,
-         -1.0f,
-         0.0f,
-         10.0f
+         zNear,
+         zFar
    );
-   float left = -aspect;
-   float right = aspect;
-   float top = -1.0f;
-   float bottom = 1.0f;
-   proj = glm::mat4(0.0f);
-   proj[0][0] = 2.f / (right - left);
-   proj[1][1] = 2.f / (bottom - top);
-   proj[2][2] = 1.f / (0.0001f - zFar);
-   proj[3][0] = -(right + left) / (right - left);
-   proj[3][1] = -(bottom + top) / (bottom - top);
-   proj[3][2] = 0.0001f / (0.0001f - zFar);
-   proj[3][3] = 1.0f;
-   //glm::mat4 proj = glm::perspective(
-   //      45.0f,
-   //      1.77865f,
-   //      zNear,
-   //      zFar
-   //);
    proj[1][1] *= -1;
 
    glm::mat4 view = glm::lookAt(
@@ -200,6 +180,11 @@ const VkFramebuffer& ShadowMap::getFramebuffer(const uint32_t imageIndex) const
 CommandPool& ShadowMap::getCommandPool()
 {
    return m_commandPool;
+}
+
+const glm::mat4& ShadowMap::getLightSpace() const
+{
+   return m_basicInfo.lightSpace;
 }
 
 void ShadowMap::createFramebuffer(

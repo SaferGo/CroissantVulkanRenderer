@@ -19,9 +19,7 @@ public:
          const float zFar
    );
    ~Arcball() override;
-
    void saveCursorPos();
-
    void updateCameraPos(glm::mat4& newRot);
 
 private: 

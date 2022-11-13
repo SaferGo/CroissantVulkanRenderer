@@ -27,9 +27,12 @@ public:
    const glm::mat4& getProjectionM() const;
    const glm::mat4& getViewM();
    const float& getFOV() const;
-   glm::fvec4& getPos();
+   const glm::fvec4& getPos() const;
+   const glm::fvec4& getTargetPos() const;
    const float& getAspect() const;
    void setFOV(const float newFOV);
+   void setPos(const glm::fvec4& pos);
+   void setTargetPos(const glm::fvec4& targetPos);
 
 protected:
 
@@ -42,6 +45,7 @@ protected:
    float m_zNear;
    float m_zFar;
    glm::fvec4 m_pos;
+   glm::fvec4 m_targetPos;
 
    glm::mat4 m_view;
    glm::mat4 m_proj;

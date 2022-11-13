@@ -14,6 +14,7 @@ namespace DescriptorTypes
          glm::vec4 color;
          float attenuation;
          float radius;
+         float intensity;
          int type;
       };
 
@@ -22,6 +23,7 @@ namespace DescriptorTypes
          glm::mat4 model;
          glm::mat4 view;
          glm::mat4 proj;
+         glm::mat4 lightSpace;
          glm::vec4 cameraPos;
          int lightsCount;
       };

@@ -50,6 +50,7 @@ public:
    void allocCommandBuffers(const uint32_t& commandBuffersCount);
    const VkImageView& getShadowMapView() const;
    const VkSampler& getSampler() const;
+   const glm::mat4& getLightSpace() const;
    const VkDescriptorSet& getDescriptorSet(const uint32_t index) const;
    const VkFramebuffer& getFramebuffer(const uint32_t imageIndex) const;
    const VkCommandBuffer& getCommandBuffer(const uint32_t index) const;

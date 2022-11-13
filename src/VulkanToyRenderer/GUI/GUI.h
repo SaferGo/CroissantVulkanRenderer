@@ -9,6 +9,7 @@
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
+#include <VulkanToyRenderer/Camera/Camera.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/Model/Model.h>
 
@@ -34,7 +35,7 @@ public:
    );
    void draw(
          const std::vector<std::shared_ptr<Model>>& models,
-         glm::fvec4& cameraPos,
+         const std::shared_ptr<Camera>& camera,
          const std::vector<size_t>& normalModelIndices,
          const std::vector<size_t>& lightModelIndices
    );
@@ -60,7 +61,7 @@ private:
          const float& minV,
          float& value
    );
-   void createCameraWindow(const std::string& name, glm::fvec4& cameraPos);
+   void createCameraWindow(const std::shared_ptr<Camera>& camera);
    void createTransformationsInfo(
          glm::vec4& pos,
          glm::vec3& rot,
@@ -69,6 +70,7 @@ private:
    );
    void createTranslationSliders(
          const std::string& name,
+         const std::string& treeNodeName,
          glm::fvec4& pos,
          const float minR,
          const float maxR

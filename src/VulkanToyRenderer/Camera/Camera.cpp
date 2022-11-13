@@ -61,7 +61,7 @@ const glm::mat4& Camera::getViewM()
          // Eyes position.
          glm::vec3(m_pos),
          // Center position
-         glm::vec3(0.0f, 0.0f, 0.0f),
+         glm::vec3(m_targetPos),
          // Up axis
          glm::vec3(0.0f, 1.0f, 0.0f)
    );
@@ -86,7 +86,22 @@ void Camera::setFOV(const float newFOV)
    );
 }
 
-glm::fvec4& Camera::getPos()
+void Camera::setPos(const glm::fvec4& pos)
+{
+   m_pos = pos;
+}
+
+void Camera::setTargetPos(const glm::fvec4& targetPos)
+{
+   m_targetPos = targetPos;
+}
+
+const glm::fvec4& Camera::getPos() const
 {
    return m_pos;
+}
+
+const glm::fvec4& Camera::getTargetPos() const
+{
+   return m_targetPos;
 }

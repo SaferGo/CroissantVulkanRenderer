@@ -23,7 +23,11 @@ Arcball::Arcball(
    ratio,
    zNear,
    zFar
-) {}
+) {
+   m_lastCursorPos = glm::fvec2(0.0f);
+   m_currentCursorPos = glm::fvec2(0.0f);
+   m_targetPos = glm::fvec4(0.0f);
+}
 
 Arcball::~Arcball() {}
 
@@ -51,7 +55,7 @@ glm::fvec3 Arcball::getArcballVector(const float x, const float y)
 }
 
 /*
- * Algorithm from:
+ * Algorithm taken from:
  * https://en.wikibooks.org/wiki/OpenGL_Programming/Modern_OpenGL_Tutorial_Arcball
  */
 void Arcball::updateCameraPos(glm::mat4& newRot)

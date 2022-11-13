@@ -329,7 +329,7 @@ const VkCommandBuffer& GUI::getCommandBuffer(const uint32_t index) const
 
 void GUI::draw(
       const std::vector<std::shared_ptr<Model>>& models,
-      glm::fvec4& cameraPos,
+      const std::shared_ptr<Camera>& camera,
       const std::vector<size_t>& normalModelIndices,
       const std::vector<size_t>& lightModelIndices
 ) {
@@ -340,7 +340,7 @@ void GUI::draw(
 
       createModelsWindow(models, normalModelIndices);
       createLightsWindow(models, lightModelIndices);
-      createCameraWindow("Camera", cameraPos);
+      createCameraWindow(camera);
 
    ImGui::Render();
 }
@@ -357,13 +357,14 @@ void GUI::createLightsWindow(
              std::dynamic_pointer_cast<Light>(models[j])
          ) {
             const std::string modelName = model.get()->getName();
+            std::string subMenuName;
+            std::string sliderName;
 
             glm::fvec4 newPos = model.get()->getPos();
             glm::fvec3 newRot = model.get()->getRot();
             glm::fvec3 newSize = model.get()->getSize();
             glm::fvec4 color = model.get()->getColor();
-            float attenuation = model.get()->getAttenuation();
-            float radius = model.get()->getRadius();
+            float intensity = model.get()->getIntensity();
             bool isHided = model.get()->isHided();
 
             if (ImGui::TreeNode(modelName.c_str()))
@@ -384,12 +385,15 @@ void GUI::createLightsWindow(
 
                if (model.get()->getLightType() != LightType::DIRECTIONAL_LIGHT)
                {
+                  float radius = model.get()->getRadius();
+                  float attenuation = model.get()->getAttenuation();
+
                   // Attenuation
 
-                  std::string subMenuName = (
+                  subMenuName = (
                         "Attenuation###LightProperty::Attenuation" + modelName
                   );
-                  std::string sliderName = (
+                  sliderName = (
                         "###Attenuation::" + modelName
                   );
 
@@ -408,15 +412,48 @@ void GUI::createLightsWindow(
                   sliderName = (
                         "###Radius::" + modelName
                   );
-
                   createSlider(
                         subMenuName,
                         sliderName,
-                        50.0f,
+                        100.0f,
                         0.0f,
                         radius
                   );
+
+                  model.get()->setAttenuation(attenuation);
+                  model.get()->setRadius(radius);
                }
+
+               if (model.get()->getLightType() != LightType::POINT_LIGHT)
+               {
+                  glm::fvec4 targetPos = model.get()->getTargetPos();
+
+                  // Target's position.
+                  createTranslationSliders(
+                        modelName,
+                        "Target Pos.",
+                        targetPos,
+                        -100.0f,
+                        100.0f
+                  );
+
+                  model.get()->setTargetPos(targetPos);
+               }
+
+               // Intensity
+               subMenuName = (
+                     "Intensity###LightProperty::Intensity" + modelName
+               );
+               sliderName = (
+                     "###Intensity::" + modelName
+               );
+               createSlider(
+                     subMenuName,
+                     sliderName,
+                     100.0f,
+                     0.0f,
+                     intensity
+               );
 
                ImGui::TreePop();
                ImGui::Separator();
@@ -424,9 +461,8 @@ void GUI::createLightsWindow(
            model.get()->setPos(newPos);
            model.get()->setRot(newRot);
            model.get()->setSize(newSize);
+           model.get()->setIntensity(intensity);
            model.get()->setColor(color);
-           model.get()->setAttenuation(attenuation);
-           model.get()->setRadius(radius);
            model.get()->setHideStatus(isHided);
          }
       }
@@ -500,6 +536,7 @@ void GUI::createModelsWindow(
 
 void GUI::createTranslationSliders(
       const std::string& name,
+      const std::string& treeNodeName,
       glm::fvec4& pos,
       const float minR,
       const float maxR
@@ -519,7 +556,7 @@ void GUI::createTranslationSliders(
    };
 
    if (ImGui::TreeNode(
-            ("Position##TRANSLATION::" + name).c_str()) 
+            (treeNodeName + "##TRANSLATION::" + name).c_str()) 
    ){
       for (size_t i = 0; i < sliderNames.size(); i++)
       {
@@ -534,6 +571,7 @@ void GUI::createTranslationSliders(
       ImGui::Separator();
    }
 }
+
 void GUI::createRotationSliders(
       const std::string& name,
       glm::fvec3& pos,
@@ -616,9 +654,10 @@ void GUI::createTransformationsInfo(
 
    createTranslationSliders(
          modelName,
+         "Position",
          pos,
-         -10.0f,
-         10.0f
+         -100.0f,
+         100.0f
    );
    createRotationSliders(
          modelName,
@@ -634,19 +673,33 @@ void GUI::createTransformationsInfo(
    );
 }
 
-void GUI::createCameraWindow(const std::string& name, glm::fvec4& cameraPos)
+void GUI::createCameraWindow(const std::shared_ptr<Camera>& camera)
 {
+   glm::fvec4 cameraPos = camera->getPos();
+   glm::fvec4 targetPos = camera->getTargetPos();
 
    ImGui::Begin("Camera");
-
+      // Moves the camera.
       createTranslationSliders(
-            name,
+            "Camera",
+            "Position",
             cameraPos,
-            -30.0f,
-            30.0f
+            -100.0f,
+            100.0f
+      );
+      // Moves the target's position.
+      createTranslationSliders(
+            "Camera",
+            "Target Pos.",
+            targetPos,
+            -100.0f,
+            100.0f
       );
 
    ImGui::End();
+
+   camera->setPos(cameraPos);
+   camera->setTargetPos(targetPos);
 }
 
 void GUI::destroy(const VkDevice& logicalDevice)

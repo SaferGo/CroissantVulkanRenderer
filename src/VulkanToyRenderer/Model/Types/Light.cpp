@@ -12,18 +12,23 @@ Light::Light(
       const LightType& lightType,
       const glm::fvec4& lightColor,
       const glm::fvec4& pos,
-      const glm::fvec4& endPos,
+      const glm::fvec4& targetPos,
       const glm::fvec3& rot,
       const glm::fvec3& size,
       const float attenuation,
       const float radius
 ) : Model(name, ModelType::LIGHT, pos, rot, size),
-    m_endPos(endPos),
+    m_targetPos(targetPos),
     m_color(lightColor),
     m_lightType(lightType),
     m_attenuation(attenuation),
     m_radius(radius)
 {
+   if (lightType == LightType::DIRECTIONAL_LIGHT)
+      m_intensity = 5.0f;
+   else
+      m_intensity = 70.0f;
+
    loadModel((std::string(MODEL_DIR) + modelFileName).c_str());
 
    m_rot = glm::fvec3(0.0f);
@@ -229,20 +234,24 @@ void Light::updateUBO(
       const uint32_t& currentFrame
 ) {
 
-   DescriptorTypes::UniformBufferObject::Light newUBO;
-
-   newUBO.model = UBOutils::getUpdatedModelMatrix(
+   m_dataInShader.model = UBOutils::getUpdatedModelMatrix(
          m_pos,
          m_rot,
          m_size
    );
-   newUBO.view = view;
-   newUBO.proj = proj;
+   m_dataInShader.view = view;
+   m_dataInShader.proj = proj;
 
-   newUBO.lightColor = m_color;
+   m_dataInShader.lightColor = m_color;
 
-   size_t size = sizeof(newUBO);
-   UBOutils::updateUBO(logicalDevice, m_ubo, size, &newUBO, currentFrame);
+   size_t size = sizeof(m_dataInShader);
+   UBOutils::updateUBO(
+         logicalDevice,
+         m_ubo,
+         size,
+         &m_dataInShader,
+         currentFrame
+   );
 }
 
 const glm::fvec4& Light::getColor() const
@@ -250,9 +259,14 @@ const glm::fvec4& Light::getColor() const
    return m_color;
 }
 
-const glm::fvec4& Light::getEndPos() const
+const float& Light::getIntensity() const
 {
-   return m_endPos;
+   return m_intensity;
+}
+
+const glm::fvec4& Light::getTargetPos() const
+{
+   return m_targetPos;
 }
 
 const float& Light::getAttenuation() const
@@ -275,9 +289,19 @@ void Light::setColor(const glm::fvec4& newColor)
    m_color = newColor;
 }
 
+void Light::setTargetPos(const glm::fvec4& pos)
+{
+   m_targetPos = pos;
+}
+
 void Light::setAttenuation(const float& attenuation)
 {
    m_attenuation = attenuation;
+}
+
+void Light::setIntensity(const float& intensity)
+{
+   m_intensity = intensity;
 }
 
 void Light::setRadius(const float& radius)

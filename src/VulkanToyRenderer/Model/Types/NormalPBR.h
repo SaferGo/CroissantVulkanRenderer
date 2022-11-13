@@ -55,6 +55,7 @@ public:
          const glm::vec4& cameraPos,
          const glm::mat4& view,
          const glm::mat4& proj,
+         const glm::mat4& lightSpace,
          const int& lightsCount,
          const std::vector<std::shared_ptr<Model>>& models,
          const uint32_t& currentFrame
@@ -88,6 +89,6 @@ private:
 
    UBO m_uboLights;
 
-   DescriptorTypes::UniformBufferObject::NormalPBR m_basicInfo;
+   DescriptorTypes::UniformBufferObject::NormalPBR m_dataInShader;
    DescriptorTypes::UniformBufferObject::LightInfo m_lightsInfo[config::LIGHTS_COUNT];
 };

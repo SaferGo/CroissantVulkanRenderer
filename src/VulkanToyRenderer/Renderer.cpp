@@ -684,12 +684,12 @@ void Renderer::createGraphicsPipelines()
             {
                shaderType::VERTEX,
                // Filename of the vertex shader.
-               "normal"
+               "scene"
             },
             {
                shaderType::FRAGMENT,
                // Filename of the fragment shader.
-               "normal"
+               "scene"
             }
          },
          m_msaa.getSamplesCount(),
@@ -823,7 +823,7 @@ void Renderer::initVK()
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                // TODO: Make the size more precise.
-               800
+               1500
                //static_cast<uint32_t> (
                //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                //)
@@ -831,7 +831,7 @@ void Renderer::initVK()
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                // TODO: Make the size more precise.
-               800
+               1500
                //static_cast<uint32_t> (
                //      m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
                //)
@@ -839,7 +839,7 @@ void Renderer::initVK()
          },
          // Descriptor SETS count.
          // TODO: Make the size more precise.
-         130
+         1500
          //m_allModels.size() * config::MAX_FRAMES_IN_FLIGHT
    );
 
@@ -1128,7 +1128,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
             // TODO: make it for more than 1 model
             pMainModel->getModelM(),
             pLight->getPos(),
-            pLight->getEndPos(),
+            pLight->getTargetPos(),
             m_camera->getAspect(),
             config::Z_NEAR,
             config::Z_FAR,
@@ -1161,6 +1161,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
                   m_camera->getPos(),
                   m_camera->getViewM(),
                   m_camera->getProjectionM(),
+                  m_shadowMap.getLightSpace(),
                   m_lightModelIndices.size(),
                   m_allModels,
                   currentFrame
@@ -1373,7 +1374,7 @@ void Renderer::mainLoop()
       // Draws Imgui
       m_GUI->draw(
             m_allModels,
-            m_camera->getPos(),
+            m_camera,
             m_objectModelIndices,
             m_lightModelIndices
       );
