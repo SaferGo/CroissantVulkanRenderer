@@ -12,7 +12,6 @@ class CommandPool
 
 public:
 
-   CommandPool();
    CommandPool(
          const VkDevice& logicalDevice,
          const VkCommandPoolCreateFlags& flags,
@@ -51,7 +50,8 @@ private:
          VkCommandBufferAllocateInfo& allocInfo
    );
 
-   VkCommandPool m_commandPool;
-   VkDevice m_logicalDevice;
+   VkDevice                     m_logicalDevice;
+
+   VkCommandPool                m_commandPool;
    std::vector<VkCommandBuffer> m_commandBuffers;
 };

@@ -1,9 +1,9 @@
-#include <VulkanToyRenderer/GraphicsPipeline/renderTargetUtils.h>
+#include <VulkanToyRenderer/Features/featuresUtils.h>
 
 #include <vector>
 #include <stdexcept>
 
-VkSampleCountFlagBits renderTargetUtils::msaa::getMaxUsableSampleCount(
+VkSampleCountFlagBits featuresUtils::getMaxUsableSampleCount(
       const VkPhysicalDevice& physicalDevice
 ) {
    VkPhysicalDeviceProperties physicalDeviceProperties;
@@ -24,7 +24,7 @@ VkSampleCountFlagBits renderTargetUtils::msaa::getMaxUsableSampleCount(
    return VK_SAMPLE_COUNT_1_BIT;
 }
 
-VkFormat renderTargetUtils::depthBuffer::findSupportedFormat(
+VkFormat featuresUtils::findSupportedFormat(
       const VkPhysicalDevice& physicalDevice,
       const std::vector<VkFormat>& candidates,
       const VkImageTiling tiling,
@@ -48,7 +48,7 @@ VkFormat renderTargetUtils::depthBuffer::findSupportedFormat(
    throw std::runtime_error("Failed to find supported format!");
 }
 
- void renderTargetUtils::depthBuffer::createDepthStencilStateInfo(
+ void featuresUtils::createDepthStencilStateInfo(
        const GraphicsPipelineType& type,
        VkPipelineDepthStencilStateCreateInfo& depthStencil
 ) {

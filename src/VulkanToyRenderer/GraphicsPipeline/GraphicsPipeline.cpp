@@ -8,7 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include <VulkanToyRenderer/ShaderManager/shaderManager.h>
-#include <VulkanToyRenderer/GraphicsPipeline/renderTargetUtils.h>
+#include <VulkanToyRenderer/Features/featuresUtils.h>
 
 GraphicsPipeline::GraphicsPipeline() {}
 
@@ -25,7 +25,10 @@ GraphicsPipeline::GraphicsPipeline(
       VkVertexInputBindingDescription vertexBindingDescriptions,
       std::vector<VkVertexInputAttributeDescription> vertexAttribDescriptions,
       std::vector<size_t>* modelIndices
-) : m_type(type), m_opModelIndices(modelIndices) {
+) : m_logicalDevice(logicalDevice),
+    m_type(type),
+    m_opModelIndices(modelIndices)
+{
 
    std::vector<VkShaderModule> shaderModules(shaderInfos.size());
    std::vector<VkPipelineShaderStageCreateInfo> shaderStagesInfos(
@@ -35,7 +38,6 @@ GraphicsPipeline::GraphicsPipeline(
    for (size_t i = 0; i < shaderInfos.size(); i++)
    {
       createShaderModule(
-            logicalDevice,
             shaderInfos[i],
             shaderModules[i]
       );
@@ -116,11 +118,11 @@ GraphicsPipeline::GraphicsPipeline(
    createColorBlendingGlobalInfo(colorBlendAttachment, colorBlendingInfo);
    
    // Pipeline layout
-   createPipelineLayout(logicalDevice, descriptorSetLayout);
+   createPipelineLayout(descriptorSetLayout);
 
    // Depth and stencil
    VkPipelineDepthStencilStateCreateInfo depthStencil{};
-   renderTargetUtils::depthBuffer::createDepthStencilStateInfo(
+   featuresUtils::createDepthStencilStateInfo(
          m_type,
          depthStencil
    );
@@ -178,7 +180,6 @@ GraphicsPipeline::GraphicsPipeline(
 }
 
 void GraphicsPipeline::createShaderModule(
-      const VkDevice& logicalDevice,
       const ShaderInfo& shaderInfo,
       VkShaderModule& shaderModule
 ) {
@@ -201,7 +202,7 @@ void GraphicsPipeline::createShaderModule(
 
    shaderModule = shaderManager::createShaderModule(
          shaderCode,
-         logicalDevice
+         m_logicalDevice
    );
 }
 
@@ -422,8 +423,7 @@ void GraphicsPipeline::createColorBlendingGlobalInfo(
 // Interface that creates and allows us to communicate with the uniform
 // values and push constants in the shaders.
 void GraphicsPipeline::createPipelineLayout(
-   const VkDevice& logicalDevice,
-   const VkDescriptorSetLayout& descriptorSetLayout
+      const VkDescriptorSetLayout& descriptorSetLayout
 ) {
    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -436,7 +436,7 @@ void GraphicsPipeline::createPipelineLayout(
    pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
    auto status = vkCreatePipelineLayout(
-         logicalDevice,
+         m_logicalDevice,
          &pipelineLayoutInfo,
          nullptr,
          &m_pipelineLayout
@@ -463,10 +463,10 @@ const VkPipelineLayout& GraphicsPipeline::getPipelineLayout() const
    return m_pipelineLayout;
 }
 
-void GraphicsPipeline::destroy(const VkDevice& logicalDevice)
+void GraphicsPipeline::destroy()
 {
-   vkDestroyPipeline(logicalDevice, m_graphicsPipeline, nullptr);
-   vkDestroyPipelineLayout(logicalDevice, m_pipelineLayout, nullptr);
+   vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
+   vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
 }
 
 const GraphicsPipelineType GraphicsPipeline::getType() const

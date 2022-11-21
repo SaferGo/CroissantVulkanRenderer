@@ -13,6 +13,7 @@ public:
    Arcball(
          GLFWwindow* window,
          const glm::fvec4& pos,
+         const glm::fvec4& target,
          const float FOV,
          const float ratio,
          const float zNear,

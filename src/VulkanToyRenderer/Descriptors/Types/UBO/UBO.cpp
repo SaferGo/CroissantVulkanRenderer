@@ -7,19 +7,16 @@
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 
-UBO::UBO() {}
-
-UBO::~UBO() {}
-
-void UBO::createUniformBuffers(
+UBO::UBO(
       const VkPhysicalDevice physicalDevice,
       const VkDevice logicalDevice,
       const uint32_t nSets,
       const size_t size
-) {
+) : m_logicalDevice(logicalDevice)
+{
 
-   m_uniformBuffers.resize(nSets);
-   m_uniformBufferMemories.resize(nSets);
+   m_buffers.resize(nSets);
+   m_memories.resize(nSets);
 
    for (size_t i = 0; i < nSets; i++)
    {
@@ -30,44 +27,46 @@ void UBO::createUniformBuffers(
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            m_uniformBufferMemories[i],
-            m_uniformBuffers[i]
+            m_memories[i],
+            m_buffers[i]
       );
    }
 }
 
-std::vector<VkDeviceMemory>& UBO::getUniformBufferMemories()
+UBO::~UBO() {}
+
+std::vector<VkDeviceMemory>& UBO::getMemories()
 {
-   return m_uniformBufferMemories;
+   return m_memories;
 }
 
-VkDeviceMemory& UBO::getUniformBufferMemory(const uint32_t index)
+VkDeviceMemory& UBO::getMemory(const uint32_t index)
 {
-   return m_uniformBufferMemories[index];
+   return m_memories[index];
 }
 
-std::vector<VkBuffer>& UBO::getUniformBuffers()
+std::vector<VkBuffer>& UBO::get()
 {
-   return m_uniformBuffers;
+   return m_buffers;
 }
 
-VkBuffer& UBO::getUniformBuffer(const size_t i)
+VkBuffer& UBO::get(const size_t i)
 {
-   return m_uniformBuffers[i];
+   return m_buffers[i];
 }
 
-void UBO::destroyUniformBuffersAndMemories(const VkDevice& logicalDevice)
+void UBO::destroy()
 {
-   for (size_t i = 0; i < m_uniformBuffers.size(); i++)
+   for (size_t i = 0; i < m_buffers.size(); i++)
    {
       vkDestroyBuffer(
-            logicalDevice,
-            m_uniformBuffers[i],
+            m_logicalDevice,
+            m_buffers[i],
             nullptr
       );
       vkFreeMemory(
-            logicalDevice,
-            m_uniformBufferMemories[i],
+            m_logicalDevice,
+            m_memories[i],
             nullptr
       );
    }

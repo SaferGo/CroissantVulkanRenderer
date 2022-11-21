@@ -19,8 +19,9 @@ set(SKYBOX_DIR "${CMAKE_SOURCE_DIR}/assets/skybox")
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
    set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Wall")
-   #else ()
-   #   set(CMAKE_CXX_FLAGS_RELEASE_INIT "-Wall")
+else ()
+   set(CMAKE_CXX_FLAGS_RELEASE_INIT "-Wall")
+   add_definitions(-DRELEASE_MODE_ON=0)
 endif ()
 
 #####################################Libs######################################
@@ -65,12 +66,17 @@ target_include_directories(
 
 # -Assimp
 set(ASSIMP_DIR "${PROJECT_LIBRARIES_DIR}/assimp")
+option(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory(${ASSIMP_DIR})
-set(ASSIMP_BUILD_TESTS OFF)
 
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+# - Tracy
+option(TRACY_ENABLE "" ON)
+option(TRACY_ON_DEMAND "" ON)
+add_subdirectory("${PROJECT_LIBRARIES_DIR}/tracy")
 
 ##################################Shaders######################################
 
@@ -93,12 +99,10 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayers/vlManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/qfUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/queueFamilyUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/Swapchain.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ShaderManager/shaderManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/renderTarget.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/renderTargetUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPass.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/attachmentUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/subPassUtils.cpp"
@@ -119,6 +123,8 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Images/Image.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Texture.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/mipmapUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/cubemapUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Textures/Bitmap.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Attributes.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Model.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Model/Types/NormalPBR.cpp"
@@ -127,7 +133,11 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Camera.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Camera/Types/Arcball.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/ShadowMap.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/MSAA.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/DepthBuffer.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/featuresUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Framebuffer/framebufferUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Math/mathUtils.cpp"
 )
 
 target_include_directories(
@@ -136,11 +146,13 @@ target_include_directories(
       "${PROJECT_INCLUDE_DIR}"
       "${VULKAN_INCLUDE_DIR}"
       "${GLFW_INCLUDE_DIRS}"
+      "${TracyClient_INCLUDE_DIRS}"
    PRIVATE
       "${PROJECT_SOURCE_DIR}"
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC
+target_link_libraries(${PROJECT_NAME}
+   PUBLIC
    glfw 
    ${Vulkan_LIBRARY}
    Threads::Threads  # Needed by GLFW.
@@ -149,7 +161,9 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
    stb
    assimp
    imgui
-   PRIVATE ${CMAKE_DL_LIBS}
+   Tracy::TracyClient
+   PRIVATE
+   ${CMAKE_DL_LIBS}
 )
 # CMAKE_DL_LIBS -> is the library libdl which helps to link dynamic
 # libraries. We need it in order to use Vulkan Loader.

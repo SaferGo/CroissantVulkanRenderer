@@ -9,24 +9,24 @@ class UBO
 
 public:
 
-   UBO();
-   ~UBO();
-   void createUniformBuffers(
+   UBO(
          const VkPhysicalDevice physicalDevice,
          const VkDevice logicalDevice,
          const uint32_t nSets,
          const size_t size
    );
-   std::vector<VkDeviceMemory>& getUniformBufferMemories();
-   VkDeviceMemory& getUniformBufferMemory(const uint32_t index);
-   VkDeviceMemory& getUniformBufferMemory();
-   std::vector<VkBuffer>& getUniformBuffers();
-   VkBuffer& getUniformBuffer(const size_t i);
-   void destroyUniformBuffersAndMemories(const VkDevice& logicalDevice);
+   ~UBO();
+   std::vector<VkDeviceMemory>& getMemories();
+   VkDeviceMemory& getMemory(const uint32_t index);
+   std::vector<VkBuffer>& get();
+   VkBuffer& get(const size_t i);
+   void destroy();
 
 private:
 
-   std::vector<VkBuffer>        m_uniformBuffers;
-   std::vector<VkDeviceMemory>  m_uniformBufferMemories;
+   VkDevice                     m_logicalDevice;
+
+   std::vector<VkBuffer>        m_buffers;
+   std::vector<VkDeviceMemory>  m_memories;
 
 };

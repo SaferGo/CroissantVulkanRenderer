@@ -4,8 +4,8 @@
 
 struct DescriptorInfo
 {
-   int bindingNumber;
-   VkDescriptorType descriptorType;
+   int                   bindingNumber;
+   VkDescriptorType      descriptorType;
    VkShaderStageFlagBits shaderStage;
 };
 

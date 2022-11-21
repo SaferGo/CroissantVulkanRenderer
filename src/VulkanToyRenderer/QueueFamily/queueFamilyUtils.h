@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-namespace qfUtils
+namespace queueFamilyUtils
 {
    bool isGraphicsQueueSupported(const VkQueueFamilyProperties& qfSupported);
 

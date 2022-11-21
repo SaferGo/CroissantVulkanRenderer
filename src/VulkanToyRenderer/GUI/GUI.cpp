@@ -31,7 +31,8 @@ GUI::GUI(
       const uint32_t& graphicsFamilyIndex,
       const VkQueue& graphicsQueue,
       const std::shared_ptr<Window>& window
-) : m_opSwapchain(&swapchain), m_opLogicalDevice(&logicalDevice) {
+) : m_logicalDevice(logicalDevice), m_opSwapchain(&swapchain)
+{
 
    // - Descriptor Pool
    // (calculates the total size of the pool depending of the descriptors
@@ -77,7 +78,7 @@ GUI::GUI(
    initInfo.QueueFamily = graphicsFamilyIndex;
    initInfo.Queue = graphicsQueue;
    initInfo.PipelineCache = VK_NULL_HANDLE;
-   initInfo.DescriptorPool = m_descriptorPool.getDescriptorPool();
+   initInfo.DescriptorPool = m_descriptorPool.get();
    initInfo.Allocator = nullptr;
    initInfo.MinImageCount = m_opSwapchain->getMinImageCount();
    initInfo.ImageCount = m_opSwapchain->getImageCount();
@@ -86,12 +87,12 @@ GUI::GUI(
    
 
    // -Creation of command buffers and command pool
-   m_commandPool = CommandPool(
+   m_commandPool = std::make_shared<CommandPool>(
          logicalDevice,
          VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
          graphicsFamilyIndex
    );
-   m_commandPool.allocCommandBuffers(config::MAX_FRAMES_IN_FLIGHT);
+   m_commandPool->allocCommandBuffers(config::MAX_FRAMES_IN_FLIGHT);
 
    uploadFonts(graphicsQueue);
    
@@ -175,16 +176,16 @@ void GUI::uploadFonts(const VkQueue& graphicsQueue)
    // (one time command buffer)
    VkCommandBuffer newCommandBuffer;
    
-   m_commandPool.allocCommandBuffer(newCommandBuffer, true);
-   m_commandPool.beginCommandBuffer(
+   m_commandPool->allocCommandBuffer(newCommandBuffer, true);
+   m_commandPool->beginCommandBuffer(
          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
          newCommandBuffer
    );
    
       ImGui_ImplVulkan_CreateFontsTexture(newCommandBuffer);
    
-   m_commandPool.endCommandBuffer(newCommandBuffer);
-   m_commandPool.submitCommandBuffer(
+   m_commandPool->endCommandBuffer(newCommandBuffer);
+   m_commandPool->submitCommandBuffer(
          graphicsQueue,
          newCommandBuffer
    );
@@ -209,7 +210,7 @@ void GUI::createFrameBuffers()
    {
       attachment[0] = m_opSwapchain->getImageView(i);
       vkCreateFramebuffer(
-            *m_opLogicalDevice,
+            m_logicalDevice,
             &info,
             nullptr,
             &m_framebuffers[i]
@@ -283,7 +284,7 @@ void GUI::createRenderPass()
    );
 
    m_renderPass = RenderPass(
-         *m_opLogicalDevice,
+         m_logicalDevice,
          {attachment},
          {subpass},
          {dependency}
@@ -296,11 +297,11 @@ void GUI::recordCommandBuffer(
       const std::vector<VkClearValue>& clearValues
 ) {
    const VkCommandBuffer& commandBuffer = (
-         m_commandPool.getCommandBuffer(currentFrame)
+         m_commandPool->getCommandBuffer(currentFrame)
    );
 
-   m_commandPool.resetCommandBuffer(currentFrame);
-   m_commandPool.beginCommandBuffer(
+   m_commandPool->resetCommandBuffer(currentFrame);
+   m_commandPool->beginCommandBuffer(
          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
          currentFrame
    );
@@ -319,12 +320,12 @@ void GUI::recordCommandBuffer(
          );
 
       m_renderPass.end(commandBuffer);
-   m_commandPool.endCommandBuffer(commandBuffer);
+   m_commandPool->endCommandBuffer(commandBuffer);
 }
 
 const VkCommandBuffer& GUI::getCommandBuffer(const uint32_t index) const
 {
-   return m_commandPool.getCommandBuffer(index);
+   return m_commandPool->getCommandBuffer(index);
 }
 
 void GUI::draw(
@@ -702,18 +703,19 @@ void GUI::createCameraWindow(const std::shared_ptr<Camera>& camera)
    camera->setTargetPos(targetPos);
 }
 
-void GUI::destroy(const VkDevice& logicalDevice)
+void GUI::destroy()
 {
    for (auto& framebuffer : m_framebuffers)
-      vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+      vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
 
-   m_renderPass.destroy(logicalDevice);
-   m_commandPool.destroy();
+   m_renderPass.destroy();
+   m_commandPool->destroy();
 
    ImGui_ImplVulkan_Shutdown();
    ImGui_ImplGlfw_Shutdown();
    ImGui::DestroyContext();
-   m_descriptorPool.destroyDescriptorPool(logicalDevice);
+
+   m_descriptorPool.destroy();
 
 }
 

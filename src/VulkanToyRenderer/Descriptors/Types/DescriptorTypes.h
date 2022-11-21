@@ -26,6 +26,7 @@ namespace DescriptorTypes
          glm::mat4 lightSpace;
          glm::vec4 cameraPos;
          int lightsCount;
+         bool hasNormalMap;
       };
 
       struct alignas(16) Light

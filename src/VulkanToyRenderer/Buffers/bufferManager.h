@@ -18,7 +18,7 @@ namespace bufferManager
    );
    template<typename T>
    void createBufferAndTransferToDevice(
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          T* data,
@@ -28,7 +28,6 @@ namespace bufferManager
          VkDeviceMemory& memory,
          VkBuffer& buffer
    );
-
    void freeMemory(
          const VkDevice& logicalDevice,
          VkDeviceMemory& memory
@@ -37,9 +36,8 @@ namespace bufferManager
          const VkDevice& logicalDevice,
          VkBuffer& buffer
    );
-
    void copyBuffer(
-      CommandPool& commandPool,
+      const std::shared_ptr<CommandPool>& commandPool,
       const VkDeviceSize size,
       VkBuffer& srcBuffer,
       VkBuffer& dstBuffer,
@@ -53,7 +51,6 @@ namespace bufferManager
          const VkDeviceSize size,
          VkDeviceMemory& memory
    );
-
    void allocBuffer(
       const VkDevice& logicalDevice,
       const VkPhysicalDevice& physicalDevice,
@@ -66,5 +63,4 @@ namespace bufferManager
       VkBuffer& buffer,
       VkDeviceMemory& memory
    );
-
 };

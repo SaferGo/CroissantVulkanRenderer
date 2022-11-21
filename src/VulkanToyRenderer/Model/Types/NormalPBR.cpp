@@ -9,6 +9,7 @@
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
 #include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Model/Types/Light.h>
+#include <VulkanToyRenderer/Math/mathUtils.h>
 
 NormalPBR::NormalPBR(
       const std::string& name,
@@ -25,31 +26,31 @@ NormalPBR::~NormalPBR() {}
 
 void NormalPBR::destroy(const VkDevice& logicalDevice)
 {
-   m_ubo.destroyUniformBuffersAndMemories(logicalDevice);
-   m_uboLights.destroyUniformBuffersAndMemories(logicalDevice);
+   m_ubo->destroy();
+   m_uboLights->destroy();
 
    for (auto& texture : m_texturesLoaded) 
-      texture->destroyTexture(logicalDevice);
+      texture->destroy();
 
    for (auto& mesh : m_meshes)
    {
 
       bufferManager::destroyBuffer(
             logicalDevice,
-            mesh.m_vertexBuffer
+            mesh.vertexBuffer
       );
       bufferManager::destroyBuffer(
             logicalDevice,
-            mesh.m_indexBuffer
+            mesh.indexBuffer
       );
       
       bufferManager::freeMemory(
             logicalDevice,
-            mesh.m_vertexMemory
+            mesh.vertexMemory
       );
       bufferManager::freeMemory(
             logicalDevice,
-            mesh.m_indexMemory
+            mesh.indexMemory
       );
    }
 }
@@ -62,7 +63,7 @@ std::string NormalPBR::getMaterialTextureName(
 ) {
    if (material->GetTextureCount(type) > 0)
    {
-      // TODO: do something when there are many textures of the same type.
+      // TODO: manage when there are several textures of the same type.
 
       //for (size_t i = 0; i < material->GetTextureCount(type); i++)
       //{
@@ -74,12 +75,8 @@ std::string NormalPBR::getMaterialTextureName(
 
       return str.C_Str();
 
-   } else {
-      if (typeName == "NORMALS")
-         std::cout << " NSADSADSADSA NO HAY NORMALS\n";
-      // TODO: Improve this
+   } else
       return defaultTextureFile;
-   }
 }
 
 void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
@@ -105,10 +102,8 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
                   mesh->mNormals[i].z
                )
          );
-      } else {
-         std::cout << " NO HAY NORMALS !\n";
-         vertex.normal = glm::fvec3(1.0f);
-      }
+      } else
+         throw std::runtime_error("Mesh doesn't have normals!");
 
       if (mesh->mTextureCoords[0] != NULL)
       {
@@ -117,13 +112,9 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
             mesh->mTextureCoords[0][i].x,
             mesh->mTextureCoords[0][i].y,
          };
-         newMesh.m_hasTextureCoords = true;
 
       } else
-      {
          vertex.texCoord = glm::fvec3(1.0f);
-         newMesh.m_hasTextureCoords = false;
-      }
 
       if (mesh->mTangents != NULL)
       {
@@ -141,7 +132,7 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
 
       vertex.posInLightSpace = glm::fvec4(1.0f);
       
-      newMesh.m_vertices.push_back(vertex);
+      newMesh.vertices.push_back(vertex);
 
    }
 
@@ -149,7 +140,7 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
    {
       auto face = mesh->mFaces[i];
       for (size_t j = 0; j < face.mNumIndices; j++)
-         newMesh.m_indices.push_back(face.mIndices[j]);
+         newMesh.indices.push_back(face.mIndices[j]);
    }
 
 
@@ -168,7 +159,7 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       );
       info.format = VK_FORMAT_R8G8B8A8_SRGB;
 
-      newMesh.m_texturesToLoadInfo.push_back(info);
+      newMesh.texturesToLoadInfo.push_back(info);
 
       info.name = getMaterialTextureName(
             material,
@@ -178,7 +169,7 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       );
       info.format = VK_FORMAT_R8G8B8A8_SRGB;
 
-      newMesh.m_texturesToLoadInfo.push_back(info);
+      newMesh.texturesToLoadInfo.push_back(info);
 
       info.name = getMaterialTextureName(
             material,
@@ -188,7 +179,13 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       );
       info.format = VK_FORMAT_R8G8B8A8_UNORM;
 
-      newMesh.m_texturesToLoadInfo.push_back(info);
+      if (info.name == "textures/default.png")
+         m_hasNormalMap = false;
+      else
+         m_hasNormalMap = true;
+
+
+      newMesh.texturesToLoadInfo.push_back(info);
    }
 
    m_meshes.push_back(newMesh);
@@ -199,13 +196,13 @@ void NormalPBR::createUniformBuffers(
       const VkDevice& logicalDevice,
       const uint32_t& uboCount
 ) {
-   m_ubo.createUniformBuffers(
+   m_ubo = std::make_shared<UBO>(
          physicalDevice,
          logicalDevice,
          uboCount,
          sizeof(DescriptorTypes::UniformBufferObject::NormalPBR)
    );
-   m_uboLights.createUniformBuffers(
+   m_uboLights = std::make_shared<UBO>(
          physicalDevice,
          logicalDevice,
          uboCount,
@@ -216,23 +213,28 @@ void NormalPBR::createUniformBuffers(
 void NormalPBR::createDescriptorSets(
       const VkDevice& logicalDevice,
       const VkDescriptorSetLayout& descriptorSetLayout,
-      const ShadowMap* shadowMap,
+      const Texture& irradianceMap,
+      const std::shared_ptr<ShadowMap>& shadowMap,
       DescriptorPool& descriptorPool
 ) {
-   std::vector<UBO*> opUBOs = {&m_ubo, &m_uboLights};
+   std::vector<UBO*> opUBOs = {
+      (m_ubo.get()),
+      (m_uboLights.get())
+   };
 
   for (auto& mesh : m_meshes)
    {
-      mesh.m_descriptorSets = DescriptorSets(
+      mesh.descriptorSets = DescriptorSets(
             logicalDevice,
             GRAPHICS_PIPELINE::PBR::UBOS_INFO,
             GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
-            mesh.m_textures,
-            &shadowMap->getShadowMapView(),
-            &shadowMap->getSampler(),
+            mesh.textures,
             opUBOs,
             descriptorSetLayout,
-            descriptorPool
+            descriptorPool,
+            std::make_optional(irradianceMap),
+            std::make_optional(shadowMap->getShadowMapView()),
+            std::make_optional(shadowMap->getSampler())
       );
    }
 
@@ -242,7 +244,7 @@ void NormalPBR::uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       VkQueue& graphicsQueue,
-      CommandPool& commandPool
+      const std::shared_ptr<CommandPool>& commandPool
 ) {
 
    for (auto& mesh : m_meshes)
@@ -252,12 +254,12 @@ void NormalPBR::uploadVertexData(
             commandPool,
             physicalDevice,
             logicalDevice,
-            mesh.m_vertices.data(),
-            sizeof(mesh.m_vertices[0]) * mesh.m_vertices.size(),
+            mesh.vertices.data(),
+            sizeof(mesh.vertices[0]) * mesh.vertices.size(),
             graphicsQueue,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            mesh.m_vertexMemory,
-            mesh.m_vertexBuffer
+            mesh.vertexMemory,
+            mesh.vertexBuffer
          );
 
       // Index Buffer(with staging buffer)
@@ -265,12 +267,12 @@ void NormalPBR::uploadVertexData(
             commandPool,
             physicalDevice,
             logicalDevice,
-            mesh.m_indices.data(),
-            sizeof(mesh.m_indices[0]) * mesh.m_indices.size(),
+            mesh.indices.data(),
+            sizeof(mesh.indices[0]) * mesh.indices.size(),
             graphicsQueue,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            mesh.m_indexMemory,
-            mesh.m_indexBuffer
+            mesh.indexMemory,
+            mesh.indexBuffer
       );
    }
 }
@@ -278,11 +280,11 @@ void NormalPBR::uploadVertexData(
 /*
  * Creates and loads all the samplers used in the shader of each mesh.
  */
-void NormalPBR::createTextures(
+void NormalPBR::loadTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const VkSampleCountFlagBits& samplesCount,
-      CommandPool& commandPool,
+      const std::shared_ptr<CommandPool>& commandPool,
       VkQueue& graphicsQueue
 ) {
 
@@ -294,32 +296,29 @@ void NormalPBR::createTextures(
       for (size_t i = 0; i < nTextures; i++)
       {
          auto it = (
-               m_texturesID.find(mesh.m_texturesToLoadInfo[i].name)
+               m_texturesID.find(mesh.texturesToLoadInfo[i].name)
          );
 
          if (it == m_texturesID.end())
          {
-            mesh.m_textures.push_back(
+            mesh.textures.push_back(
                   std::make_shared<Texture>(
                      physicalDevice,
                      logicalDevice,
-                     mesh.m_texturesToLoadInfo[i],
-                     // isSkybox
-                     false,
+                     mesh.texturesToLoadInfo[i],
                      samplesCount,
                      commandPool,
                      graphicsQueue
                   )
             );
 
-            m_texturesLoaded.push_back(mesh.m_textures[i]);
-            m_texturesID[mesh.m_texturesToLoadInfo[i].name] = (
+            m_texturesLoaded.push_back(mesh.textures[i]);
+            m_texturesID[mesh.texturesToLoadInfo[i].name] = (
                   m_texturesLoaded.size() - 1
             );
          } else
-            mesh.m_textures.push_back(m_texturesLoaded[it->second]);
+            mesh.textures.push_back(m_texturesLoaded[it->second]);
       }
-
    }
 }
 
@@ -339,7 +338,7 @@ void NormalPBR::updateUBO(
       const uint32_t& currentFrame
 ) {
 
-   m_dataInShader.model = UBOutils::getUpdatedModelMatrix(
+   m_dataInShader.model = mathUtils::getUpdatedModelMatrix(
          m_pos,
          m_rot,
          m_size
@@ -350,6 +349,7 @@ void NormalPBR::updateUBO(
 
    m_dataInShader.cameraPos = cameraPos;
    m_dataInShader.lightsCount = lightsCount;
+   m_dataInShader.hasNormalMap = m_hasNormalMap;
 
    size_t size = sizeof(m_dataInShader);
    UBOutils::updateUBO(

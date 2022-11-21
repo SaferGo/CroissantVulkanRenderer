@@ -29,7 +29,6 @@ Texture::Texture(
       VkQueue& graphicsQueue
 ) : m_logicalDevice(logicalDevice),
     m_isCubemap(false),
-    m_isIrradianceMap(false),
     m_samplesCount(samplesCount)
 {
 
@@ -48,7 +47,6 @@ Texture::Texture(
 Texture::Texture(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const bool isIrradianceMap,
       const TextureToLoadInfo& textureInfo,
       const std::string& textureFolderName,
       const VkSampleCountFlagBits& samplesCount,
@@ -56,7 +54,6 @@ Texture::Texture(
       VkQueue& graphicsQueue
 ) : m_logicalDevice(logicalDevice),
     m_isCubemap(true),
-    m_isIrradianceMap(isIrradianceMap),
     m_samplesCount(samplesCount)
 {
    createTextureImageCubemap(
@@ -310,13 +307,11 @@ void Texture::createTextureImageCubemap(
    VkDeviceMemory stagingBufferMemory;
 
    const float* img = stbi_loadf(
-         (m_isIrradianceMap) ?
-            (pathToTexture + "/IrradianceMap/" + textureInfo.name).c_str() :
-            (pathToTexture + "/" + textureInfo.name).c_str(),
+         (pathToTexture + "/" + textureInfo.name).c_str(),
          &texWidth,
          &texHeight,
          &texChannels,
-         3
+         4
    );
 
    if (img == nullptr)
@@ -328,36 +323,20 @@ void Texture::createTextureImageCubemap(
       );
    }
 
-   // TODO: Verify if it's already created.
-   if (!m_isIrradianceMap)
-   {
-      cubemapUtils::createIrradianceHDR(
-            img,
-            texWidth,
-            texHeight,
-            pathToTexture + "/IrradianceMap/Irradiance.hdr"
-      );
-   }
-
-   // Converts RGB -> RGBA
-   // (Because Vulkan doesn't accept to use RGB format as sampler)
-   std::vector<float> img32(texWidth * texHeight * 4);
-   cubemapUtils::float24to32(texWidth, texHeight, img, img32.data());
-   stbi_image_free((void*)img);
-
    // Creates a Vertical Cross texture from the square texture.
    
-   Bitmap in(texWidth, texHeight, 4, eBitmapFormat_Float, img32.data());
+   Bitmap in(texWidth, texHeight, 4, eBitmapFormat_Float, img);
    Bitmap out = cubemapUtils::convertEquirectangularMapToVerticalCross(in);
 
+   stbi_image_free((void*)img);
 
-   //stbi_write_hdr(
-   //      (pathToTexture + "/verticalCross.hdr").c_str(),
-   //      out.w_,
-   //      out.h_,
-   //      out.comp_,
-   //      (const float*)out.data_.data()
-   //);
+   stbi_write_hdr(
+         (pathToTexture + "/verticalCross.hdr").c_str(),
+         out.w_,
+         out.h_,
+         out.comp_,
+         (const float*)out.data_.data()
+   );
 
    // Divides the cross and creates the 6 faces.
 
@@ -368,15 +347,69 @@ void Texture::createTextureImageCubemap(
          cubemap.w_ *
          cubemap.h_ *
          // rgba
-         4 *
-         Bitmap::getBytesPerComponent(cubemap.fmt_) *
-         // faces
-         6
+         cubemap.comp_ *
+         Bitmap::getBytesPerComponent(cubemap.fmt_)
    );
+   for (int i = 0; i < 6; i++)
+   {
+      stbi_write_hdr(
+            (
+             pathToTexture + "/" +
+             config::TEXTURE_CUBEMAP_NAMING_CONV[i] +
+             ".hdr"
+            ).c_str(),
+            cubemap.w_,
+            cubemap.h_,
+            cubemap.comp_,
+            (const float*)data
+      );
+      data += imageSize;
+   }
 
    // Creates the textures of the faces.
    
+   stbi_uc* pixels[6];
+
+   for (size_t i = 0; i < 6; i++)
+   {
+      pixels[i] = stbi_load(
+            (
+               std::string(pathToTexture) + "/" +
+               config::TEXTURE_CUBEMAP_NAMING_CONV[i] +
+               ".hdr"
+            ).c_str(),
+            &texWidth,
+            &texHeight,
+            &texChannels,
+            4
+      );
+      std::cout << "TEX WIDTH ::: " << texWidth << std::endl;
+      std::cout << "TEX HEIGHT ::: " << texHeight << std::endl;
+
+      if (!pixels[i])
+      {
+         throw std::runtime_error(
+               "Failed to load texture image: " +
+               std::string(pathToTexture) + "/" +
+               config::TEXTURE_CUBEMAP_NAMING_CONV[i] +
+               ".hdr"
+         );
+      }
+   }
+
    m_mipLevels = 1;
+
+   imageSize = (
+         texWidth *
+         texHeight *
+         // rgba
+         4 *
+         // 6 -> since we've 6 layers because of the cubemap.
+         6
+   );
+   std::cout << "IMG WIDTH ::: " << cubemap.w_ << std::endl;
+   std::cout << "IMG HEIGHT ::: " << cubemap.h_ << std::endl;
+   std::cout << "IMG COMP ::: " << cubemap.comp_ << std::endl;
 
    bufferManager::createBuffer(
          physicalDevice,
@@ -389,13 +422,20 @@ void Texture::createTextureImageCubemap(
          stagingBuffer
    );
 
-   bufferManager::fillBuffer(
-         m_logicalDevice,
-         data,
-         0,
-         imageSize,
-         stagingBufferMemory
-   );
+   VkDeviceSize layerSize = imageSize / 6;
+
+   for (size_t i = 0; i < 6; i++)
+   {
+      bufferManager::fillBuffer(
+            m_logicalDevice,
+            pixels[i],
+            layerSize * i,
+            layerSize,
+            stagingBufferMemory
+      );
+
+      stbi_image_free(pixels[i]);
+   }
    
    m_image = Image(
          physicalDevice,
@@ -460,12 +500,12 @@ void Texture::createTextureImageCubemap(
    
 }
 
-const VkImageView& Texture::getImageView() const
+const VkImageView& Texture::getTextureImageView() const
 {
    return m_image.getImageView();
 }
 
-const VkSampler& Texture::getSampler() const
+const VkSampler& Texture::getTextureSampler() const
 {
    return m_image.getSampler();
 }

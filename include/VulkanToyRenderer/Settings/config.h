@@ -24,12 +24,12 @@ namespace config
    // Textures - Naming Convention For Cubemaps
    inline const std::vector<std::string> TEXTURE_CUBEMAP_NAMING_CONV =
    {
-      "pz",
-      "nz",
+      "px",
+      "nx",
       "py",
       "ny",
-      "nx",
-      "px"
+      "pz",
+      "nz"
    };
    inline const std::string TEXTURE_CUBEMAP_FORMAT = "png";
    

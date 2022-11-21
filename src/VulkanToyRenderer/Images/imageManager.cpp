@@ -166,15 +166,15 @@ void imageManager::copyBufferToImage(
       const bool isCubemap,
       const VkQueue& graphicsQueue,
       const VkBuffer& buffer,
-      CommandPool& commandPool,
+      const std::shared_ptr<CommandPool>& commandPool,
       const VkImage& image
 ) {
 
    VkCommandBuffer commandBuffer;
 
-   commandPool.allocCommandBuffer(commandBuffer, true);
+   commandPool->allocCommandBuffer(commandBuffer, true);
 
-   commandPool.beginCommandBuffer(
+   commandPool->beginCommandBuffer(
          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
          commandBuffer
    );
@@ -214,9 +214,9 @@ void imageManager::copyBufferToImage(
       );
 
 
-   commandPool.endCommandBuffer(commandBuffer);
+   commandPool->endCommandBuffer(commandBuffer);
 
-   commandPool.submitCommandBuffer(
+   commandPool->submitCommandBuffer(
          graphicsQueue,
          commandBuffer
    );

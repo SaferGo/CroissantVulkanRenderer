@@ -16,16 +16,17 @@ public:
       const uint32_t descriptorSetsCount
    );
    ~DescriptorPool();
-   const VkDescriptorPool& getDescriptorPool() const;
+   const VkDescriptorPool& get() const;
    void allocDescriptorSets(
-         const VkDevice& logicalDevice,
          const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
          std::vector<VkDescriptorSet>& descriptorSets
    );
-   void destroyDescriptorPool(const VkDevice& logicalDevice);
+   void destroy();
 
 
 private:
+
+   VkDevice          m_logicalDevice;
 
    VkDescriptorPool  m_descriptorPool;
 };

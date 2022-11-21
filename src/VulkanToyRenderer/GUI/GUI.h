@@ -41,7 +41,7 @@ public:
    );
    const VkCommandBuffer& getCommandBuffer(const uint32_t index) const;
    const bool isCursorPositionInGUI() const;
-   void destroy(const VkDevice& logicalDevice);
+   void destroy();
 
 private:
 
@@ -98,13 +98,14 @@ private:
    );
    void cameraWindow(glm::fvec3& cameraPos);
 
-   std::vector<VkFramebuffer>   m_framebuffers;
-   CommandPool                  m_commandPool;
-   DescriptorPool               m_descriptorPool;
-   RenderPass                   m_renderPass;
+   VkDevice                         m_logicalDevice;
+
+   std::vector<VkFramebuffer>       m_framebuffers;
+   std::shared_ptr<CommandPool>     m_commandPool;
+   DescriptorPool  m_descriptorPool;
+   RenderPass                       m_renderPass;
 
    // Observer pointers
-   const Swapchain*             m_opSwapchain;
-   const VkDevice*              m_opLogicalDevice;
+   const Swapchain*                 m_opSwapchain;
 
 };

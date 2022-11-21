@@ -77,7 +77,7 @@ void bufferManager::bindBufferWithMemory(
  * memory allocation.
  */
 void bufferManager::copyBuffer(
-      CommandPool& commandPool,
+      const std::shared_ptr<CommandPool>& commandPool,
       const VkDeviceSize size,
       VkBuffer& srcBuffer,
       VkBuffer& dstBuffer,
@@ -85,9 +85,9 @@ void bufferManager::copyBuffer(
 ) {
    VkCommandBuffer commandBuffer;
 
-   commandPool.allocCommandBuffer(commandBuffer, true);
+   commandPool->allocCommandBuffer(commandBuffer, true);
 
-   commandPool.beginCommandBuffer(
+   commandPool->beginCommandBuffer(
          VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
          commandBuffer
    );
@@ -107,9 +107,9 @@ void bufferManager::copyBuffer(
             commandBuffer
       );
 
-   commandPool.endCommandBuffer(commandBuffer);
+   commandPool->endCommandBuffer(commandBuffer);
 
-   commandPool.submitCommandBuffer(graphicsQueue, commandBuffer);
+   commandPool->submitCommandBuffer(graphicsQueue, commandBuffer);
 }
 
 void bufferManager::allocBuffer(
@@ -164,7 +164,7 @@ void bufferManager::allocBuffer(
 
 template<typename T>
 void bufferManager::createBufferAndTransferToDevice(
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          T* data,
@@ -224,7 +224,7 @@ void bufferManager::createBufferAndTransferToDevice(
 //////////////////////////////////Instances////////////////////////////////////
 
 template void bufferManager::createBufferAndTransferToDevice<uint32_t>(
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          uint32_t* data,
@@ -238,7 +238,7 @@ template void bufferManager::createBufferAndTransferToDevice<uint32_t>(
 template void bufferManager::createBufferAndTransferToDevice<
    Attributes::PBR::Vertex
 >(
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          Attributes::PBR::Vertex* data,
@@ -252,7 +252,7 @@ template void bufferManager::createBufferAndTransferToDevice<
 template void bufferManager::createBufferAndTransferToDevice<
    Attributes::LIGHT::Vertex
 >(
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          Attributes::LIGHT::Vertex* data,
@@ -267,7 +267,7 @@ template void bufferManager::createBufferAndTransferToDevice<
 template void bufferManager::createBufferAndTransferToDevice<
    Attributes::SKYBOX::Vertex
 >(
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          Attributes::SKYBOX::Vertex* data,
@@ -324,9 +324,16 @@ template void bufferManager::fillBuffer<uint32_t>(
       const VkDeviceSize size,
       VkDeviceMemory& memory
 );
-template void bufferManager::fillBuffer<stbi_uc>(
+template void bufferManager::fillBuffer<uint8_t>(
       const VkDevice& logicalDevice,
-      stbi_uc* data,
+      uint8_t* data,
+      const VkDeviceSize offset,
+      const VkDeviceSize size,
+      VkDeviceMemory& memory
+);
+template void bufferManager::fillBuffer<float>(
+      const VkDevice& logicalDevice,
+      float* data,
       const VkDeviceSize offset,
       const VkDeviceSize size,
       VkDeviceMemory& memory

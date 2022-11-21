@@ -57,7 +57,6 @@ public:
    );
    void init(
       const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice,
       const uint32_t width,
       const uint32_t height,
       const VkFormat& format,
@@ -79,9 +78,11 @@ public:
    const VkImage& get() const;
    const VkImageView& getImageView() const;
    const VkSampler& getSampler() const;
-   void destroy(const VkDevice& logicalDevice);
+   void destroy();
 
 private:
+
+   VkDevice                m_logicalDevice;
 
    VkImage                 m_image;
    VkImageView             m_imageView;

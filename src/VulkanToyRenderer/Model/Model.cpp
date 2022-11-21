@@ -22,8 +22,8 @@ Model::Model(
       const glm::fvec4& pos,
       const glm::fvec3& rot,
       const glm::fvec3& size
-) : m_name(name),
-    m_type(type),
+) : m_type(type),
+    m_name(name),
     m_pos(pos),
     m_rot(rot),
     m_size(size),

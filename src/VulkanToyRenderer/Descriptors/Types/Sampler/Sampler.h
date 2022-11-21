@@ -7,7 +7,6 @@ class Sampler
 
 public:
 
-   Sampler();
    Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
@@ -18,10 +17,11 @@ public:
    ~Sampler();
    
    const VkSampler& get() const;
-   void destroySampler(const VkDevice& logicalDevice);
+   void destroy();
 
 private:
 
-      VkSampler     m_sampler;
+   VkDevice      m_logicalDevice;
 
+   VkSampler     m_sampler;
 };

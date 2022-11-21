@@ -16,6 +16,7 @@ public:
    Camera(
          GLFWwindow* window,
          const glm::fvec4& pos,
+         const glm::fvec4& target,
          const CameraType& type,
          const float FOV,
          const float ratio,
@@ -38,17 +39,17 @@ protected:
 
    // Observer pointer
    GLFWwindow* m_opWindow;
-   CameraType m_type;
-   
-   float m_FOV;
-   float m_ratio;
-   float m_zNear;
-   float m_zFar;
-   glm::fvec4 m_pos;
-   glm::fvec4 m_targetPos;
 
-   glm::mat4 m_view;
-   glm::mat4 m_proj;
+   CameraType  m_type;
+
+   float       m_FOV;
+   float       m_ratio;
+   float       m_zNear;
+   float       m_zFar;
+   glm::fvec4  m_pos;
+   glm::fvec4  m_targetPos;
+   glm::mat4   m_view;
+   glm::mat4   m_proj;
 
 private:
 

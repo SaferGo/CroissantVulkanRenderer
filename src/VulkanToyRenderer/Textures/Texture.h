@@ -23,18 +23,27 @@ public:
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const TextureToLoadInfo& textureInfo,
-      const bool isCubemap,
       const VkSampleCountFlagBits& samplesCount,
-      CommandPool& commandPool,
+      const std::shared_ptr<CommandPool>& commandPool,
+      VkQueue& graphicsQueue
+   );
+   Texture(
+      const VkPhysicalDevice& physicalDevice,
+      const VkDevice& logicalDevice,
+      const bool isIrradianceMap,
+      const TextureToLoadInfo& textureInfo,
+      const std::string& textureFolderName,
+      const VkSampleCountFlagBits& samplesCount,
+      const std::shared_ptr<CommandPool>& commandPool,
       VkQueue& graphicsQueue
    );
    ~Texture();
    
       
-   const VkImageView& getTextureImageView() const;
-   const VkSampler& getTextureSampler() const;
+   const VkImageView& getImageView() const;
+   const VkSampler& getSampler() const;
 
-   void destroyTexture(const VkDevice& logicalDevice);
+   void destroy();
 
 private:
 
@@ -42,37 +51,31 @@ private:
          const char* pathToTexture,
          const VkFormat& format,
          const VkPhysicalDevice& physicalDevice,
-         const VkDevice& logicalDevice,
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          VkQueue& graphicsQueue
    );
-   void createTextureImageView(
-         const VkDevice& logicalDevice,
-         const VkFormat& format
-   );
-   void createTextureSampler(
-      const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice
-   );
+   void createTextureImageView(const VkFormat& format);
+   void createTextureSampler(const VkPhysicalDevice& physicalDevice);
    void transitionImageLayout(
          const VkFormat& format,
          const VkImageLayout& oldLayout,
          const VkImageLayout& newLayout,
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          VkQueue& graphicsQueue
    );
 
    void createTextureImageCubemap(
-         const char* pathToTexture,
-         const VkFormat& format,
+         const std::string& pathToTexture,
+         const TextureToLoadInfo& textureInfo,
          const VkPhysicalDevice& physicalDevice,
-         const VkDevice& logicalDevice,
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          VkQueue& graphicsQueue
    );
 
+   VkDevice              m_logicalDevice;
    Image                 m_image;
    bool                  m_isCubemap;
+   bool                  m_isIrradianceMap;
    uint32_t              m_mipLevels;
    VkSampleCountFlagBits m_samplesCount;
 };

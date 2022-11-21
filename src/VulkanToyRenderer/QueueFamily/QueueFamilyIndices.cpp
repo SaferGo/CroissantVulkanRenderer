@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/QueueFamily/qfUtils.h>
+#include <VulkanToyRenderer/QueueFamily/queueFamilyUtils.h>
 
 /*
  * Checks if the queue families required are:
@@ -17,15 +17,15 @@ void QueueFamilyIndices::getIndicesOfRequiredQueueFamilies(
          const VkSurfaceKHR& surface
 ) {
    std::vector<VkQueueFamilyProperties> qfSupported;
-   qfUtils::getSupportedQueueFamilies(physicalDevice, qfSupported);
+   queueFamilyUtils::getSupportedQueueFamilies(physicalDevice, qfSupported);
 
    int i = 0;
    for (const auto& qf : qfSupported)
    {
-      if (qfUtils::isGraphicsQueueSupported(qf))
+      if (queueFamilyUtils::isGraphicsQueueSupported(qf))
          graphicsFamily = i;
 
-      if (qfUtils::isPresentQueueSupported(i, surface, physicalDevice))
+      if (queueFamilyUtils::isPresentQueueSupported(i, surface, physicalDevice))
          presentFamily = i;
 
       i++;

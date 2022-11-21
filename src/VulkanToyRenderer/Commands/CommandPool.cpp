@@ -9,8 +9,6 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Commands/commandUtils.h>
 
-CommandPool::CommandPool() {}
-
 CommandPool::CommandPool(
       const VkDevice& logicalDevice,
       const VkCommandPoolCreateFlags& flags,

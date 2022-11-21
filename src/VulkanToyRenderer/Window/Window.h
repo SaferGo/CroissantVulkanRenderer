@@ -22,7 +22,7 @@ public:
    const VkSurfaceKHR getSurface() const;
    void getResolutionInPixels(int& width, int& height) const;
 
-   void destroyWindow();
+   void destroy();
    void destroySurface(const VkInstance& instance);
 
    bool isWindowClosed() const;
@@ -35,7 +35,7 @@ private:
 
    // ImGui needs to access to non-const GLFWwindow.
    friend class GUI;
-   GLFWwindow* m_window;
+   GLFWwindow*  m_window;
    VkSurfaceKHR m_surface;
 
 };

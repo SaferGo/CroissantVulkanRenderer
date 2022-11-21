@@ -12,7 +12,7 @@
 #include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
-#include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
+#include <VulkanToyRenderer/Features/DepthBuffer.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Device/Device.h>
@@ -21,9 +21,28 @@
 #include <VulkanToyRenderer/Textures/Texture.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/Skybox.h>
+#include <VulkanToyRenderer/Model/Types/Light.h>
 #include <VulkanToyRenderer/Camera/Camera.h>
 #include <VulkanToyRenderer/Camera/Types/Arcball.h>
 #include <VulkanToyRenderer/Features/ShadowMap.h>
+
+
+struct ModelToLoadInfo
+{
+   ModelType   type;
+   std::string name;
+   std::string modelFileName;
+   glm::fvec3  color;
+   glm::fvec3  pos;
+   glm::fvec3  rot;
+   glm::fvec3  size;
+
+   // For light models.
+   LightType   lType;
+   glm::fvec3  endPos;
+   const float attenuation;
+   const float radius;
+};
 
 class Renderer
 {
@@ -31,7 +50,8 @@ class Renderer
 public:
 
    void run();
-
+   void loadModel(const size_t startI, const size_t chunckSize);
+   void loadModels();
    void addObjectPBR(
          const std::string& name,
          const std::string& modelFileName,
@@ -39,7 +59,6 @@ public:
          const glm::fvec3& rot = glm::fvec3(0.0f),
          const glm::fvec3& size = glm::fvec3(1.0f)
    );
-
    void addDirectionalLight(
          const std::string& name,
          const std::string& modelFileName,
@@ -48,7 +67,6 @@ public:
          const glm::fvec3& endPos,
          const glm::fvec3& size
    );
-
    void addSpotLight(
          const std::string& name,
          const std::string& modelFileName,
@@ -60,7 +78,6 @@ public:
          const float attenuation,
          const float radius
    );
-
    void addPointLight(
          const std::string& name,
          const std::string& modelFileName,
@@ -70,7 +87,6 @@ public:
          const float attenuation,
          const float radius
    );
-
    void addSkybox(
          const std::string& name,
          const std::string& textureFolderName
@@ -79,10 +95,14 @@ public:
 private:
 
    void createGraphicsPipelines();
-   void uploadAllData();
+   void uploadModels();
    void initVK();
    void handleInput();
-   static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+   static void scrollCallback(
+         GLFWwindow* window,
+         double xoffset,
+         double yoffset
+   );
    void mainLoop();
    void cleanup();
    void createShadowMapRenderPass();
@@ -96,7 +116,7 @@ private:
          const uint32_t currentFrame,
          const VkCommandBuffer& commandBuffer,
          const std::vector<VkClearValue>& clearValues,
-         CommandPool& commandPool
+         const std::shared_ptr<CommandPool>& commandPool
    );
    template <typename T>
    void bindAllMeshesData(
@@ -112,57 +132,58 @@ private:
 
    void destroySyncObjects();
 
-   std::shared_ptr<Window>    m_window;
-   std::unique_ptr<GUI>       m_GUI;
-   VkInstance                 m_vkInstance;
-   Device                     m_device;
-   QueueFamilyIndices         m_qfIndices;
-   QueueFamilyHandles         m_qfHandles;
-   std::unique_ptr<Swapchain> m_swapchain;
+   std::shared_ptr<Window>             m_window;
+   std::unique_ptr<GUI>                m_GUI;
+   std::shared_ptr<Camera>             m_camera;
 
-   RenderPass                 m_renderPass;
-   RenderPass                 m_renderPassShadowMap;
+   VkInstance                          m_vkInstance;
+   Device                              m_device;
+   VkDebugUtilsMessengerEXT            m_debugMessenger;
+   QueueFamilyIndices                  m_qfIndices;
+   QueueFamilyHandles                  m_qfHandles;
 
-   VkDebugUtilsMessengerEXT   m_debugMessenger;
+   std::unique_ptr<Swapchain>          m_swapchain;
+   RenderPass                          m_renderPass;
+   RenderPass                          m_renderPassShadowMap;
 
-   // Command buffer for main drawing commands.
-   CommandPool                m_commandPool;
+   std::vector<VkSemaphore>            m_imageAvailableSemaphores;
+   std::vector<VkSemaphore>            m_renderFinishedSemaphores;
+   std::vector<VkFence>                m_inFlightFences;
 
-   // Sync objects(for each frame)
-   std::vector<VkSemaphore> m_imageAvailableSemaphores;
-   std::vector<VkSemaphore> m_renderFinishedSemaphores;
-   std::vector<VkFence>     m_inFlightFences;
+   std::vector<ModelToLoadInfo>        m_modelsToLoadInfo;
+   std::vector<std::shared_ptr<Model>> m_models;
+   std::vector<size_t>                 m_objectModelIndices;
+   std::vector<size_t>                 m_lightModelIndices;
+   std::vector<size_t>                 m_skyboxModelIndex;
+   std::optional<size_t>               m_directionalLightIndex;
+   std::shared_ptr<Skybox>             m_skybox;
 
-   std::vector<std::shared_ptr<Model>> m_allModels;
-   // Models that interact with the light.
-   std::vector<size_t>     m_objectModelIndices;
-   std::vector<size_t>     m_skyboxModelIndices;
-   std::vector<size_t>     m_lightModelIndices;
-   std::optional<size_t>   m_directionalLightIndex;
    // TODO: delete this
    size_t                  m_mainModelIndex;
 
-   DescriptorPool             m_descriptorPool;
+   GraphicsPipeline                    m_graphicsPipelinePBR;
+   GraphicsPipeline                    m_graphicsPipelineSkybox;
+   GraphicsPipeline                    m_graphicsPipelineLight;
+   GraphicsPipeline                    m_graphicsPipelineShadowMap;
 
-   GraphicsPipeline           m_graphicsPipelinePBR;
-   GraphicsPipeline           m_graphicsPipelineSkybox;
-   GraphicsPipeline           m_graphicsPipelineLight;
-   GraphicsPipeline           m_graphicsPipelineShadowMap;
+   // Command buffer for main drawing commands.
+   std::shared_ptr<CommandPool>        m_commandPool;
 
-   VkDescriptorSetLayout      m_descriptorSetLayoutNormalPBR;
-   VkDescriptorSetLayout      m_descriptorSetLayoutLight;
-   VkDescriptorSetLayout      m_descriptorSetLayoutSkybox;
-   VkDescriptorSetLayout      m_descriptorSetLayoutShadowMap;
+   DescriptorPool                      m_descriptorPool;
+   VkDescriptorSetLayout               m_descriptorSetLayoutNormalPBR;
+   VkDescriptorSetLayout               m_descriptorSetLayoutLight;
+   VkDescriptorSetLayout               m_descriptorSetLayoutSkybox;
+   VkDescriptorSetLayout               m_descriptorSetLayoutShadowMap;
 
    // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
    std::vector<VkClearValue> m_clearValues;
    std::vector<VkClearValue> m_clearValuesShadowMap;
-   std::shared_ptr<Camera> m_camera;
    bool m_isMouseInMotion;
 
    //---------------------------Features--------------------------------------
-   renderTarget::DepthBuffer  m_depthBuffer;
-   renderTarget::MSAA         m_msaa;
-   ShadowMap                  m_shadowMap;
+   DepthBuffer  m_depthBuffer;
+   MSAA         m_msaa;
+   std::shared_ptr<ShadowMap> m_shadowMap;
+   std::shared_ptr<Texture>   m_irradianceMap;
 
 };

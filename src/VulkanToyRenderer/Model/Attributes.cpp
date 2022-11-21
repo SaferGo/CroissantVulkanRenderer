@@ -161,7 +161,7 @@ VkVertexInputBindingDescription Attributes::LIGHT::getBindingDescription()
 std::vector<VkVertexInputAttributeDescription> 
    Attributes::LIGHT::getAttributeDescriptions() 
 {
-   std::vector<VkVertexInputAttributeDescription> attributeDescriptions(3);
+   std::vector<VkVertexInputAttributeDescription> attributeDescriptions(2);
 
    // -Vertex Attribute: Position
 
@@ -180,13 +180,6 @@ std::vector<VkVertexInputAttributeDescription>
    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
    attributeDescriptions[1].offset = offsetof(LIGHT::Vertex, texCoord);
 
-   // - Vertex Attribute: Normal
-
-   attributeDescriptions[2].binding = 0;
-   attributeDescriptions[2].location = 2;
-   attributeDescriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescriptions[2].offset = offsetof(LIGHT::Vertex, normal);
-   
    return attributeDescriptions;
 }
 
@@ -198,7 +191,7 @@ VkVertexInputBindingDescription Attributes::SHADOWMAP::getBindingDescription()
    // attribute descriptions).
    bindingDescription.binding = 0;
    // Specifies the number of bytes from one entry to the next.
-   bindingDescription.stride = sizeof(SHADOWMAP::Vertex);
+   bindingDescription.stride = sizeof(PBR::Vertex);
    // -VK_VERTEX_INPUT_RATE_VERTEX = Move to the next data entry after each
    //                                vertex(vertex rendering).
    // -VK_VERTEX_INPUT_RATE_INSTANCE = Move to the next data entry after each

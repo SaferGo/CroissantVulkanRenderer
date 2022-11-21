@@ -8,6 +8,7 @@ layout(std140, binding = 0) uniform UniformBufferObject
    mat4 lightSpace;
    vec4 cameraPos;
    int  lightsCount;
+   bool hasNormalMap;
 
 } ubo;
 
@@ -27,10 +28,12 @@ layout(std140, binding = 1) uniform Lights
    Light lights[10];
 };
 
-layout(binding = 2) uniform sampler2D baseColorSampler;
-layout(binding = 3) uniform sampler2D metallicRoughnessSampler;
-layout(binding = 4) uniform sampler2D normalSampler;
-layout(binding = 5) uniform sampler2D shadowMapSampler;
+layout(binding = 2) uniform sampler2D   baseColorSampler;
+layout(binding = 3) uniform sampler2D   metallicRoughnessSampler;
+layout(binding = 4) uniform sampler2D   normalSampler;
+
+layout(binding = 5) uniform samplerCube irradianceMapSampler;
+layout(binding = 6) uniform sampler2D   shadowMapSampler;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
@@ -59,6 +62,7 @@ float geometrySmith(float nDotV, float nDotL, float rough);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
 ///////////////////////////////////////////////////////////////////////////////
 
+vec3 calculateNormal();
 vec3 calculateDirLight(
       int i,
       vec3 normal,
@@ -79,21 +83,25 @@ vec3 calculatePointLight(
 );
 float filterPCF(vec4 shadowCoords);
 float calculateShadow(vec4 shadowCoords, vec2 off);
+vec3 uncharted2Tonemap(vec3 color);
+vec4 tonemap(vec4 color);
+vec4 SRGBtoLINEAR(vec4 srgb);
+
+float exposure = 18.0;
+vec3 ambient = vec3(0.25);
 
 void main()
 {
-   mat3 TBN = mat3(inTangent, inBitangent, inNormal);
 
-   vec3 normal = normalize(
-         TBN * (texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0)
-   );
+   float pp = texture(irradianceMapSampler, vec3(0.0)).r;
+   vec3 normal = calculateNormal();
    vec3 view = normalize(vec3(ubo.cameraPos) - inPosition);
-   vec3 albedo = texture(baseColorSampler, inTexCoord).rgb;
-   float metallic = texture(metallicRoughnessSampler, inTexCoord).r;
+   vec3 albedo     = SRGBtoLINEAR(
+         tonemap(texture(baseColorSampler, inTexCoord))
+   ).rgb;
+   float metallic  = texture(metallicRoughnessSampler, inTexCoord).r;
    float roughness = texture(metallicRoughnessSampler, inTexCoord).g;
    roughness = max(0.03, metallic);
-
-   vec3 ambient = vec3(0.1);
 
    // Material specular
    vec3 F0 = vec3(0.04);
@@ -132,37 +140,94 @@ void main()
 
    vec3 color = ambient * albedo + (1.0 - shadow) * Lo;
 
-   outColor = vec4(color, 1.0);
+   outColor = SRGBtoLINEAR(vec4(color, 1.0));
+}
+
+vec3 uncharted2Tonemap(vec3 color)
+{
+   float A = 0.15;
+   float B = 0.50;
+   float C = 0.10;
+   float D = 0.20;
+   float E = 0.02;
+   float F = 0.30;
+   float W = 11.2;
+
+   return (
+         (color * (A * color + C * B) + D * E) /
+         (color * (A * color + B) + D * F)
+   ) - E / F;
+}
+
+vec4 tonemap(vec4 color)
+{
+   vec3 newColor = uncharted2Tonemap(color.rgb * exposure);
+   newColor *= (1.0f / uncharted2Tonemap(vec3(11.2f)));
+
+   return vec4(
+         pow(
+            newColor,
+            vec3(1.0f / 2.2)
+         ),
+         color.a
+   );
+}
+
+vec4 SRGBtoLINEAR(vec4 srgb)
+{
+	vec3 linOut = pow(srgb.xyz,vec3(2.2));
+
+	return vec4(linOut,srgb.w);;
+}
+
+vec3 calculateNormal()
+{
+   mat3 TBN = mat3(inTangent, inBitangent, inNormal);
+
+   if (ubo.hasNormalMap)
+   {
+      return normalize(
+            TBN * (texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0)
+      );
+   } else
+      return inNormal;
 }
 
 float filterPCF(vec4 shadowCoords)
 {
-   vec2 texelSize = 1.0 / textureSize(shadowMapSampler, 0);
-
-   float shadowFactor = 0.0;
-   int samples = 4;
+   vec2 texelSize = textureSize(shadowMapSampler, 0);
+   float scale = 1.5;
+   float dx = scale * 1.0 / float(texelSize.x);
+   float dy = scale * 1.0 / float(texelSize.y);
 
    float shadow = 0.0;
-   for (int i = 0; i < samples; i++)
+   int count = 0;
+   int range = 1;
+
+   for (int x = -range; x <= range; x++)
    {
-      shadow += calculateShadow(
-            shadowCoords,
-            sampleOffsetDirections[i].xy * texelSize
-      );
+      for (int y = -range; y <= range; y++)
+      {
+         shadow += calculateShadow(
+               shadowCoords,
+               vec2(dx * x, dy * y)
+         );
+         count++;
+      }
    }
 
-   return shadow;
+   return shadow / count;
 }
 
 float calculateShadow(vec4 shadowCoords, vec2 off)
 {
    if (shadowCoords.z > -1.0 && shadowCoords.z < 1.0)
    {
-      float currentDepth = shadowCoords.z;
       float closestDepth = texture(shadowMapSampler, shadowCoords.xy + off).r;
+      float currentDepth = shadowCoords.z;
 
       if (closestDepth < currentDepth)
-         return 0.111;
+         return 1.0;
    }
 
    return 0.0;

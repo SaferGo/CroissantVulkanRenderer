@@ -7,7 +7,8 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Window/Window.h>
-#include <VulkanToyRenderer/GraphicsPipeline/renderTarget.h>
+#include <VulkanToyRenderer/Features/MSAA.h>
+#include <VulkanToyRenderer/Features/DepthBuffer.h>
 
 struct SwapchainSupportedProperties
 {
@@ -38,19 +39,13 @@ public:
       const SwapchainSupportedProperties& supportedProperties
    );
    ~Swapchain();
-   void createAllImageViews(const VkDevice& logicalDevice);
+   void createAllImageViews();
    void createFramebuffers(
-         const VkDevice& logicalDevice,
          const VkRenderPass& renderPass,
-         const renderTarget::DepthBuffer& depthBuffer,
-         const renderTarget::MSAA& msaa
+         const DepthBuffer& depthBuffer,
+         const MSAA& msaa
    );
-
-   void destroyFramebuffers(const VkDevice& logicalDevice);
-   void destroySwapchain(const VkDevice& logicalDevice);
-   void destroyImageViews(const VkDevice& logicalDevice);
-
-     
+   void destroy();
    const VkExtent2D& getExtent() const;
    const VkFormat& getImageFormat() const;
    const VkFramebuffer& getFramebuffer(const uint32_t imageIndex) const;
@@ -95,15 +90,15 @@ private:
          const VkSurfaceCapabilitiesKHR& capabilities
    ) const;
 
-   VkSwapchainKHR m_swapchain;
-   std::vector<VkImage> m_images;
-   // Used for the creation of the Imgui instance.
-   uint32_t m_minImageCount;
-   // Describes how to access the images and which part of the images to
-   // access.
-   std::vector<VkImageView> m_imageViews;
-   VkFormat m_imageFormat;
-   // Size of the swapchain color images.
-   VkExtent2D m_extent;
+   VkDevice                   m_logicalDevice;
+
+   VkSwapchainKHR             m_swapchain;
+   VkFormat                   m_imageFormat;
+   VkExtent2D                 m_extent;
+   std::vector<VkImage>       m_images;
+   std::vector<VkImageView>   m_imageViews;
    std::vector<VkFramebuffer> m_framebuffers;
+
+   // Used for the creation of the Imgui instance.
+   uint32_t                   m_minImageCount;
 };

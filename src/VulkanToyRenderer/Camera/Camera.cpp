@@ -2,23 +2,25 @@
 
 #include <GLFW/glfw3.h>
 
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
+#include <VulkanToyRenderer/Math/mathUtils.h>
 
 Camera::Camera(
       GLFWwindow* window,
       const glm::fvec4& pos,
+      const glm::fvec4& target,
       const CameraType& type,
       const float FOV,
       const float ratio,
       const float zNear,
       const float zFar
 ) : m_opWindow(window),
-    m_pos(pos),
     m_type(type),
     m_FOV(FOV),
     m_ratio(ratio),
     m_zNear(zNear),
-    m_zFar(zFar)
+    m_zFar(zFar),
+    m_pos(pos),
+    m_targetPos(target)
 {
    m_view = glm::lookAt(
          // Eyes position.
@@ -28,7 +30,7 @@ Camera::Camera(
          // Up axis
          glm::vec3(0.0f, 1.0f, 0.0f)
    );
-   m_proj = UBOutils::getUpdatedProjMatrix(
+   m_proj = mathUtils::getUpdatedProjMatrix(
          glm::radians(m_FOV),
          m_ratio,
          m_zNear,
@@ -78,7 +80,7 @@ void Camera::setFOV(const float newFOV)
 {
    m_FOV = newFOV;
 
-   m_proj = UBOutils::getUpdatedProjMatrix(
+   m_proj = mathUtils::getUpdatedProjMatrix(
          glm::radians(m_FOV),
          m_ratio,
          m_zNear,

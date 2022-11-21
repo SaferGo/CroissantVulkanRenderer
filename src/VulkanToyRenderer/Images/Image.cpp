@@ -24,10 +24,10 @@ Image::Image(
       const VkComponentSwizzle& componentMapG,
       const VkComponentSwizzle& componentMapB,
       const VkComponentSwizzle& componentMapA
-) {
+) : m_logicalDevice(logicalDevice)
+{
    init(
          physicalDevice,
-         logicalDevice,
          width,
          height,
          format,
@@ -66,10 +66,10 @@ Image::Image(
       // Parameters to create the Sampler
       const VkSamplerAddressMode& addressMode,
       const VkFilter& filter
-) {
+) : m_logicalDevice(logicalDevice)
+{
    init(
          physicalDevice,
-         logicalDevice,
          width,
          height,
          format,
@@ -88,7 +88,7 @@ Image::Image(
 
    m_sampler = Sampler(
          physicalDevice,
-         logicalDevice,
+         m_logicalDevice,
          mipLevels,
          addressMode,
          filter
@@ -97,7 +97,6 @@ Image::Image(
 
 void Image::init(
       const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice,
       const uint32_t width,
       const uint32_t height,
       const VkFormat& format,
@@ -117,7 +116,7 @@ void Image::init(
 
    imageManager::createImage(
          physicalDevice,
-         logicalDevice,
+         m_logicalDevice,
          width,
          height,
          format,
@@ -132,7 +131,7 @@ void Image::init(
    );
 
    imageManager::createImageView(
-         logicalDevice,
+         m_logicalDevice,
          format,
          m_image,
          aspectFlags,
@@ -146,7 +145,6 @@ void Image::init(
    );
 
 }
-
 
 Image::~Image() {}
 
@@ -165,12 +163,12 @@ const VkSampler& Image::getSampler() const
       return m_sampler->get();
 }
 
-void Image::destroy(const VkDevice& logicalDevice)
+void Image::destroy()
 {
    if (m_sampler.has_value())
-      m_sampler->destroySampler(logicalDevice);
+      m_sampler->destroy();
 
-   vkDestroyImageView(logicalDevice, m_imageView, nullptr);
-   vkDestroyImage(logicalDevice, m_image, nullptr);
-   vkFreeMemory(logicalDevice, m_imageMemory, nullptr);
+   vkDestroyImageView(m_logicalDevice, m_imageView, nullptr);
+   vkDestroyImage(m_logicalDevice, m_image, nullptr);
+   vkFreeMemory(m_logicalDevice, m_imageMemory, nullptr);
 }

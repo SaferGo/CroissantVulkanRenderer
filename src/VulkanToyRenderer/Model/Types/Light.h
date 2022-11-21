@@ -9,7 +9,8 @@ enum class LightType
 {
    DIRECTIONAL_LIGHT = 0,
    POINT_LIGHT       = 1,
-   SPOT_LIGHT        = 2
+   SPOT_LIGHT        = 2,
+   NONE              = 3
 };
 
 class Light : public Model
@@ -29,39 +30,31 @@ public:
          const float attenuation = 1.0f,
          const float radius = 1.0f
    );
-
    ~Light() override;
-
    void destroy(const VkDevice& logicalDevice) override;
-
    void createDescriptorSets(
          const VkDevice& logicalDevice,
          const VkDescriptorSetLayout& descriptorSetLayout,
-         const ShadowMap* shadowMap,
          DescriptorPool& descriptorPool
-   ) override;
-
+   );
    void createUniformBuffers(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          const uint32_t& uboCount
    ) override;
-
    void uploadVertexData(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          VkQueue& graphicsQueue,
-         CommandPool& commandPool
+         const std::shared_ptr<CommandPool>& commandPool
    ) override;
-
-   void createTextures(
+   void loadTextures(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          const VkSampleCountFlagBits& samplesCount,
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          VkQueue& graphicsQueue
    ) override;
-
    void updateUBO(
          const VkDevice& logicalDevice,
          const glm::vec4& cameraPos,
@@ -95,11 +88,11 @@ private:
 
    // To get the direction of directional and spot lights(m_endPos - m_Pos);
    glm::fvec4 m_targetPos;
-   float m_attenuation;
-   float m_radius;
-   float m_intensity;
    glm::fvec4 m_color;
-   LightType m_lightType;
+   float      m_attenuation;
+   float      m_radius;
+   float      m_intensity;
+   LightType  m_lightType;
 
    DescriptorTypes::UniformBufferObject::Light m_dataInShader;
 };

@@ -4,15 +4,14 @@
 
 #include <vulkan/vulkan.h>
 
-Sampler::Sampler() {}
-
 Sampler::Sampler(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const uint32_t mipLevels,
       const VkSamplerAddressMode& addressMode,
       const VkFilter& filter
-) {
+) : m_logicalDevice(logicalDevice)
+{
    VkSamplerCreateInfo samplerInfo{};
    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
    // Specifies how to interpolate texels that are magnified or minified.
@@ -70,7 +69,7 @@ const VkSampler& Sampler::get() const
    return m_sampler;
 }
 
-void Sampler::destroySampler(const VkDevice& logicalDevice)
+void Sampler::destroy()
 {
-   vkDestroySampler(logicalDevice, m_sampler, nullptr);
+   vkDestroySampler(m_logicalDevice, m_sampler, nullptr);
 }

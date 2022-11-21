@@ -46,9 +46,17 @@ namespace GRAPHICS_PIPELINE
                   VK_SHADER_STAGE_FRAGMENT_BIT
             )
          },
-         //For shadow mapping
          {
             5,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            (VkShaderStageFlagBits)(
+                  VK_SHADER_STAGE_FRAGMENT_BIT
+            )
+         },
+         //For shadow mapping
+         //(IMPORTANT: Always leave it as the last sampler)
+         {
+            6,
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             (VkShaderStageFlagBits)(
                   VK_SHADER_STAGE_FRAGMENT_BIT
@@ -56,8 +64,8 @@ namespace GRAPHICS_PIPELINE
          }
       };
 
-      // We won't count the sampler for shadow mapping.
-      inline const uint32_t TEXTURES_PER_MESH_COUNT = SAMPLERS_INFO.size() - 1;
+      // We won't count the shadow and irradiance map.
+      inline const uint32_t TEXTURES_PER_MESH_COUNT = SAMPLERS_INFO.size() - 2;
       inline const uint32_t SAMPLERS_PER_MESH_COUNT = SAMPLERS_INFO.size();
       inline const uint32_t UBOS_PER_MESH_COUNT = UBOS_INFO.size();
 
@@ -119,7 +127,7 @@ namespace GRAPHICS_PIPELINE
       inline const uint32_t UBOS_PER_MESH_COUNT = UBOS_INFO.size();
    };
 
-   ///////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////
    ///////////////////////////////FEATURES/////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////
    

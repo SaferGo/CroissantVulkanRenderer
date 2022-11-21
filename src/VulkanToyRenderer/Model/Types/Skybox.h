@@ -26,32 +26,25 @@ public:
          const std::string& name,
          const std::string& textureFolderName
    );
-
    ~Skybox() override;
-
    void destroy(const VkDevice& logicalDevice);
-
-   void createTextures(
+   void loadTextures(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          const VkSampleCountFlagBits& samplesCount,
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          VkQueue& graphicsQueue
    ) override;
-
    void createDescriptorSets(
          const VkDevice& logicalDevice,
          const VkDescriptorSetLayout& descriptorSetLayout,
-         const ShadowMap* shadowMap,
          DescriptorPool& descriptorPool
-   ) override;
-
+   );
    void createUniformBuffers(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          const uint32_t& uboCount
    ) override;
-
    void updateUBO(
          const VkDevice& logicalDevice,
          const glm::vec4& cameraPos,
@@ -59,13 +52,13 @@ public:
          const VkExtent2D&  extent,
          const uint32_t& currentFrame
    );
-
    void uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       VkQueue& graphicsQueue,
-      CommandPool& commandPool
+      const std::shared_ptr<CommandPool>& commandPool
    );
+   const Texture& getIrradianceMap() const;
 
    // Info to update UBO.
    float extremeX[2];
@@ -77,6 +70,15 @@ public:
 private:
 
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
+   void loadIrradianceMap(
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         const TextureToLoadInfo& textureInfo,
+         const VkSampleCountFlagBits& samplesCount,
+         const std::shared_ptr<CommandPool>& commandPool,
+         VkQueue& graphicsQueue
+   );
 
-   std::string m_textureFolderName;
+   std::string                m_textureFolderName;
+   std::shared_ptr<Texture>   m_irradianceMap;
 };

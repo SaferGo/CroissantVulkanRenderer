@@ -39,7 +39,7 @@ namespace imageManager{
          const bool isCubemap,
          const VkQueue& graphicsQueue,
          const VkBuffer& buffer,
-         CommandPool& commandPool,
+         const std::shared_ptr<CommandPool>& commandPool,
          const VkImage& image
    );
 };

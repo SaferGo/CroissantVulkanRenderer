@@ -13,22 +13,19 @@ template<typename T>
 struct Mesh
 {
    // Vertex
-   std::vector<T> m_vertices;
-   std::vector<uint32_t> m_indices;
+   std::vector<T>                         vertices;
+   std::vector<uint32_t>                  indices;
 
-   VkBuffer       m_vertexBuffer;
-   VkBuffer       m_indexBuffer;
-   VkDeviceMemory m_vertexMemory;
-   VkDeviceMemory m_indexMemory;
+   VkBuffer                               vertexBuffer;
+   VkBuffer                               indexBuffer;
+   VkDeviceMemory                         vertexMemory;
+   VkDeviceMemory                         indexMemory;
 
-   std::vector<std::shared_ptr<Texture>> m_textures;
-   std::vector<TextureToLoadInfo>        m_texturesToLoadInfo;
+   std::vector<std::shared_ptr<Texture>>  textures;
+   std::vector<TextureToLoadInfo>         texturesToLoadInfo;
 
-   // Descritors
-   // (one descriptor set for all the ubo and samplers of a mesh)
-   // (the same descriptor set for each frame in flight)
-   DescriptorSets m_descriptorSets;
-
-   bool m_hasTextureCoords;
+   // (One descriptor set for all the ubo and samplers of a mesh)
+   // (The same descriptor set for each frame in flight)
+   DescriptorSets                         descriptorSets;
 };
 

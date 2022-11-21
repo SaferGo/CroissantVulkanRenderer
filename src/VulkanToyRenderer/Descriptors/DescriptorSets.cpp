@@ -14,6 +14,7 @@
 
 
 DescriptorSets::DescriptorSets() {}
+
 /*
  * Creates, allocates and configures the descriptor sets.
  */
@@ -22,16 +23,13 @@ DescriptorSets::DescriptorSets(
       const std::vector<DescriptorInfo>& uboInfo,
       const std::vector<DescriptorInfo>& samplersInfo,
       const std::vector<std::shared_ptr<Texture>>& textures,
-      const VkImageView* shadowMapImageView,
-      const VkSampler* shadowMapSampler,
       std::vector<UBO*>& UBOs,
       const VkDescriptorSetLayout& descriptorSetLayout,
-      DescriptorPool& descriptorPool
+      DescriptorPool& descriptorPool,
+      const std::optional<Texture> irradianceMap,
+      const std::optional<VkImageView> shadowMapView,
+      const std::optional<VkSampler> shadowMapSampler
 ) {
-   // TODO: Improve this, since all the descriptors sets
-   // are the same, just copy it instead of creating them
-   // many times?
-
    std::vector<VkDescriptorImageInfo> imageInfos;
    imageInfos.resize(samplersInfo.size());
 
@@ -46,7 +44,6 @@ DescriptorSets::DescriptorSets(
    );
 
    descriptorPool.allocDescriptorSets(
-         logicalDevice,
          m_descriptorSetLayouts,
          m_descriptorSets
    );
@@ -59,7 +56,7 @@ DescriptorSets::DescriptorSets(
       for (size_t j = 0; j < UBOs.size(); j++)
       {
          descriptorTypesUtils::createDescriptorBufferInfo(
-               UBOs[j]->getUniformBuffer(i),
+               UBOs[j]->get(i),
                bufferInfos[j]
          );
       }
@@ -68,19 +65,28 @@ DescriptorSets::DescriptorSets(
       for (size_t j = 0; j < textures.size(); j++)
       {
          descriptorTypesUtils::createDescriptorImageInfo(
-               textures[j]->getTextureImageView(),
-               textures[j]->getTextureSampler(),
+               textures[j]->getImageView(),
+               textures[j]->getSampler(),
                imageInfos[j]
          );
       }
 
-      //Samplers of data(e.g shadowMapping)
-      if (shadowMapImageView != nullptr && shadowMapSampler != nullptr)
+      if (irradianceMap.has_value())
+      {
+         // Sampler of Irradiance map.
+         descriptorTypesUtils::createDescriptorImageInfo(
+               irradianceMap->getImageView(),
+               irradianceMap->getSampler(),
+               imageInfos[samplersInfo.size() - 2]
+         );
+      }
+
+      if (shadowMapView.has_value() && shadowMapSampler.has_value())
       {
          descriptorTypesUtils::createDescriptorImageInfo(
-               *shadowMapImageView,
-               *shadowMapSampler,
-               imageInfos[textures.size()]
+               shadowMapView.value(),
+               shadowMapSampler.value(),
+               imageInfos[samplersInfo.size() - 1]
          );
       }
 
@@ -123,6 +129,22 @@ DescriptorSets::DescriptorSets(
          nullptr
       );
    }
+}
+
+DescriptorSets::DescriptorSets(const DescriptorSets& other)
+   : m_descriptorSets(other.m_descriptorSets),
+     m_descriptorSetLayouts(other.m_descriptorSetLayouts)
+{}
+
+DescriptorSets& DescriptorSets::operator=(const DescriptorSets& other)
+{
+   if (this == &other)
+      return *this;
+
+   m_descriptorSets = other.m_descriptorSets;
+   m_descriptorSetLayouts = other.m_descriptorSetLayouts;
+
+   return *this;
 }
 
 DescriptorSets::~DescriptorSets() {}

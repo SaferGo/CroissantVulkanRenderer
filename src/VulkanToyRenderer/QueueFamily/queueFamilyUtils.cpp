@@ -1,11 +1,11 @@
-#include <VulkanToyRenderer/QueueFamily/qfUtils.h>
+#include <VulkanToyRenderer/QueueFamily/queueFamilyUtils.h>
 
 #include <vulkan/vulkan.h>
 
 /*
  * Checks if the queue supported is a graphic's queue.
  */
-bool qfUtils::isGraphicsQueueSupported(
+bool queueFamilyUtils::isGraphicsQueueSupported(
       const VkQueueFamilyProperties& qfSupported
 ) {
    return qfSupported.queueFlags & VK_QUEUE_GRAPHICS_BIT;
@@ -15,7 +15,7 @@ bool qfUtils::isGraphicsQueueSupported(
  * Checks if the Queue Family is compatible with the
  * window's surface.
  */
-bool qfUtils::isPresentQueueSupported(
+bool queueFamilyUtils::isPresentQueueSupported(
       const int qfSupportedIndex,
       const VkSurfaceKHR& surface,
       const VkPhysicalDevice& physicalDevice
@@ -34,7 +34,7 @@ bool qfUtils::isPresentQueueSupported(
 /* 
  * Gets all the queue families supported by the device with their properties.
  */
-void qfUtils::getSupportedQueueFamilies(
+void queueFamilyUtils::getSupportedQueueFamilies(
       const VkPhysicalDevice& physicalDevice,
       std::vector<VkQueueFamilyProperties>& qfSupported
 ) {

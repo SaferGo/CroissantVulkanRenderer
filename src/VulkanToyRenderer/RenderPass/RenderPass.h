@@ -33,11 +33,11 @@ public:
 
    const VkRenderPass& get() const;
 
-   void destroy(const VkDevice& logicalDevice);
+   void destroy();
 
 private:
    
-
+   VkDevice     m_logicalDevice;
    VkRenderPass m_renderPass;
 
 };
