@@ -1,10 +1,10 @@
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 
 #include <vector>
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/QueueFamily/queueFamilyUtils.h>
+#include <VulkanToyRenderer/Queue/queueFamilyUtils.h>
 
 /*
  * Checks if the queue families required are:
@@ -28,13 +28,20 @@ void QueueFamilyIndices::getIndicesOfRequiredQueueFamilies(
       if (queueFamilyUtils::isPresentQueueSupported(i, surface, physicalDevice))
          presentFamily = i;
 
+      if (queueFamilyUtils::isComputeQueueSupported(qf))
+         computeFamily = i;
+
       i++;
    }
+
+   // TODO: Check if the graphicsFamily index is the same as the Compute Family
+   // index. This is the case for all devices.
 
    // Verifies if all the QF required are supported.
    areAllQueueFamiliesSupported = (
          graphicsFamily.has_value() &&
-         presentFamily.has_value()
+         presentFamily.has_value() &&
+         computeFamily.has_value()
    );
 }
 

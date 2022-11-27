@@ -2,9 +2,9 @@
 
 #include <stdexcept>
 
-#include <VulkanToyRenderer/Commands/commandUtils.h>
+#include <VulkanToyRenderer/Commands/commandManager.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Buffers/bufferUtils.h>
+#include <VulkanToyRenderer/BufferManager/bufferUtils.h>
 
 void imageManager::createImage(
       const VkPhysicalDevice& physicalDevice,
@@ -204,7 +204,7 @@ void imageManager::copyBufferToImage(
          1
       };
 
-      commandUtils::ACTION::copyBufferToImage(
+      commandManager::action::copyBufferToImage(
             buffer,
             image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -218,7 +218,8 @@ void imageManager::copyBufferToImage(
 
    commandPool->submitCommandBuffer(
          graphicsQueue,
-         commandBuffer
+         {commandBuffer},
+         true
    );
 }
 

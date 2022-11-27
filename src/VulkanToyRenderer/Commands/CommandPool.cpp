@@ -6,8 +6,7 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Settings/config.h>
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
-#include <VulkanToyRenderer/Commands/commandUtils.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 
 CommandPool::CommandPool(
       const VkDevice& logicalDevice,
@@ -83,20 +82,56 @@ void CommandPool::allocCommandBuffer(
 
 
 void CommandPool::submitCommandBuffer(
-      const VkQueue& graphicsQueue,
-      const VkCommandBuffer& commandBuffer
+      const VkQueue& queue,
+      const std::vector<VkCommandBuffer>& commandBuffers,
+      const bool waitForCompletition,
+      const std::optional<std::vector<VkSemaphore>> waitSemaphores,
+      const std::optional<VkPipelineStageFlags> waitStages,
+      const std::optional<std::vector<VkSemaphore>> signalSemaphores,
+      const std::optional<VkFence> fence
 ) {
    VkSubmitInfo submitInfo{};
    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-   submitInfo.commandBufferCount = 1;
-   submitInfo.pCommandBuffers = &commandBuffer;
+   submitInfo.commandBufferCount = commandBuffers.size();
+   submitInfo.pCommandBuffers = commandBuffers.data();
+   
+   if (waitSemaphores.has_value())
+   {
+      submitInfo.waitSemaphoreCount = waitSemaphores.value().size();
+      // Specifies which semaphores to wait on before execution begins.
+      submitInfo.pWaitSemaphores = waitSemaphores.value().data();
+   }
+
+   if (waitStages.has_value())
+   {
+      // Specifies which stage/s of the pipeline to wait.
+      submitInfo.pWaitDstStageMask = &(waitStages.value());
+   }
+
+   if (signalSemaphores.has_value())
+   {
+      // Specifies which semaphores to signal once the command buffer/s have
+      // finished execution.
+      submitInfo.signalSemaphoreCount = signalSemaphores.value().size();
+      submitInfo.pSignalSemaphores = signalSemaphores.value().data();
+   }
 
    // Submits and execute the cmd immediately and wait on this transfer to
    // complete.
-   vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-   vkQueueWaitIdle(graphicsQueue);
+   auto status = vkQueueSubmit(
+         queue,
+         1,
+         &submitInfo,
+         (fence.has_value()) ?
+            fence.value() :
+            VK_NULL_HANDLE
+   );
 
-   //freeCommandBuffer(commandBuffer);
+   if (status != VK_SUCCESS)
+      throw std::runtime_error("Failed to submit draw command buffer!");
+
+   if (waitForCompletition)
+      vkQueueWaitIdle(queue);
 }
 
 const VkCommandBuffer& CommandPool::getCommandBuffer(const uint32_t index) const

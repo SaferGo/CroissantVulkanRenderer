@@ -1,4 +1,4 @@
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
+#include <VulkanToyRenderer/Pipeline/Graphics.h>
 
 #include <vector>
 #include <array>
@@ -10,11 +10,11 @@
 #include <VulkanToyRenderer/ShaderManager/shaderManager.h>
 #include <VulkanToyRenderer/Features/featuresUtils.h>
 
-GraphicsPipeline::GraphicsPipeline() {}
+Graphics::Graphics() {}
 
-GraphicsPipeline::~GraphicsPipeline() {}
+Graphics::~Graphics() {}
 
-GraphicsPipeline::GraphicsPipeline(
+Graphics::Graphics(
       const VkDevice& logicalDevice,
       const GraphicsPipelineType type,
       const VkExtent2D& extent,
@@ -25,8 +25,8 @@ GraphicsPipeline::GraphicsPipeline(
       VkVertexInputBindingDescription vertexBindingDescriptions,
       std::vector<VkVertexInputAttributeDescription> vertexAttribDescriptions,
       std::vector<size_t>* modelIndices
-) : m_logicalDevice(logicalDevice),
-    m_type(type),
+) : Pipeline(logicalDevice, PipelineType::GRAPHICS),
+    m_gType(type),
     m_opModelIndices(modelIndices)
 {
 
@@ -61,7 +61,7 @@ GraphicsPipeline::GraphicsPipeline(
    // value. We can provide parameters for biasing a fragment's depth during
    // the pipeline creation. But when depth bias is specified as one of the
    // dynamic states, we do it through a function call.
-   //if (m_type == GraphicsPipelineType::SHADOWMAP)
+   //if (m_gType == GraphicsPipelineType::SHADOWMAP)
    //   dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
 
    // Dynamic states
@@ -123,7 +123,7 @@ GraphicsPipeline::GraphicsPipeline(
    // Depth and stencil
    VkPipelineDepthStencilStateCreateInfo depthStencil{};
    featuresUtils::createDepthStencilStateInfo(
-         m_type,
+         m_gType,
          depthStencil
    );
    
@@ -162,7 +162,7 @@ GraphicsPipeline::GraphicsPipeline(
          VK_NULL_HANDLE,
          1,
          &pipelineInfo, nullptr,
-         &m_graphicsPipeline
+         &m_pipeline
    );
 
    if (status != VK_SUCCESS)
@@ -179,37 +179,10 @@ GraphicsPipeline::GraphicsPipeline(
    }
 }
 
-void GraphicsPipeline::createShaderModule(
-      const ShaderInfo& shaderInfo,
-      VkShaderModule& shaderModule
-) {
-   std::vector<char> shaderCode;
-
-   if (shaderInfo.type == shaderType::VERTEX)
-   {
-      shaderCode = (
-            shaderManager::getBinaryDataFromFile("vert-" + shaderInfo.fileName)
-      );
-   } else if (shaderInfo.type == shaderType::FRAGMENT)
-   {
-      shaderCode = (
-            shaderManager::getBinaryDataFromFile("frag-" + shaderInfo.fileName)
-      );
-   } else
-   {
-      throw std::runtime_error("Shader type doesn't exist.");
-   }
-
-   shaderModule = shaderManager::createShaderModule(
-         shaderCode,
-         m_logicalDevice
-   );
-}
-
 /*
  * Creates the info strucutres to link the shaders to specific pipeline stages.
  */
-void GraphicsPipeline::createShaderStageInfo(
+void Graphics::createShaderStageInfo(
       const VkShaderModule& shaderModule,
       const shaderType& type,
       VkPipelineShaderStageCreateInfo& shaderStageInfo
@@ -233,7 +206,7 @@ void GraphicsPipeline::createShaderStageInfo(
    // ..
 }
 
-void GraphicsPipeline::createDynamicStatesInfo(
+void Graphics::createDynamicStatesInfo(
       const std::vector<VkDynamicState>& dynamicStates,
       VkPipelineDynamicStateCreateInfo& dynamicStatesInfo
 ) {
@@ -250,7 +223,7 @@ void GraphicsPipeline::createDynamicStatesInfo(
  * Describes the format of the vertex data that will be passed to the
  * vertex shader.
  */
-void GraphicsPipeline::createVertexShaderInputInfo(
+void Graphics::createVertexShaderInputInfo(
       const VkVertexInputBindingDescription& bindingDescription,
       const std::vector<VkVertexInputAttributeDescription>&
          attribDescriptions,
@@ -278,7 +251,7 @@ void GraphicsPipeline::createVertexShaderInputInfo(
    // elements formed an incomplete primitive, and restarts the primitive
    // assembly using the subsequent indices, but only assembling the immediatly
    // following element through the end of the originally specified elements.
-void GraphicsPipeline::createInputAssemblyInfo(
+void Graphics::createInputAssemblyInfo(
       VkPipelineInputAssemblyStateCreateInfo& inputAssemblyInfo
 ) {
    inputAssemblyInfo.sType = (
@@ -290,7 +263,7 @@ void GraphicsPipeline::createInputAssemblyInfo(
 
 // Describes the region of the framebuffer that the output
 // will be renderer to. This is almost always (0,0) to (width, height).
-void GraphicsPipeline::createViewport(
+void Graphics::createViewport(
       VkViewport& viewport,
       const VkExtent2D& extent
 ) {
@@ -303,7 +276,7 @@ void GraphicsPipeline::createViewport(
    viewport.maxDepth = 1.0f;
 }
 
-void GraphicsPipeline::createScissor(
+void Graphics::createScissor(
       VkRect2D& scissor,
       const VkExtent2D& extent
 ) {
@@ -314,7 +287,7 @@ void GraphicsPipeline::createScissor(
 
 // In the case that we turned viewport and scissor as dinamically, we need to
 // specify their count at pipeline creation time.
-void GraphicsPipeline::createViewportStateInfo(
+void Graphics::createViewportStateInfo(
          VkPipelineViewportStateCreateInfo& viewportStateInfo
 ) {
    viewportStateInfo.sType = (
@@ -324,7 +297,7 @@ void GraphicsPipeline::createViewportStateInfo(
    viewportStateInfo.scissorCount = 1;
 }
 
-void GraphicsPipeline::createRasterizerInfo(
+void Graphics::createRasterizerInfo(
       VkPipelineRasterizationStateCreateInfo& rasterizerInfo
 ) {
    rasterizerInfo.sType = (
@@ -346,7 +319,7 @@ void GraphicsPipeline::createRasterizerInfo(
    rasterizerInfo.lineWidth = 1.0f;
 
    // Determines the type of face culling to use.
-   if (m_type == GraphicsPipelineType::SKYBOX)
+   if (m_gType == GraphicsPipelineType::SKYBOX)
    {
       rasterizerInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
    }
@@ -357,7 +330,7 @@ void GraphicsPipeline::createRasterizerInfo(
 
    // Alters the depth values by adding a constant value or biasing them based
    // on a fragment's slope. Used sometimes for shadow mapping.
-   if (m_type == GraphicsPipelineType::SHADOWMAP)
+   if (m_gType == GraphicsPipelineType::SHADOWMAP)
    {
       rasterizerInfo.depthBiasEnable = VK_TRUE;
       rasterizerInfo.depthBiasConstantFactor = 4.0f;
@@ -369,7 +342,7 @@ void GraphicsPipeline::createRasterizerInfo(
    //rasterizerInfo.depthBiasClamp = 0.0f;
 }
 
-void GraphicsPipeline::createMultisamplingInfo(
+void Graphics::createMultisamplingInfo(
       const VkSampleCountFlagBits& samplesCount,
       VkPipelineMultisampleStateCreateInfo& multisamplingInfo
 ) {
@@ -390,7 +363,7 @@ void GraphicsPipeline::createMultisamplingInfo(
 
 // Contains the configuration per attached framebuffer.
 // (For now, we won't use both config.)
-void GraphicsPipeline::createColorBlendingAttachment(
+void Graphics::createColorBlendingAttachment(
       VkPipelineColorBlendAttachmentState& colorBlendAttachment
 ) {
    colorBlendAttachment.colorWriteMask = (
@@ -403,7 +376,7 @@ void GraphicsPipeline::createColorBlendingAttachment(
 }
 
 
-void GraphicsPipeline::createColorBlendingGlobalInfo(
+void Graphics::createColorBlendingGlobalInfo(
       const VkPipelineColorBlendAttachmentState& colorBlendAttachment,
       VkPipelineColorBlendStateCreateInfo& colorBlendingInfo
 ) {
@@ -420,56 +393,14 @@ void GraphicsPipeline::createColorBlendingGlobalInfo(
    colorBlendingInfo.blendConstants[3] = 0.0f; // Optional
 }
 
-// Interface that creates and allows us to communicate with the uniform
-// values and push constants in the shaders.
-void GraphicsPipeline::createPipelineLayout(
-      const VkDescriptorSetLayout& descriptorSetLayout
-) {
-   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-   // In this case we gonna bind the descriptor layout.
-   pipelineLayoutInfo.setLayoutCount= 1;
-   pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-   // Optional
-   pipelineLayoutInfo.pushConstantRangeCount = 0;
-   // Optional
-   pipelineLayoutInfo.pPushConstantRanges = nullptr;
-
-   auto status = vkCreatePipelineLayout(
-         m_logicalDevice,
-         &pipelineLayoutInfo,
-         nullptr,
-         &m_pipelineLayout
-   );
-
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to create pipeline layout!");
-}
-
-
-const VkPipeline& GraphicsPipeline::get() const
-{
-   return m_graphicsPipeline;
-}
 
 // TODO: make this safer.
-const std::vector<size_t>& GraphicsPipeline::getModelIndices() const
+const std::vector<size_t>& Graphics::getModelIndices() const
 {
    return *m_opModelIndices;
 }
 
-const VkPipelineLayout& GraphicsPipeline::getPipelineLayout() const
+const GraphicsPipelineType Graphics::getGraphicsPipelineType() const
 {
-   return m_pipelineLayout;
-}
-
-void GraphicsPipeline::destroy()
-{
-   vkDestroyPipeline(m_logicalDevice, m_graphicsPipeline, nullptr);
-   vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
-}
-
-const GraphicsPipelineType GraphicsPipeline::getType() const
-{
-   return m_type;
+   return m_gType;
 }

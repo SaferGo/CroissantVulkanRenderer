@@ -92,8 +92,9 @@ DescriptorSets::DescriptorSets(
 
       // Describes how to update the descriptors.
       // (how and which buffer/image use to bind with the each descriptor)
-      std::vector<VkWriteDescriptorSet> descriptorWrites;
-      descriptorWrites.resize(uboInfo.size() + samplersInfo.size());
+      std::vector<VkWriteDescriptorSet> descriptorWrites(
+            uboInfo.size() + samplersInfo.size()
+      );
 
       // UBOs
       for (size_t j = 0; j < uboInfo.size(); j++)
@@ -131,6 +132,61 @@ DescriptorSets::DescriptorSets(
    }
 }
 
+/*
+ * Used for Compute Pipelines.
+ */
+DescriptorSets::DescriptorSets(
+   const VkDevice logicalDevice,
+   const std::vector<DescriptorInfo>& bufferInfos,
+   const std::vector<VkBuffer>& buffers,
+   const VkDescriptorSetLayout& descriptorSetLayout,
+   DescriptorPool& descriptorPool
+) {
+
+   // We just need 1 descriptor set per compute pipeline.
+   m_descriptorSets.resize(1);
+
+   m_descriptorSetLayouts.resize(
+         1,
+         descriptorSetLayout
+   );
+
+   descriptorPool.allocDescriptorSets(
+         m_descriptorSetLayouts,
+         m_descriptorSets
+   );
+
+   std::vector<VkDescriptorBufferInfo> descriptorBufferInfos(buffers.size());
+   for (size_t i = 0; i < buffers.size(); i++)
+   {
+      descriptorTypesUtils::createDescriptorBufferInfo(
+            buffers[i],
+            descriptorBufferInfos[i]
+      );
+   }
+
+   std::vector<VkWriteDescriptorSet> descriptorWrites(buffers.size());
+   for (size_t j = 0; j < buffers.size(); j++)
+   {
+      createDescriptorWriteInfo(
+            descriptorBufferInfos[j],
+            m_descriptorSets[0],
+            bufferInfos[j].bindingNumber,
+            0,
+            bufferInfos[j].descriptorType,
+            descriptorWrites[j]
+      );
+   }
+
+   vkUpdateDescriptorSets(
+      logicalDevice,
+      static_cast<uint32_t>(descriptorWrites.size()),
+      descriptorWrites.data(),
+      0,
+      nullptr
+   );
+}
+
 DescriptorSets::DescriptorSets(const DescriptorSets& other)
    : m_descriptorSets(other.m_descriptorSets),
      m_descriptorSetLayouts(other.m_descriptorSetLayouts)
@@ -165,10 +221,22 @@ void DescriptorSets::createDescriptorWriteInfo(
    descriptorWrite.descriptorType = type;
    descriptorWrite.descriptorCount = 1;
 
-   if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+   if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
+       type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER
+   ) {
+
       descriptorWrite.pBufferInfo = (VkDescriptorBufferInfo*)&descriptorInfo;
-   if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+
+   } else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+   {
+
       descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)&descriptorInfo;
+      
+   } else {
+
+      std::runtime_error("Error creating a descriptor set!");
+
+   }
 }
 
 const VkDescriptorSet& DescriptorSets::get(

@@ -5,7 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Commands/commandUtils.h>
+#include <VulkanToyRenderer/Commands/commandManager.h>
 
 void mipmapUtils::generateMipmaps(
    const VkPhysicalDevice& physicalDevice,
@@ -54,14 +54,14 @@ void mipmapUtils::generateMipmaps(
          imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
          imgMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-         commandUtils::SYNCHRONIZATION::recordPipelineBarrier(
+         commandManager::synchronization::recordPipelineBarrier(
                VK_PIPELINE_STAGE_TRANSFER_BIT,
                VK_PIPELINE_STAGE_TRANSFER_BIT,
                0,
-               0, nullptr,
-               0, nullptr,
-               1, &imgMemoryBarrier,
-               commandBuffer
+               commandBuffer,
+               {},
+               {},
+               {imgMemoryBarrier}
          );
 
          VkImageBlit blit{};
@@ -95,14 +95,14 @@ void mipmapUtils::generateMipmaps(
          imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
          imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-         commandUtils::SYNCHRONIZATION::recordPipelineBarrier(
+         commandManager::synchronization::recordPipelineBarrier(
                VK_PIPELINE_STAGE_TRANSFER_BIT,
                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                0,
-               0, nullptr,
-               0, nullptr,
-               1, &imgMemoryBarrier,
-               commandBuffer
+               commandBuffer,
+               {},
+               {},
+               {imgMemoryBarrier}
          );
 
          if (mipWidth > 1)
@@ -117,21 +117,22 @@ void mipmapUtils::generateMipmaps(
       imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
       imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-      commandUtils::SYNCHRONIZATION::recordPipelineBarrier(
+      commandManager::synchronization::recordPipelineBarrier(
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             0,
-            0, nullptr,
-            0, nullptr,
-            1, &imgMemoryBarrier,
-            commandBuffer
+            commandBuffer,
+            {},
+            {},
+            {imgMemoryBarrier}
       );
             
    commandPool->endCommandBuffer(commandBuffer);
 
    commandPool->submitCommandBuffer(
          graphicsQueue,
-         commandBuffer
+         {commandBuffer},
+         true
    );
 }
 

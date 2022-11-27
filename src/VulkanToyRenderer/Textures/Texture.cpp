@@ -12,8 +12,8 @@
 #include <VulkanToyRenderer/Textures/cubemapUtils.h>
 #include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Images/imageManager.h>
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
-#include <VulkanToyRenderer/Commands/commandUtils.h>
+#include <VulkanToyRenderer/BufferManager/bufferManager.h>
+#include <VulkanToyRenderer/Commands/commandManager.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.h>
 
@@ -151,21 +151,22 @@ void Texture::transitionImageLayout(
          throw std::invalid_argument("Unsupported layout transition!");
 
 
-      commandUtils::SYNCHRONIZATION::recordPipelineBarrier(
+      commandManager::synchronization::recordPipelineBarrier(
             sourceStage,
             destinationStage,
             0,
-            0, nullptr,
-            0, nullptr,
-            1, &imgMemoryBarrier,
-            commandBuffer
+            commandBuffer,
+            {},
+            {},
+            {imgMemoryBarrier}
       );
             
    commandPool->endCommandBuffer(commandBuffer);
 
    commandPool->submitCommandBuffer(
          graphicsQueue,
-         commandBuffer
+         {commandBuffer},
+         true
    );
 }
 

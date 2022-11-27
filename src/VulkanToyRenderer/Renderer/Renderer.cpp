@@ -15,6 +15,9 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <gli/gli.hpp>
+#include <gli/texture2d.hpp>
+#include <gli/load_ktx.hpp>
 
 #ifdef RELEASE_MODE_ON
    #include <tracy/Tracy.hpp>
@@ -25,15 +28,13 @@
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/ValidationLayers/vlManager.h>
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
+#include <VulkanToyRenderer/Pipeline/Graphics.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Commands/commandUtils.h>
+#include <VulkanToyRenderer/Commands/commandManager.h>
 #include <VulkanToyRenderer/Extensions/extensionsUtils.h>
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
-#include <VulkanToyRenderer/Buffers/bufferUtils.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
 #include <VulkanToyRenderer/Model/Types/Skybox.h>
@@ -90,6 +91,9 @@ void Renderer::run()
    );
 
    initVK();
+   initComputations();
+
+   doComputations();
 
    // Keyword and mouse settings
    m_isMouseInMotion = false;
@@ -760,7 +764,7 @@ void Renderer::uploadModels()
             m_device.getPhysicalDevice(),
             m_device.getLogicalDevice(),
             m_qfHandles.graphicsQueue,
-            m_commandPool
+            m_commandPoolGraphics
       );
             
       // Creates and uploads the Textures(images and samplers).
@@ -768,7 +772,7 @@ void Renderer::uploadModels()
          m_device.getPhysicalDevice(),
          m_device.getLogicalDevice(),
          VK_SAMPLE_COUNT_1_BIT,
-         m_commandPool,
+         m_commandPoolGraphics,
          m_qfHandles.graphicsQueue
       );
 
@@ -790,7 +794,7 @@ void Renderer::uploadModels()
                pModel->createDescriptorSets(
                   m_device.getLogicalDevice(),
                   m_descriptorSetLayoutSkybox,
-                  m_descriptorPool
+                  m_descriptorPoolGraphics
                );
             }
 
@@ -806,7 +810,7 @@ void Renderer::uploadModels()
                   m_descriptorSetLayoutNormalPBR,
                   m_skybox->getIrradianceMap(),
                   m_shadowMap,
-                  m_descriptorPool
+                  m_descriptorPoolGraphics
                );
             }
 
@@ -819,7 +823,7 @@ void Renderer::uploadModels()
                pModel->createDescriptorSets(
                   m_device.getLogicalDevice(),
                   m_descriptorSetLayoutLight,
-                  m_descriptorPool
+                  m_descriptorPoolGraphics
                );
             }
 
@@ -834,105 +838,110 @@ void Renderer::uploadModels()
    }
 }
 
-void Renderer::createGraphicsPipelines()
+
+void Renderer::createPipelines()
 {
 
 #ifdef RELEASE_MODE_ON
    ZoneScoped;
 #endif
 
-   ///////////////////////////////////MODELS///////////////////////////////////
+   // --------------------------------GRAPHICS---------------------------------
 
-   m_graphicsPipelineSkybox = GraphicsPipeline(
-         m_device.getLogicalDevice(),
-         GraphicsPipelineType::SKYBOX,
-         m_swapchain->getExtent(),
-         m_renderPass.get(),
-         m_descriptorSetLayoutSkybox,
-         {
+   {
+      // - Models
+      m_graphicsPipelineSkybox = Graphics(
+            m_device.getLogicalDevice(),
+            GraphicsPipelineType::SKYBOX,
+            m_swapchain->getExtent(),
+            m_renderPass.get(),
+            m_descriptorSetLayoutSkybox,
             {
-               shaderType::VERTEX,
-               "skybox"
+               {
+                  shaderType::VERTEX,
+                  "skybox"
+               },
+               {
+                  shaderType::FRAGMENT,
+                  "skybox"
+               }
             },
-            {
-               shaderType::FRAGMENT,
-               "skybox"
-            }
-         },
-         m_msaa.getSamplesCount(),
-         Attributes::SKYBOX::getBindingDescription(),
-         Attributes::SKYBOX::getAttributeDescriptions(),
-         &m_skyboxModelIndex
-   );
+            m_msaa.getSamplesCount(),
+            Attributes::SKYBOX::getBindingDescription(),
+            Attributes::SKYBOX::getAttributeDescriptions(),
+            &m_skyboxModelIndex
+      );
 
-   m_graphicsPipelinePBR = GraphicsPipeline(
-         m_device.getLogicalDevice(),
-         GraphicsPipelineType::PBR,
-         m_swapchain->getExtent(),
-         m_renderPass.get(),
-         m_descriptorSetLayoutNormalPBR,
-         {
+      m_graphicsPipelinePBR = Graphics(
+            m_device.getLogicalDevice(),
+            GraphicsPipelineType::PBR,
+            m_swapchain->getExtent(),
+            m_renderPass.get(),
+            m_descriptorSetLayoutNormalPBR,
             {
-               shaderType::VERTEX,
-               // Filename of the vertex shader.
-               "scene"
+               {
+                  shaderType::VERTEX,
+                  // Filename of the vertex shader.
+                  "scene"
+               },
+               {
+                  shaderType::FRAGMENT,
+                  // Filename of the fragment shader.
+                  "scene"
+               }
             },
-            {
-               shaderType::FRAGMENT,
-               // Filename of the fragment shader.
-               "scene"
-            }
-         },
-         m_msaa.getSamplesCount(),
-         Attributes::PBR::getBindingDescription(),
-         Attributes::PBR::getAttributeDescriptions(),
-         // Models assocciated with this graphics pipeline.
-         &m_objectModelIndices
-   );
+            m_msaa.getSamplesCount(),
+            Attributes::PBR::getBindingDescription(),
+            Attributes::PBR::getAttributeDescriptions(),
+            // Models assocciated with this graphics pipeline.
+            &m_objectModelIndices
+      );
 
 
-   m_graphicsPipelineLight = GraphicsPipeline(
-         m_device.getLogicalDevice(),
-         GraphicsPipelineType::LIGHT,
-         m_swapchain->getExtent(),
-         m_renderPass.get(),
-         m_descriptorSetLayoutLight,
-         {
+      m_graphicsPipelineLight = Graphics(
+            m_device.getLogicalDevice(),
+            GraphicsPipelineType::LIGHT,
+            m_swapchain->getExtent(),
+            m_renderPass.get(),
+            m_descriptorSetLayoutLight,
             {
-               shaderType::VERTEX,
-               "light"
+               {
+                  shaderType::VERTEX,
+                  "light"
+               },
+               {
+                  shaderType::FRAGMENT,
+                  "light"
+               }
             },
-            {
-               shaderType::FRAGMENT,
-               "light"
-            }
-         },
-         m_msaa.getSamplesCount(),
-         Attributes::LIGHT::getBindingDescription(),
-         Attributes::LIGHT::getAttributeDescriptions(),
-         // Models assocciated with this graphics pipeline.
-         &m_lightModelIndices
-   );
+            m_msaa.getSamplesCount(),
+            Attributes::LIGHT::getBindingDescription(),
+            Attributes::LIGHT::getAttributeDescriptions(),
+            // Models assocciated with this graphics pipeline.
+            &m_lightModelIndices
+      );
 
-   //////////////////////////////////FEATURES//////////////////////////////////
-
-   m_graphicsPipelineShadowMap = GraphicsPipeline(
-         m_device.getLogicalDevice(),
-         GraphicsPipelineType::SHADOWMAP,
-         m_swapchain->getExtent(),
-         m_renderPassShadowMap.get(),
-         m_descriptorSetLayoutShadowMap,
-         {
+      // - Features
+      
+      m_graphicsPipelineShadowMap = Graphics(
+            m_device.getLogicalDevice(),
+            GraphicsPipelineType::SHADOWMAP,
+            m_swapchain->getExtent(),
+            m_renderPassShadowMap.get(),
+            m_descriptorSetLayoutShadowMap,
             {
-               shaderType::VERTEX,
-               "shadowMap"
-            }
-         },
-         VK_SAMPLE_COUNT_1_BIT,
-         Attributes::PBR::getBindingDescription(),
-         Attributes::PBR::getAttributeDescriptions(),
-         &m_objectModelIndices
-   );
+               {
+                  shaderType::VERTEX,
+                  "shadowMap"
+               }
+            },
+            VK_SAMPLE_COUNT_1_BIT,
+            Attributes::PBR::getBindingDescription(),
+            Attributes::PBR::getAttributeDescriptions(),
+            &m_objectModelIndices
+      );
+   }
+
 }
 
 /*
@@ -946,9 +955,8 @@ void Renderer::createDescriptorSetLayouts()
    ZoneScoped;
 #endif
 
-   // ---------------------------------Models----------------------------------
-
-   descriptorSetLayoutUtils::createDescriptorSetLayout(
+   // - Models
+   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
          GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
          GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO,
@@ -956,14 +964,14 @@ void Renderer::createDescriptorSetLayouts()
    );
 
 
-   descriptorSetLayoutUtils::createDescriptorSetLayout(
+   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
          GRAPHICS_PIPELINE::PBR::UBOS_INFO,
          GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
          m_descriptorSetLayoutNormalPBR
    );
    
-   descriptorSetLayoutUtils::createDescriptorSetLayout(
+   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
          GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
          GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
@@ -971,13 +979,68 @@ void Renderer::createDescriptorSetLayouts()
    );
 
 
-   // ---------------------------------Features--------------------------------
 
-   descriptorSetLayoutUtils::createDescriptorSetLayout(
+   // - Features
+
+   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
          m_device.getLogicalDevice(),
          GRAPHICS_PIPELINE::SHADOWMAP::UBOS_INFO,
          {},
          m_descriptorSetLayoutShadowMap
+   );
+
+}
+
+void Renderer::createCommandPools()
+{
+   // Graphics Command Pool
+   {
+      m_commandPoolGraphics = std::make_shared<CommandPool>(
+            m_device.getLogicalDevice(),
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            m_qfIndices.graphicsFamily.value()
+      );
+      
+      m_commandPoolGraphics->allocCommandBuffers(
+            config::MAX_FRAMES_IN_FLIGHT
+      );
+   }
+
+   // Compute Command Pool
+   {
+      m_commandPoolCompute = std::make_shared<CommandPool>(
+            m_device.getLogicalDevice(),
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            m_qfIndices.computeFamily.value()
+      );
+
+      m_commandPoolCompute->allocCommandBuffers(1);
+   }
+
+   // Features
+   {
+      m_shadowMap->createCommandPool(
+            VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            m_qfIndices.graphicsFamily.value()
+      );
+
+      m_shadowMap->allocCommandBuffers(
+            config::MAX_FRAMES_IN_FLIGHT
+      );
+   }
+
+}
+
+void Renderer::initComputations()
+{
+   m_BRDF = Computation(
+         m_device.getPhysicalDevice(),
+         m_device.getLogicalDevice(),
+         "BRDF",
+         sizeof(float),
+         2 * sizeof(float) * config::BRDF_HEIGHT * config::BRDF_WIDTH,
+         m_qfIndices,
+         m_descriptorPoolComputations
    );
 }
 
@@ -1016,7 +1079,7 @@ void Renderer::initVK()
    // Descriptor Pool
    // (Calculates the total size of the pool depending of the descriptors
    // we send as parameter and the number of descriptor SETS defined)
-   m_descriptorPool = DescriptorPool(
+   m_descriptorPoolGraphics = DescriptorPool(
          m_device.getLogicalDevice(),
          // Type of descriptors / Count of each type of descriptor in the pool.
          {
@@ -1041,6 +1104,17 @@ void Renderer::initVK()
          // TODO: Make the size more precise.
          1500
          //m_models.size() * config::MAX_FRAMES_IN_FLIGHT
+   );
+
+   m_descriptorPoolComputations = DescriptorPool(
+         m_device.getLogicalDevice(),
+         {
+            {
+               VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+               2
+            }
+         },
+         1 // just for the BRDF(for now..)
    );
 
    createDescriptorSetLayouts();
@@ -1074,6 +1148,7 @@ void Renderer::initVK()
    //----------------------------------RenderPass------------------------------
 
    createShadowMapRenderPass();
+
    createSceneRenderPass();
 
    //----------------------------------Framebuffers----------------------------
@@ -1090,31 +1165,10 @@ void Renderer::initVK()
 
    //--------------------------------------------------------------------------
 
-   createGraphicsPipelines();
+   createPipelines();
 
-   //----------------------------------Command Pools---------------------------
-   m_commandPool = std::make_shared<CommandPool>(
-         m_device.getLogicalDevice(),
-         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-         m_qfIndices.graphicsFamily.value()
-   );
-   
-   // Allocates all the neccessary cmd buffers in the cmd pool.
-   m_commandPool->allocCommandBuffers(
-         config::MAX_FRAMES_IN_FLIGHT
-   );
+   createCommandPools();
 
-   m_shadowMap->createCommandPool(
-         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-         m_qfIndices.graphicsFamily.value()
-   );
-
-   m_shadowMap->allocCommandBuffers(
-         config::MAX_FRAMES_IN_FLIGHT
-   );
-
-   //--------------------------------------------------------------------------
-   
    uploadModels();
      
    createSyncObjects();
@@ -1124,7 +1178,7 @@ void Renderer::initVK()
 template <typename T>
 void Renderer::bindAllMeshesData(
       const std::shared_ptr<T>& model,
-      const GraphicsPipeline& graphicsPipeline,
+      const Graphics& graphicsPipeline,
       const VkCommandBuffer& commandBuffer,
       const uint32_t currentFrame
 ) {
@@ -1135,7 +1189,7 @@ void Renderer::bindAllMeshesData(
 
    for (auto& mesh : model->m_meshes)
    {
-      commandUtils::STATE::bindVertexBuffers(
+      commandManager::state::bindVertexBuffers(
             {mesh.vertexBuffer},
             // Offsets.
             {0},
@@ -1145,7 +1199,7 @@ void Renderer::bindAllMeshesData(
             1,
             commandBuffer
       );
-      commandUtils::STATE::bindIndexBuffer(
+      commandManager::state::bindIndexBuffer(
             mesh.indexBuffer,
             // Offset.
             0,
@@ -1155,13 +1209,16 @@ void Renderer::bindAllMeshesData(
 
       // TODO: Improve this.
       VkDescriptorSet descriptorSet;
-      if (graphicsPipeline.getType() == GraphicsPipelineType::SHADOWMAP)
+      if (graphicsPipeline.getGraphicsPipelineType() ==
+          GraphicsPipelineType::SHADOWMAP
+      )
          descriptorSet = m_shadowMap->getDescriptorSet(currentFrame);
       else
          descriptorSet = mesh.descriptorSets.get(currentFrame);
 
-      commandUtils::STATE::bindDescriptorSets(
+      commandManager::state::bindDescriptorSets(
             graphicsPipeline.getPipelineLayout(),
+            PipelineType::GRAPHICS,
             // Index of first descriptor set.
             0,
             {descriptorSet},
@@ -1170,7 +1227,7 @@ void Renderer::bindAllMeshesData(
             commandBuffer
       );
 
-      commandUtils::ACTION::drawIndexed(
+      commandManager::action::drawIndexed(
             // Index Count
             mesh.indices.size(),
             // Instance Count
@@ -1190,7 +1247,7 @@ void Renderer::recordCommandBuffer(
       const VkFramebuffer& framebuffer,
       const RenderPass& renderPass,
       const VkExtent2D& extent,
-      const std::vector<GraphicsPipeline>& graphicsPipelines,
+      const std::vector<Graphics>& graphicsPipelines,
       const uint32_t currentFrame,
       const VkCommandBuffer& commandBuffer,
       const std::vector<VkClearValue>& clearValues,
@@ -1228,12 +1285,13 @@ void Renderer::recordCommandBuffer(
 
          for (const auto& graphicsPipeline : graphicsPipelines)
          {
-            commandUtils::STATE::bindPipeline(
+            commandManager::state::bindPipeline(
                   graphicsPipeline.get(),
+                  PipelineType::GRAPHICS,
                   commandBuffer
             );
             // Set Dynamic States
-            commandUtils::STATE::setViewport(
+            commandManager::state::setViewport(
                   0.0f,
                   0.0f,
                   extent,
@@ -1243,7 +1301,7 @@ void Renderer::recordCommandBuffer(
                   1,
                   commandBuffer
             );
-            commandUtils::STATE::setScissor(
+            commandManager::state::setScissor(
                   {0, 0},
                   extent,
                   0,
@@ -1466,9 +1524,9 @@ void Renderer::drawFrame(uint8_t& currentFrame)
             m_graphicsPipelineSkybox
          },
          currentFrame,
-         m_commandPool->getCommandBuffer(currentFrame),
+         m_commandPoolGraphics->getCommandBuffer(currentFrame),
          m_clearValues,
-         m_commandPool
+         m_commandPoolGraphics
    );
 
    // GUI
@@ -1476,45 +1534,30 @@ void Renderer::drawFrame(uint8_t& currentFrame)
 
    //----------------------Submits the command buffer--------------------------
 
-   VkSubmitInfo submitInfo{};
-   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-   VkSemaphore waitSemaphores[] = {
-      m_imageAvailableSemaphores[currentFrame]
-   };
-   VkPipelineStageFlags waitStages [] = {
-      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-   };
-   submitInfo.waitSemaphoreCount = 1;
-   // Specifies which semaphores to wait on before execution begins.
-   submitInfo.pWaitSemaphores = waitSemaphores;
-   // Specifies which stage/s of the pipeline to wait.
-   submitInfo.pWaitDstStageMask = waitStages;
-   // These two commands specify which command buffers to actualy submit for
-   // execution.
-   
-   std::vector<VkCommandBuffer> submitCommandBuffers = {
+   std::vector<VkCommandBuffer> commandBuffersToSubmit = {
       m_shadowMap->getCommandBuffer(currentFrame),
-      m_commandPool->getCommandBuffer(currentFrame),
+      m_commandPoolGraphics->getCommandBuffer(currentFrame),
       m_GUI->getCommandBuffer(currentFrame)
    };
+   std::vector<VkSemaphore> waitSemaphores = {
+      m_imageAvailableSemaphores[currentFrame]
+   };
+   std::vector<VkSemaphore> signalSemaphores = {
+      m_renderFinishedSemaphores[currentFrame]
+   };
 
-   submitInfo.commandBufferCount = submitCommandBuffers.size();
-   submitInfo.pCommandBuffers = submitCommandBuffers.data();
-   // Specifies which semaphores to signal once the command buffer/s have
-   // finished execution.
-   VkSemaphore signalSemaphores[] = {m_renderFinishedSemaphores[currentFrame]};
-   submitInfo.signalSemaphoreCount = 1;
-   submitInfo.pSignalSemaphores = signalSemaphores;
-
-   auto status = vkQueueSubmit(
+   m_commandPoolGraphics->submitCommandBuffer(
          m_qfHandles.graphicsQueue,
-         1,
-         &submitInfo,
+         commandBuffersToSubmit,
+         false,
+         waitSemaphores,
+         (VkPipelineStageFlags)(
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+         ),
+         signalSemaphores,
          m_inFlightFences[currentFrame]
    );
-
-   if (status != VK_SUCCESS)
-      throw std::runtime_error("Failed to submit draw command buffer!");
+   
 
    //-------------------Presentation of the swapchain image--------------------
    
@@ -1522,7 +1565,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
    // Specifies which semaphores to wait on before the presentation can happen.
    presentInfo.waitSemaphoreCount = 1;
-   presentInfo.pWaitSemaphores = signalSemaphores;
+   presentInfo.pWaitSemaphores = signalSemaphores.data();
 
    // Specifies the swapchains to present images to and the index of the
    // image for each swapchain.
@@ -1632,6 +1675,77 @@ void Renderer::mainLoop()
    vkDeviceWaitIdle(m_device.getLogicalDevice());
 }
 
+void Renderer::doComputations()
+{
+   std::cout << "Doing computations.\n";
+
+   const VkCommandBuffer& commandBuffer = (
+         m_commandPoolCompute->getCommandBuffer(0)
+   );
+
+   // Resets the command buffer to be able to be recorded.
+   m_commandPoolCompute->resetCommandBuffer(0);
+   // Specifies some details about the usage of this specific command
+   // buffer.
+   m_commandPoolCompute->beginCommandBuffer(0, commandBuffer);
+
+      m_BRDF.execute(commandBuffer);
+
+      // To make sure that the buffer is ready to be accessed.
+      VkMemoryBarrier readBarrier = {
+         VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+         nullptr,
+         // Specifies that we'll wait for the shader to finish writing to the
+         // buffer.
+         VK_ACCESS_SHADER_WRITE_BIT,
+         VK_ACCESS_HOST_READ_BIT
+      };
+
+      commandManager::synchronization::recordPipelineBarrier(
+            // Specifies that we'll wait for the Compute Queue to finish the
+            // execution of the tasks.
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_HOST_BIT,
+            0,
+            commandBuffer,
+            {readBarrier},
+            {},
+            {}
+      );
+
+   m_commandPoolCompute->endCommandBuffer(commandBuffer);
+
+   m_commandPoolCompute->submitCommandBuffer(
+         m_qfHandles.computeQueue,
+         {commandBuffer},
+         true
+   );
+
+   std::cout << "All the computations have been completed.\n";
+
+   uint32_t bufferSize = 2 * sizeof(float) * 256 * 256;
+   float lutData[bufferSize];
+   m_BRDF.downloadData(0, (uint8_t*)lutData, bufferSize);
+   gli::texture lutTexture = gli::texture2d(
+         gli::FORMAT_RG16_SFLOAT_PACK16,
+         gli::extent2d(256, 256),
+         1
+   );
+
+   const float* data = lutData;
+   for (int y = 0; y < 256; y++)
+	{
+		for (int x = 0; x < 256; x++)
+		{
+			const int ofs = y * 256 + x;
+			const gli::vec2 value(data[ofs * 2 + 0], data[ofs * 2 + 1]);
+			const gli::texture::extent_type uv = { x, y, 0 };
+			lutTexture.store<glm::uint32>(uv, 0, 0, 0, gli::packHalf2x16(value));
+		}
+	}
+   gli::save_ktx(lutTexture, "pene.ktx");
+}
+
 void Renderer::destroySyncObjects()
 {
 
@@ -1684,6 +1798,9 @@ void Renderer::cleanup()
    m_graphicsPipelineLight.destroy();
    m_graphicsPipelineShadowMap.destroy();
 
+   // Computations
+   m_BRDF.destroy();
+
    // Renderpass
    m_renderPass.destroy();
    m_renderPassShadowMap.destroy();
@@ -1694,7 +1811,8 @@ void Renderer::cleanup()
       model->destroy(m_device.getLogicalDevice());
 
    // Descriptor Pool
-   m_descriptorPool.destroy();
+   m_descriptorPoolGraphics.destroy();
+   m_descriptorPoolComputations.destroy();
 
    // Descriptor Set Layouts
    descriptorSetLayoutUtils::destroyDescriptorSetLayout(
@@ -1713,12 +1831,13 @@ void Renderer::cleanup()
          m_device.getLogicalDevice(),
          m_descriptorSetLayoutShadowMap
    );
-   
+
    // Sync objects
    destroySyncObjects();
 
-   // Command Pool
-   m_commandPool->destroy();
+   // Command Pools
+   if (m_commandPoolGraphics) m_commandPoolGraphics->destroy();
+   if (m_commandPoolCompute)  m_commandPoolCompute->destroy();
    
    // Logical Device
    vkDestroyDevice(m_device.getLogicalDevice(), nullptr);

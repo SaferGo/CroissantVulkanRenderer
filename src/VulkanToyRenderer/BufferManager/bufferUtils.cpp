@@ -1,4 +1,4 @@
-#include <VulkanToyRenderer/Buffers/bufferUtils.h>
+#include <VulkanToyRenderer/BufferManager/bufferUtils.h>
 
 #include <stdexcept>
 

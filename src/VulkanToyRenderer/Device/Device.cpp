@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
 
@@ -23,7 +23,8 @@ void Device::createLogicalDevice(
    // for the logical device.
    std::set<uint32_t> uniqueQueueFamilies = {
          requiredQueueFamiliesIndices.graphicsFamily.value(),
-         requiredQueueFamiliesIndices.presentFamily.value()
+         requiredQueueFamiliesIndices.presentFamily.value(),
+         requiredQueueFamiliesIndices.computeFamily.value(),
    };
 
    float queuePriority = 1.0f;

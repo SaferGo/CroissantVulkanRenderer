@@ -40,18 +40,14 @@ public:
          const glm::fvec3& rot = glm::fvec3(0.0f),
          const glm::fvec3& size = glm::fvec3(1.0f)
    );
-
    virtual ~Model() = 0;
-
    virtual void destroy(const VkDevice& logicalDevice) = 0;
-
    virtual void uploadVertexData(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          VkQueue& graphicsQueue,
          const std::shared_ptr<CommandPool>& commandPool
    ) = 0;
-
    virtual void loadTextures(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
@@ -64,7 +60,6 @@ public:
          const VkDevice& logicalDevice,
          const uint32_t& uboCount
    ) = 0;
-         
    const std::string& getName() const;
    const ModelType& getType() const;
    const glm::fvec4& getPos() const;

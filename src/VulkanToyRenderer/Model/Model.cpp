@@ -13,7 +13,6 @@
 #include <glm/gtx/hash.hpp>
 
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 
 Model::Model(

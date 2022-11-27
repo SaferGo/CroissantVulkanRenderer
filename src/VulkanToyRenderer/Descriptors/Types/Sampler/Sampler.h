@@ -15,7 +15,6 @@ public:
       const VkFilter& filter
    );
    ~Sampler();
-   
    const VkSampler& get() const;
    void destroy();
 

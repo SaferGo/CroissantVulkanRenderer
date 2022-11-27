@@ -7,7 +7,7 @@ void descriptorTypesUtils::createDescriptorBufferInfo(
       VkDescriptorBufferInfo& bufferInfo
 ) {
    // Specifies the buffer and the region within it that contains the data
-   // for the descriptor set.
+   // used by the descriptor set.
    bufferInfo.buffer = buffer;
    bufferInfo.offset = 0;
    bufferInfo.range = VK_WHOLE_SIZE;

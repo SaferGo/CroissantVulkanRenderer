@@ -8,7 +8,7 @@
  * Combines all the different types of descriptors layouts in one
  * descriptor SET layout.
  */
-void descriptorSetLayoutUtils::createDescriptorSetLayout(
+void descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
       const VkDevice& logicalDevice,
       const std::vector<DescriptorInfo>& uboInfo,
       const std::vector<DescriptorInfo>& samplersInfo,
@@ -52,6 +52,43 @@ void descriptorSetLayoutUtils::createDescriptorSetLayout(
 
    if (status != VK_SUCCESS)
       throw std::runtime_error("Failed to create descriptor set layout!");
+}
+
+/*
+ * Descriptor Set layout for In/Out buffer pair.
+ */
+void descriptorSetLayoutUtils::compute::createDescriptorSetLayout(
+      const VkDevice& logicalDevice,
+      const std::vector<DescriptorInfo>& bufferInfos,
+      VkDescriptorSetLayout& descriptorSetLayout
+) {
+
+   std::vector<VkDescriptorSetLayoutBinding> bindings(bufferInfos.size());
+
+   for (size_t i = 0; i < bufferInfos.size(); i++)
+   {
+      createDescriptorBindingLayout(
+            bufferInfos[i],
+            {},
+            bindings[i]
+      );
+   }
+
+   VkDescriptorSetLayoutCreateInfo layoutInfo{};
+   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+   layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+   layoutInfo.pBindings = bindings.data();
+
+   auto status = vkCreateDescriptorSetLayout(
+         logicalDevice,
+         &layoutInfo,
+         nullptr,
+         &descriptorSetLayout
+   );
+
+   if (status != VK_SUCCESS)
+      throw std::runtime_error("Failed to create descriptor set layout!");
+
 }
 
 void descriptorSetLayoutUtils::destroyDescriptorSetLayout(

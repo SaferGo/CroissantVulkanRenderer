@@ -44,12 +44,12 @@ add_subdirectory(${GLFW_DIR} EXCLUDE_FROM_ALL)
 set(GLM_DIR "${PROJECT_LIBRARIES_DIR}/glm")
 add_subdirectory(${GLM_DIR} EXCLUDE_FROM_ALL)
 
-# -STB(Image Loader) -> Header file that contains all the code.
+# - STB(Image Loader) -> Header file that contains all the code.
 set(STB_DIR "${PROJECT_LIBRARIES_DIR}/stb")
 add_subdirectory(${STB_DIR} EXCLUDE_FROM_ALL)
 
-# -ImGUI
-# (compiles it as an static library)
+# - ImGUI
+# (It compiles it as an static library)
 set (IMGUI_DIR "${PROJECT_LIBRARIES_DIR}/imgui")
 file(GLOB IMGUI_SOURCES
    ${IMGUI_DIR}/*.cpp
@@ -64,7 +64,7 @@ target_include_directories(
       ${IMGUI_DIR}/backends
 )
 
-# -Assimp
+# - Assimp
 set(ASSIMP_DIR "${PROJECT_LIBRARIES_DIR}/assimp")
 option(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory(${ASSIMP_DIR})
@@ -72,6 +72,10 @@ add_subdirectory(${ASSIMP_DIR})
 # - PThreads
 set(THREADS_PREFER_PTRHEAD_FLAG ON)
 find_package(Threads REQUIRED)
+
+# - Gli
+set(GLI_DIR "${PROJECT_LIBRARIES_DIR}/gli")
+add_subdirectory(${GLI_DIR} EXCLUDE_FROM_ALL)
 
 # - Tracy
 option(TRACY_ENABLE "" ON)
@@ -93,25 +97,28 @@ add_definitions(-DSKYBOX_DIR="${SKYBOX_DIR}/")
 
 add_executable(${PROJECT_NAME} 
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/main.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Renderer.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Renderer/Renderer.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Window/Window.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GUI/GUI.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Computation/Computation.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ValidationLayers/vlManager.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyIndices.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/QueueFamilyHandles.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/QueueFamily/queueFamilyUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Queue/QueueFamilyIndices.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Queue/QueueFamilyHandles.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Queue/queueFamilyUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Swapchain/Swapchain.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/ShaderManager/shaderManager.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Pipeline/Pipeline.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Pipeline/Graphics.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Pipeline/Compute.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/RenderPass.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/attachmentUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/RenderPass/subPassUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/CommandPool.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/commandUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Commands/commandManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Device/Device.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Extensions/extensionsUtils.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferManager.cpp"
-   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Buffers/bufferUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/BufferManager/bufferManager.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/BufferManager/bufferUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorSets.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/DescriptorPool.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Descriptors/Types/UBO/UBO.cpp"
@@ -162,6 +169,7 @@ target_link_libraries(${PROJECT_NAME}
    assimp
    imgui
    Tracy::TracyClient
+   gli
    PRIVATE
    ${CMAKE_DL_LIBS}
 )

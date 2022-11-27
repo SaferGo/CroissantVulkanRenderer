@@ -5,6 +5,7 @@ find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 file (GLOB SHADERS
    ${SHADERS_SOURCE_DIR}/*.vert
    ${SHADERS_SOURCE_DIR}/*.frag
+   ${SHADERS_SOURCE_DIR}/*.comp
 )
 
 foreach(source IN LISTS SHADERS)

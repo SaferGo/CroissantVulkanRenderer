@@ -1,4 +1,4 @@
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyHandles.h>
 
 void QueueFamilyHandles::setQueueHandles(
       const VkDevice& logicalDevice,
@@ -15,6 +15,12 @@ void QueueFamilyHandles::setQueueHandles(
          qfIndices.presentFamily.value(),
          0,
          &presentQueue
+   );
+   vkGetDeviceQueue(
+         logicalDevice,
+         qfIndices.computeFamily.value(),
+         0,
+         &computeQueue
    );
 }
 

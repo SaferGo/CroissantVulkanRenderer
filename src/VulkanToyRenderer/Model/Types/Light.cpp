@@ -4,7 +4,7 @@
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 #include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/BufferManager/bufferManager.h>
 #include <VulkanToyRenderer/Math/mathUtils.h>
 
 Light::Light(

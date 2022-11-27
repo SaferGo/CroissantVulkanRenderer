@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 
 class Device

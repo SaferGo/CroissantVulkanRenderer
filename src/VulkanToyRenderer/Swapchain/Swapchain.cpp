@@ -5,7 +5,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Images/imageManager.h>
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/Features/MSAA.h>

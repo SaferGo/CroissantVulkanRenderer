@@ -11,7 +11,6 @@
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Attributes.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
 #include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>

@@ -2,12 +2,13 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 
 struct QueueFamilyHandles
 {
    VkQueue graphicsQueue;
    VkQueue presentQueue;
+   VkQueue computeQueue;
 
    void setQueueHandles(
          const VkDevice& logicalDevice,

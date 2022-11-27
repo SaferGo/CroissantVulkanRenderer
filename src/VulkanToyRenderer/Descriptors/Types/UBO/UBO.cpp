@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
+#include <VulkanToyRenderer/BufferManager/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
 
 UBO::UBO(

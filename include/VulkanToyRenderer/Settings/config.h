@@ -36,4 +36,8 @@ namespace config
 
    // Scene
    inline const uint32_t LIGHTS_COUNT = 10;
+
+   // BRDF
+   inline const uint32_t BRDF_WIDTH  = 256;
+   inline const uint32_t BRDF_HEIGHT = 256;
 };

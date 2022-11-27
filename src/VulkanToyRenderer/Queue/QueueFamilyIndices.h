@@ -16,6 +16,7 @@ struct QueueFamilyIndices
 {
    std::optional<uint32_t> graphicsFamily;
    std::optional<uint32_t> presentFamily;
+   std::optional<uint32_t> computeFamily;
    bool areAllQueueFamiliesSupported;
 
    void getIndicesOfRequiredQueueFamilies (

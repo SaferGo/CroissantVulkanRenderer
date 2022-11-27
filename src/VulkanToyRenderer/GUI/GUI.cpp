@@ -187,7 +187,8 @@ void GUI::uploadFonts(const VkQueue& graphicsQueue)
    m_commandPool->endCommandBuffer(newCommandBuffer);
    m_commandPool->submitCommandBuffer(
          graphicsQueue,
-         newCommandBuffer
+         {newCommandBuffer},
+         true
    );
 }
 

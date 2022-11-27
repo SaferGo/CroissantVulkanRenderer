@@ -8,15 +8,16 @@
 
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/GUI/GUI.h>
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyIndices.h>
-#include <VulkanToyRenderer/QueueFamily/QueueFamilyHandles.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
+#include <VulkanToyRenderer/Queue/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
-#include <VulkanToyRenderer/GraphicsPipeline/GraphicsPipeline.h>
+#include <VulkanToyRenderer/Computation/Computation.h>
+#include <VulkanToyRenderer/Pipeline/Graphics.h>
+#include <VulkanToyRenderer/Pipeline/Compute.h>
 #include <VulkanToyRenderer/Features/DepthBuffer.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/Commands/CommandPool.h>
 #include <VulkanToyRenderer/Device/Device.h>
-#include <VulkanToyRenderer/Buffers/bufferManager.h>
 #include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
 #include <VulkanToyRenderer/Textures/Texture.h>
 #include <VulkanToyRenderer/Model/Model.h>
@@ -94,9 +95,11 @@ public:
 
 private:
 
-   void createGraphicsPipelines();
+   void createPipelines();
+   void createCommandPools();
    void uploadModels();
    void initVK();
+   void initComputations();
    void handleInput();
    static void scrollCallback(
          GLFWwindow* window,
@@ -108,11 +111,12 @@ private:
    void createShadowMapRenderPass();
    void createSceneRenderPass();
    void createDescriptorSetLayouts();
+   void doComputations();
    void recordCommandBuffer(
          const VkFramebuffer& framebuffer,
          const RenderPass& renderPass,
          const VkExtent2D& extent,
-         const std::vector<GraphicsPipeline>& graphicsPipelines,
+         const std::vector<Graphics>& graphicsPipelines,
          const uint32_t currentFrame,
          const VkCommandBuffer& commandBuffer,
          const std::vector<VkClearValue>& clearValues,
@@ -121,7 +125,7 @@ private:
    template <typename T>
    void bindAllMeshesData(
          const std::shared_ptr<T>& model,
-         const GraphicsPipeline& graphicsPipeline,
+         const Graphics& graphicsPipeline,
          const VkCommandBuffer& commandBuffer,
          const uint32_t currentFrame
    );
@@ -159,17 +163,24 @@ private:
    std::shared_ptr<Skybox>             m_skybox;
 
    // TODO: delete this
-   size_t                  m_mainModelIndex;
+   size_t                              m_mainModelIndex;
 
-   GraphicsPipeline                    m_graphicsPipelinePBR;
-   GraphicsPipeline                    m_graphicsPipelineSkybox;
-   GraphicsPipeline                    m_graphicsPipelineLight;
-   GraphicsPipeline                    m_graphicsPipelineShadowMap;
+   // Pipelines
+   Graphics                            m_graphicsPipelinePBR;
+   Graphics                            m_graphicsPipelineSkybox;
+   Graphics                            m_graphicsPipelineLight;
+   Graphics                            m_graphicsPipelineShadowMap;
 
-   // Command buffer for main drawing commands.
-   std::shared_ptr<CommandPool>        m_commandPool;
+   //Computations
+   Computation                         m_BRDF;
 
-   DescriptorPool                      m_descriptorPool;
+   // Command Pool for main drawing commands.
+   std::shared_ptr<CommandPool>        m_commandPoolGraphics;
+   std::shared_ptr<CommandPool>        m_commandPoolCompute;
+
+   DescriptorPool                      m_descriptorPoolGraphics;
+   DescriptorPool                      m_descriptorPoolComputations;
+
    VkDescriptorSetLayout               m_descriptorSetLayoutNormalPBR;
    VkDescriptorSetLayout               m_descriptorSetLayoutLight;
    VkDescriptorSetLayout               m_descriptorSetLayoutSkybox;
