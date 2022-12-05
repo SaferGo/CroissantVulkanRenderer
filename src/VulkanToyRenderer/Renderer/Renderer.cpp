@@ -15,9 +15,6 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <gli/gli.hpp>
-#include <gli/texture2d.hpp>
-#include <gli/load_ktx.hpp>
 
 #ifdef RELEASE_MODE_ON
    #include <tracy/Tracy.hpp>
@@ -25,27 +22,27 @@
 
 #include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
-#include <VulkanToyRenderer/Settings/vLayersConfig.h>
+#include <VulkanToyRenderer/Settings/computePipelineConfig.h>
 #include <VulkanToyRenderer/Window/Window.h>
-#include <VulkanToyRenderer/ValidationLayers/vlManager.h>
 #include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
 #include <VulkanToyRenderer/Queue/QueueFamilyHandles.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/Pipeline/Graphics.h>
-#include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Commands/commandManager.h>
-#include <VulkanToyRenderer/Extensions/extensionsUtils.h>
+#include <VulkanToyRenderer/Command/CommandPool.h>
+#include <VulkanToyRenderer/Command/commandManager.h>
 #include <VulkanToyRenderer/Model/Model.h>
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
 #include <VulkanToyRenderer/Model/Types/Skybox.h>
 #include <VulkanToyRenderer/Model/Types/Light.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
-#include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
-#include <VulkanToyRenderer/Textures/Texture.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorPool.h>
+#include <VulkanToyRenderer/Descriptor/descriptorSetLayoutManager.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBO.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBOutils.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBOinfo.h>
+#include <VulkanToyRenderer/Descriptor/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorSets.h>
+#include <VulkanToyRenderer/Texture/Texture.h>
+#include <VulkanToyRenderer/Texture/Type/NormalTexture.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
 #include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
@@ -54,6 +51,7 @@
 #include <VulkanToyRenderer/Camera/Camera.h>
 #include <VulkanToyRenderer/Camera/Types/Arcball.h>
 #include <VulkanToyRenderer/Features/ShadowMap.h>
+#include <VulkanToyRenderer/Image/imageManager.h>
 
 
 void Renderer::run()
@@ -87,17 +85,17 @@ void Renderer::run()
    m_window = std::make_shared<Window>(
          config::RESOLUTION_W,
          config::RESOLUTION_H,
-         config::TITLE
+         config::WINDOW_TITLE
    );
 
    initVK();
+
    initComputations();
-
    doComputations();
+   loadBRDFlut();
 
-   // Keyword and mouse settings
-   m_isMouseInMotion = false;
-   
+   uploadModels();
+
    m_camera = std::make_shared<Arcball>(
          m_window->get(),
          glm::fvec4(0.0f, 0.0f, 5.0f, 1.0f),
@@ -112,15 +110,13 @@ void Renderer::run()
          config::Z_FAR
    );
 
-   glfwSetWindowUserPointer(m_window->get(), m_camera.get());
-   glfwSetScrollCallback(m_window->get(), scrollCallback);
-
+   configureUserInputs();
 
    m_GUI = std::make_unique<GUI>(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         m_vkInstance,
-         *(m_swapchain.get()),
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
+         m_vkInstance->get(),
+         m_swapchain,
          m_qfIndices.graphicsFamily.value(),
          m_qfHandles.graphicsQueue,
          m_window
@@ -131,24 +127,29 @@ void Renderer::run()
    cleanup();
 }
 
+void Renderer::configureUserInputs()
+{
+   // Keyword and mouse settings
+   m_isMouseInMotion = false;
+
+   // If the user scrolls back, we'll zoom in the image.
+   glfwSetWindowUserPointer(m_window->get(), m_camera.get());
+   glfwSetScrollCallback(m_window->get(), scrollCallback);
+}
+
 void Renderer::loadModel(const size_t startI, const size_t chunckSize)
 {
    const size_t endI = startI + chunckSize;
 
    for (size_t i = startI; i < endI; i++)
    {
-      ModelToLoadInfo& modelInfo = m_modelsToLoadInfo[i];
+      ModelInfo& modelInfo = m_modelsToLoadInfo[i];
 
       switch (modelInfo.type)
       {
          case ModelType::SKYBOX:
          {
-            m_models.push_back(
-                  std::make_shared<Skybox>(
-                     modelInfo.name,
-                     modelInfo.modelFileName
-                  )
-            );
+            m_models.push_back(std::make_shared<Skybox>(modelInfo));
       
             m_skyboxModelIndex.push_back(m_models.size() - 1);
             m_skybox = std::dynamic_pointer_cast<Skybox>(
@@ -160,15 +161,7 @@ void Renderer::loadModel(const size_t startI, const size_t chunckSize)
          }
          case ModelType::NORMAL_PBR:
          {
-            m_models.push_back(
-                  std::make_shared<NormalPBR>(
-                     modelInfo.name,
-                     modelInfo.modelFileName,
-                     glm::fvec4(modelInfo.pos, 1.0f),
-                     modelInfo.rot,
-                     modelInfo.size
-                  )
-            );
+            m_models.push_back(std::make_shared<NormalPBR>(modelInfo));
             m_objectModelIndices.push_back(m_models.size() - 1);
       
             // TODO: delete this
@@ -179,78 +172,14 @@ void Renderer::loadModel(const size_t startI, const size_t chunckSize)
          }
          case ModelType::LIGHT:
          {
-            switch (modelInfo.lType)
-            {
-               case LightType::DIRECTIONAL_LIGHT:
-               {
-                  m_models.push_back(
-                        std::make_shared<Light>(
-                           modelInfo.name,
-                           modelInfo.modelFileName,
-                           LightType::DIRECTIONAL_LIGHT,
-                           glm::fvec4(modelInfo.color, 1.0f),
-                           glm::fvec4(modelInfo.pos, 1.0f),
-                           glm::fvec4(modelInfo.endPos, 1.0f),
-                           glm::fvec3(0.0f),
-                           modelInfo.size,
-                           0.0f,
-                           0.0f
-                        )
-                  );
-                  m_lightModelIndices.push_back(m_models.size() - 1);
-                  // TODO: Improve this.
-                  m_directionalLightIndex = m_models.size() - 1;
-                  
-                  break;
-      
-               }
-               case LightType::POINT_LIGHT:
-               {
-                  m_models.push_back(
-                        std::make_shared<Light>(
-                           modelInfo.name,
-                           modelInfo.modelFileName,
-                           LightType::POINT_LIGHT,
-                           glm::fvec4(modelInfo.color, 1.0f),
-                           glm::fvec4(modelInfo.pos, 1.0f),
-                           glm::fvec4(0.0f),
-                           glm::fvec3(0.0f),
-                           modelInfo.size,
-                           modelInfo.attenuation,
-                           modelInfo.radius
-                        )
-                  );
-                  m_lightModelIndices.push_back(m_models.size() - 1);
-      
-                  break;
-      
-               }
-               case LightType::SPOT_LIGHT:
-               {
-                  m_models.push_back(
-                        std::make_shared<Light>(
-                           modelInfo.name,
-                           modelInfo.modelFileName,
-                           LightType::SPOT_LIGHT,
-                           glm::fvec4(modelInfo.color, 1.0f),
-                           glm::fvec4(modelInfo.pos, 1.0f),
-                           glm::fvec4(modelInfo.endPos, 1.0f),
-                           modelInfo.rot,
-                           modelInfo.size,
-                           modelInfo.attenuation,
-                           modelInfo.radius
-                        )
-                  );
-                  m_lightModelIndices.push_back(m_models.size() - 1);
-      
-      
-                  break;
-      
-               }
-            }
-      
+            m_models.push_back(std::make_shared<Light>(modelInfo));
+            m_lightModelIndices.push_back(m_models.size() - 1);
+
+            // TODO: Improve this.
+            if (modelInfo.lType == LightType::DIRECTIONAL_LIGHT)
+               m_directionalLightIndex = m_models.size() - 1;
+
             break;
-      
          }
       }
    }
@@ -452,7 +381,7 @@ void Renderer::createSyncObjects()
    for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
    {
       auto status = vkCreateSemaphore(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             &semaphoreInfo,
             nullptr,
             &m_imageAvailableSemaphores[i]
@@ -462,7 +391,7 @@ void Renderer::createSyncObjects()
          throw std::runtime_error("Failed to create semaphore!");
 
       status = vkCreateSemaphore(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          &semaphoreInfo,
          nullptr,
          &m_renderFinishedSemaphores[i]
@@ -472,7 +401,7 @@ void Renderer::createSyncObjects()
          throw std::runtime_error("Failed to create semaphore!");
 
       status = vkCreateFence(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             &fenceInfo,
             nullptr,
             &m_inFlightFences[i]
@@ -481,85 +410,6 @@ void Renderer::createSyncObjects()
       if (status != VK_SUCCESS)
          throw std::runtime_error("Failed to create fence!");
    }
-}
-
-void Renderer::createVkInstance()
-{
-
-#ifdef RELEASE_MODE_ON
-   ZoneScoped;
-#endif
-
-   if (vLayersConfig::ARE_VALIDATION_LAYERS_ENABLED &&
-       !vlManager::areAllRequestedLayersAvailable()
-   ) {
-      throw std::runtime_error(
-            "Validation layers requested, but not available!"
-      );
-   }
-
-   // This data is optional, but it may provide some useful information
-   // to the driver in order to optimize our specific application(e.g because
-   // it uses a well-known graphics engine with certain special behavior).
-   //
-   // Example: Our game uses UE and nvidia launched a new driver that optimizes
-   // a certain thing. So in that case, nvidia will know it can apply that
-   // optimization verifying this info.
-   VkApplicationInfo appInfo{};
-
-   appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-   appInfo.pApplicationName = config::TITLE;
-   appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-   appInfo.pEngineName = "No Engine";
-   appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-   appInfo.apiVersion = VK_API_VERSION_1_0;
-
-   // This data is not optional and tells the Vulkan driver which global
-   // extensions and validation layers we want to use.
-   VkInstanceCreateInfo createInfo{};
-   createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-   createInfo.pApplicationInfo = &appInfo;
-
-   std::vector<const char*> extensions = (
-         extensionsUtils::getRequiredExtensions()
-   );
-
-   createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-   createInfo.ppEnabledExtensionNames = extensions.data();
-
-   // This variable is placed outside the if statement to ensure that it is
-   // not destroyed before the vkCreateInstance call.
-   VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-
-   if (vLayersConfig::ARE_VALIDATION_LAYERS_ENABLED)
-   {
-
-      createInfo.enabledLayerCount = static_cast<uint32_t> (
-            vLayersConfig::VALIDATION_LAYERS.size()
-      );
-      createInfo.ppEnabledLayerNames = vLayersConfig::VALIDATION_LAYERS.data();
-
-      debugCreateInfo = vlManager::getDebugMessengerCreateInfo();
-
-      createInfo.pNext = (
-            (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo
-      );
-
-   } else
-   {
-      createInfo.enabledLayerCount = 0;
-
-      createInfo.pNext = nullptr;
-   }
-
-   // -------------------------------------------------------------
-   // Paramet. 1 -> Pointer to struct with creation info.
-   // Paramet. 2 -> Pointer to custom allocator callbacks.
-   // Paramet. 3 -> Pointer to the variable that stores the handle to the
-   //               new object.
-   // -------------------------------------------------------------
-   if (vkCreateInstance(&createInfo, nullptr, &m_vkInstance) != VK_SUCCESS)
-      throw std::runtime_error("Failed to create Vulkan's instance!");
 }
 
 void Renderer::createShadowMapRenderPass()
@@ -598,18 +448,10 @@ void Renderer::createShadowMapRenderPass()
    VkSubpassDescription subpass = {};
    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
    subpass.flags = 0;
-   subpass.inputAttachmentCount = 0;
-   subpass.pInputAttachments = nullptr;
-   // No color attachments
-   subpass.colorAttachmentCount = 0;
-   subpass.pColorAttachments = nullptr;
-   subpass.pResolveAttachments = nullptr;
    subpass.pDepthStencilAttachment = &shadowMapAttachmentRef;
-   subpass.preserveAttachmentCount = 0;
-   subpass.pPreserveAttachments = nullptr;
 
    m_renderPassShadowMap = RenderPass(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          {shadowMapAttachment},
          {subpass},
          {}
@@ -739,7 +581,7 @@ void Renderer::createSceneRenderPass()
    );
 
    m_renderPass = RenderPass(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          {colorAttachment, depthAttachment, colorResolveAttachment},
          {subPassDescript},
          {dependency}
@@ -756,85 +598,72 @@ void Renderer::uploadModels()
    ZoneScoped;
 #endif
 
+   // First we upload the skybox because we need some dependencies from it for
+   // the descriptor sets of the other models.
+   m_skybox->upload(
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
+         m_qfHandles.graphicsQueue,
+         m_commandPoolGraphics,
+         config::MAX_FRAMES_IN_FLIGHT
+   );
+
+   m_skybox->createDescriptorSets(
+         m_device->getLogicalDevice(),
+         m_graphicsPipelineSkybox.getDescriptorSetLayout(),
+         nullptr,
+         m_descriptorPoolGraphics
+   );
+
+   VkDescriptorSetLayout descriptorSetLayout;
+   DescriptorSetInfo descriptorSetInfo = {
+      &(m_skybox->getEnvMap()),
+      &(m_skybox->getIrradianceMap()),
+      &(*m_BRDFlut),
+      &(m_shadowMap->getShadowMapView()),
+      &(m_shadowMap->getSampler())
+   };
+
    for (auto& model : m_models)
    {
-      // Vertex buffer and index buffer(with staging buffer)
-      // (Position, color, texCoord, normal, etc)
-      model->uploadVertexData(
-            m_device.getPhysicalDevice(),
-            m_device.getLogicalDevice(),
-            m_qfHandles.graphicsQueue,
-            m_commandPoolGraphics
-      );
-            
-      // Creates and uploads the Textures(images and samplers).
-      model->loadTextures(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         VK_SAMPLE_COUNT_1_BIT,
-         m_commandPoolGraphics,
-         m_qfHandles.graphicsQueue
-      );
+      auto type = model->getType();
 
-      // Uniform Buffers
-      model->createUniformBuffers(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         config::MAX_FRAMES_IN_FLIGHT
+      if (type == ModelType::SKYBOX)
+         continue;
+
+      model->upload(
+            m_device->getPhysicalDevice(),
+            m_device->getLogicalDevice(),
+            m_qfHandles.graphicsQueue,
+            m_commandPoolGraphics,
+            // UBO count
+            config::MAX_FRAMES_IN_FLIGHT
       );
 
       // Descriptor Sets
-      switch (model->getType())
+      if (type == ModelType::NORMAL_PBR)
       {
-         case ModelType::SKYBOX:
-         {
-
-            if (auto pModel = std::dynamic_pointer_cast<Skybox>(model))
-            {
-               pModel->createDescriptorSets(
-                  m_device.getLogicalDevice(),
-                  m_descriptorSetLayoutSkybox,
-                  m_descriptorPoolGraphics
-               );
-            }
-
-            break;
-
-         } case ModelType::NORMAL_PBR:
-         {
-
-            if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
-            {
-               pModel->createDescriptorSets(
-                  m_device.getLogicalDevice(),
-                  m_descriptorSetLayoutNormalPBR,
-                  m_skybox->getIrradianceMap(),
-                  m_shadowMap,
-                  m_descriptorPoolGraphics
-               );
-            }
-
-            break;
-
-         } case ModelType::LIGHT:
-         {
-            if (auto pModel = std::dynamic_pointer_cast<Light>(model))
-            {
-               pModel->createDescriptorSets(
-                  m_device.getLogicalDevice(),
-                  m_descriptorSetLayoutLight,
-                  m_descriptorPoolGraphics
-               );
-            }
-
-            break;
-
-         } case ModelType::NONE:
-         {
-
-            break;
-         }
+         descriptorSetLayout = (
+               m_graphicsPipelinePBR.getDescriptorSetLayout()
+         );
+  
+      } else if (type == ModelType::LIGHT)
+      {
+         descriptorSetLayout = (
+               m_graphicsPipelineLight.getDescriptorSetLayout()
+         );
+            
+      } else
+      {
+         std::cout << "TODO";
       }
+
+      model->createDescriptorSets(
+         m_device->getLogicalDevice(),
+         descriptorSetLayout,
+         &descriptorSetInfo,
+         m_descriptorPoolGraphics
+      );
    }
 }
 
@@ -851,11 +680,10 @@ void Renderer::createPipelines()
    {
       // - Models
       m_graphicsPipelineSkybox = Graphics(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             GraphicsPipelineType::SKYBOX,
             m_swapchain->getExtent(),
             m_renderPass.get(),
-            m_descriptorSetLayoutSkybox,
             {
                {
                   shaderType::VERTEX,
@@ -869,15 +697,16 @@ void Renderer::createPipelines()
             m_msaa.getSamplesCount(),
             Attributes::SKYBOX::getBindingDescription(),
             Attributes::SKYBOX::getAttributeDescriptions(),
-            &m_skyboxModelIndex
+            &m_skyboxModelIndex,
+            GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
+            GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO
       );
 
       m_graphicsPipelinePBR = Graphics(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             GraphicsPipelineType::PBR,
             m_swapchain->getExtent(),
             m_renderPass.get(),
-            m_descriptorSetLayoutNormalPBR,
             {
                {
                   shaderType::VERTEX,
@@ -894,16 +723,17 @@ void Renderer::createPipelines()
             Attributes::PBR::getBindingDescription(),
             Attributes::PBR::getAttributeDescriptions(),
             // Models assocciated with this graphics pipeline.
-            &m_objectModelIndices
+            &m_objectModelIndices,
+            GRAPHICS_PIPELINE::PBR::UBOS_INFO,
+            GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO
       );
 
 
       m_graphicsPipelineLight = Graphics(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             GraphicsPipelineType::LIGHT,
             m_swapchain->getExtent(),
             m_renderPass.get(),
-            m_descriptorSetLayoutLight,
             {
                {
                   shaderType::VERTEX,
@@ -918,17 +748,18 @@ void Renderer::createPipelines()
             Attributes::LIGHT::getBindingDescription(),
             Attributes::LIGHT::getAttributeDescriptions(),
             // Models assocciated with this graphics pipeline.
-            &m_lightModelIndices
+            &m_lightModelIndices,
+            GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
+            GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO
       );
 
       // - Features
       
       m_graphicsPipelineShadowMap = Graphics(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             GraphicsPipelineType::SHADOWMAP,
             m_swapchain->getExtent(),
             m_renderPassShadowMap.get(),
-            m_descriptorSetLayoutShadowMap,
             {
                {
                   shaderType::VERTEX,
@@ -938,56 +769,11 @@ void Renderer::createPipelines()
             VK_SAMPLE_COUNT_1_BIT,
             Attributes::PBR::getBindingDescription(),
             Attributes::PBR::getAttributeDescriptions(),
-            &m_objectModelIndices
+            &m_objectModelIndices,
+            GRAPHICS_PIPELINE::SHADOWMAP::UBOS_INFO,
+            {}
       );
    }
-
-}
-
-/*
- * Specifies all the neccessary descriptors, their bindings and their 
- * shader stages.
- */
-void Renderer::createDescriptorSetLayouts()
-{
-   
-#ifdef RELEASE_MODE_ON
-   ZoneScoped;
-#endif
-
-   // - Models
-   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
-         GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO,
-         m_descriptorSetLayoutSkybox
-   );
-
-
-   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         GRAPHICS_PIPELINE::PBR::UBOS_INFO,
-         GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
-         m_descriptorSetLayoutNormalPBR
-   );
-   
-   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
-         GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
-         m_descriptorSetLayoutLight
-   );
-
-
-
-   // - Features
-
-   descriptorSetLayoutUtils::graphics::createDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         GRAPHICS_PIPELINE::SHADOWMAP::UBOS_INFO,
-         {},
-         m_descriptorSetLayoutShadowMap
-   );
 
 }
 
@@ -996,7 +782,7 @@ void Renderer::createCommandPools()
    // Graphics Command Pool
    {
       m_commandPoolGraphics = std::make_shared<CommandPool>(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             m_qfIndices.graphicsFamily.value()
       );
@@ -1009,7 +795,7 @@ void Renderer::createCommandPools()
    // Compute Command Pool
    {
       m_commandPoolCompute = std::make_shared<CommandPool>(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             m_qfIndices.computeFamily.value()
       );
@@ -1017,7 +803,7 @@ void Renderer::createCommandPools()
       m_commandPoolCompute->allocCommandBuffers(1);
    }
 
-   // Features
+   // Features Command Pool
    {
       m_shadowMap->createCommandPool(
             VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
@@ -1033,14 +819,15 @@ void Renderer::createCommandPools()
 
 void Renderer::initComputations()
 {
-   m_BRDF = Computation(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
+   m_BRDFcomp = Computation(
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
          "BRDF",
          sizeof(float),
          2 * sizeof(float) * config::BRDF_HEIGHT * config::BRDF_WIDTH,
          m_qfIndices,
-         m_descriptorPoolComputations
+         m_descriptorPoolComputations,
+         COMPUTE_PIPELINE::BRDF::BUFFERS_INFO
    );
 }
 
@@ -1051,36 +838,29 @@ void Renderer::initVK()
    ZoneScoped;
 #endif
 
-   createVkInstance();
+   m_vkInstance = std::make_unique<VKinstance>(config::WINDOW_TITLE);
 
-   vlManager::setupDebugMessenger(m_vkInstance, m_debugMessenger);
+   m_window->createSurface(m_vkInstance->get());
 
-   m_window->createSurface(m_vkInstance);
-
-   m_device.pickPhysicalDevice(
-         m_vkInstance,
+   m_device = std::make_unique<Device>(
+         m_vkInstance->get(),
          m_qfIndices,
          m_window->getSurface()
    );
-
-   m_device.createLogicalDevice(m_qfIndices);
    
-   m_qfHandles.setQueueHandles(m_device.getLogicalDevice(), m_qfIndices);
+   m_qfHandles.setQueueHandles(m_device->getLogicalDevice(), m_qfIndices);
 
-   m_swapchain = std::make_unique<Swapchain>(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
+   m_swapchain = std::make_shared<Swapchain>(
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
          m_window,
-         m_device.getSupportedProperties()
+         m_device->getSupportedProperties()
    );
 
-   m_swapchain->createAllImageViews();
-   
-   // Descriptor Pool
-   // (Calculates the total size of the pool depending of the descriptors
-   // we send as parameter and the number of descriptor SETS defined)
+   //------------------------------Descriptor Pools----------------------------
+
    m_descriptorPoolGraphics = DescriptorPool(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          // Type of descriptors / Count of each type of descriptor in the pool.
          {
             {
@@ -1107,7 +887,7 @@ void Renderer::initVK()
    );
 
    m_descriptorPoolComputations = DescriptorPool(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          {
             {
                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
@@ -1117,39 +897,52 @@ void Renderer::initVK()
          1 // just for the BRDF(for now..)
    );
 
-   createDescriptorSetLayouts();
    
-   // -----------------------------------Features------------------------------
+   // -------------------------------Main Features-----------------------------
 
    m_msaa = MSAA(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
          m_swapchain->getExtent(),
          m_swapchain->getImageFormat()
    );
 
    m_depthBuffer = DepthBuffer(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
          m_swapchain->getExtent(),
          m_msaa.getSamplesCount()
    );
 
-   m_shadowMap = std::make_shared<ShadowMap>(
-         m_device.getPhysicalDevice(),
-         m_device.getLogicalDevice(),
-         m_swapchain->getExtent().width,
-         m_swapchain->getExtent().height,
-         m_depthBuffer.getFormat(),
-         m_descriptorSetLayoutShadowMap,
-         config::MAX_FRAMES_IN_FLIGHT
-   );
 
-   //----------------------------------RenderPass------------------------------
+   //----------------------------------RenderPasses----------------------------
 
    createShadowMapRenderPass();
 
    createSceneRenderPass();
+
+   //----------------------------------Pipelines-------------------------------
+
+   createPipelines();
+
+   //-----------------------------Secondary Features---------------------------
+   //(these features they are not used by all the pipelines and need
+   //dependencies)
+
+   m_shadowMap = std::make_shared<ShadowMap<Attributes::PBR::Vertex>>(
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
+         m_swapchain->getExtent().width,
+         m_swapchain->getExtent().height,
+         m_depthBuffer.getFormat(),
+         m_graphicsPipelineShadowMap.getDescriptorSetLayout(),
+         config::MAX_FRAMES_IN_FLIGHT,
+         &(
+          std::dynamic_pointer_cast<NormalPBR>(
+             m_models[m_mainModelIndex]
+          )->getMeshes()
+         )
+   );
 
    //----------------------------------Framebuffers----------------------------
 
@@ -1165,82 +958,10 @@ void Renderer::initVK()
 
    //--------------------------------------------------------------------------
 
-   createPipelines();
-
    createCommandPools();
 
-   uploadModels();
-     
    createSyncObjects();
 
-}
-
-template <typename T>
-void Renderer::bindAllMeshesData(
-      const std::shared_ptr<T>& model,
-      const Graphics& graphicsPipeline,
-      const VkCommandBuffer& commandBuffer,
-      const uint32_t currentFrame
-) {
-
-#ifdef RELEASE_MODE_ON
-   ZoneScoped;
-#endif
-
-   for (auto& mesh : model->m_meshes)
-   {
-      commandManager::state::bindVertexBuffers(
-            {mesh.vertexBuffer},
-            // Offsets.
-            {0},
-            // Index of first binding.
-            0,
-            // Bindings count.
-            1,
-            commandBuffer
-      );
-      commandManager::state::bindIndexBuffer(
-            mesh.indexBuffer,
-            // Offset.
-            0,
-            VK_INDEX_TYPE_UINT32,
-            commandBuffer
-      );
-
-      // TODO: Improve this.
-      VkDescriptorSet descriptorSet;
-      if (graphicsPipeline.getGraphicsPipelineType() ==
-          GraphicsPipelineType::SHADOWMAP
-      )
-         descriptorSet = m_shadowMap->getDescriptorSet(currentFrame);
-      else
-         descriptorSet = mesh.descriptorSets.get(currentFrame);
-
-      commandManager::state::bindDescriptorSets(
-            graphicsPipeline.getPipelineLayout(),
-            PipelineType::GRAPHICS,
-            // Index of first descriptor set.
-            0,
-            {descriptorSet},
-            // Dynamic offsets.
-            {},
-            commandBuffer
-      );
-
-      commandManager::action::drawIndexed(
-            // Index Count
-            mesh.indices.size(),
-            // Instance Count
-            1,
-            // First index.
-            0,
-            // Vertex Offset.
-            0,
-            // First Intance.
-            0,
-            commandBuffer
-      );
-   }
 }
 
 void Renderer::recordCommandBuffer(
@@ -1266,13 +987,6 @@ void Renderer::recordCommandBuffer(
    
       //--------------------------------RenderPass-----------------------------
 
-      // The final parameter controls how the drawing commands between the
-      // render pass will be provided:
-      //    -VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be
-      //    embedded in the primary command buffer itself and no secondary
-      //    command buffers will be executed.
-      //    -VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS: The render pass
-      //    commands will be executed from secondary command buffers.
       renderPass.begin(
             framebuffer,
             extent,
@@ -1309,61 +1023,28 @@ void Renderer::recordCommandBuffer(
                   commandBuffer
             );
 
+            if (graphicsPipeline.getGraphicsPipelineType() ==
+                GraphicsPipelineType::SHADOWMAP
+            ) {
+               m_shadowMap->bindData(
+                     graphicsPipeline,
+                     commandBuffer,
+                     currentFrame
+               );
+               continue;
+            }
+
             // Binds all the models with the same Graphics Pipeline.
             for (const size_t& i : graphicsPipeline.getModelIndices())
             {
                const auto& model = m_models[i];
 
-               switch (model->getType())
-               {
-                  case ModelType::SKYBOX:
-                  {
-                     if (auto pModel = std::dynamic_pointer_cast<Skybox>(model))
-                        bindAllMeshesData<Skybox>(
-                              pModel,
-                              graphicsPipeline,
-                              commandBuffer,
-                              currentFrame
-                        );
+               model->bindData(
+                     graphicsPipeline,
+                     commandBuffer,
+                     currentFrame
+               );
 
-                     break;
-
-                  } case ModelType::NORMAL_PBR:
-                  {
-                     if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
-                     {
-                        if (pModel.get()->isHided())
-                           continue;
-
-                        bindAllMeshesData<NormalPBR>(
-                              pModel,
-                              graphicsPipeline,
-                              commandBuffer,
-                              currentFrame
-                        );
-                     }
-
-                     break;
-
-                  } case ModelType::LIGHT:
-                  {
-                     if (auto pModel =std::dynamic_pointer_cast<Light>(model))
-                     {
-                        if (pModel.get()->isHided())
-                           continue;
-                     
-                        bindAllMeshesData<Light>(
-                           pModel, graphicsPipeline, commandBuffer, currentFrame
-                        );
-                     }
-
-                     break;
-
-                  } case ModelType::NONE:
-                  {
-                     break;
-                  }
-               }
             }
       }
 
@@ -1384,7 +1065,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
    //    - 4 param. -> waitAll.
    //    - 5 param. -> timeOut.
    vkWaitForFences(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          1,
          &m_inFlightFences[currentFrame],
          VK_TRUE,
@@ -1393,12 +1074,15 @@ void Renderer::drawFrame(uint8_t& currentFrame)
 
    // After waiting, we need to manually reset the fence.
    vkResetFences(
-         m_device.getLogicalDevice(),
+         m_device->getLogicalDevice(),
          1,
          &m_inFlightFences[currentFrame]
    );
 
    //------------------------Updates uniform buffer----------------------------
+
+   // First we update the shadow map since the other models of the scene
+   // have dependencies with it.
 
    // Shadow Map
    if (m_directionalLightIndex.has_value())
@@ -1422,79 +1106,39 @@ void Renderer::drawFrame(uint8_t& currentFrame)
       );
    }
 
+   UBOinfo uboInfo = {
+      m_camera->getPos(),
+      m_camera->getViewM(),
+      m_camera->getProjectionM(),
+      m_shadowMap->getLightSpace(),
+      m_lightModelIndices.size(),
+      m_swapchain->getExtent()
+   };
+
    // Scene
    for (auto& model : m_models)
    {
+      model->updateUBO(
+            m_device->getLogicalDevice(),
+            currentFrame,
+            uboInfo
+      );
 
-      switch (model->getType())
+      if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
       {
-         case ModelType::SKYBOX:
-         {
-            if (auto pModel = std::dynamic_pointer_cast<Skybox>(model))
-               pModel->updateUBO(
-                     m_device.getLogicalDevice(),
-                     m_camera->getPos(),
-                     m_camera->getViewM(),
-                     m_swapchain->getExtent(),
-                     currentFrame
-               );
-
-            break;
-
-         } case ModelType::NORMAL_PBR:
-         {
-            if (auto pModel = std::dynamic_pointer_cast<NormalPBR>(model))
-            {
-               pModel->updateUBO(
-                     m_device.getLogicalDevice(),
-                     m_camera->getPos(),
-                     m_camera->getViewM(),
-                     m_camera->getProjectionM(),
-                     m_shadowMap->getLightSpace(),
-                     m_lightModelIndices.size(),
-                     m_models,
-                     currentFrame
-               );
-               pModel->updateUBOlightsInfo(
-                     m_device.getLogicalDevice(),
-                     m_lightModelIndices,
-                     m_models,
-                     currentFrame
-               );
-            }
-         } case ModelType::LIGHT:
-         {
-            if (auto pModel = std::dynamic_pointer_cast<Light>(model))
-            {
-               pModel->updateUBO(
-                     m_device.getLogicalDevice(),
-                     m_camera->getPos(),
-                     m_camera->getViewM(),
-                     m_camera->getProjectionM(),
-                     currentFrame
-               );
-            }
- 
-            break;
-
-         } case ModelType::NONE:
-         {
-            break;
-         }
+         pModel->updateUBOlights(
+               m_device->getLogicalDevice(),
+               m_lightModelIndices,
+               m_models,
+               currentFrame
+         );
       }
    }
 
    //--------------------Acquires an image from the swapchain------------------
-   uint32_t imageIndex;
-   vkAcquireNextImageKHR(
-         m_device.getLogicalDevice(),
-         m_swapchain->get(),
-         UINT64_MAX,
-         // Specifies synchr. objects that have to be signaled when the
-         // presentation engine is finished using the image.
-         m_imageAvailableSemaphores[currentFrame],
-         VK_NULL_HANDLE,
-         &imageIndex
+   
+   const uint32_t imageIndex = m_swapchain->getNextImageIndex(
+         m_imageAvailableSemaphores[currentFrame]
    );
 
    //---------------------Records all the command buffer-----------------------
@@ -1561,24 +1205,11 @@ void Renderer::drawFrame(uint8_t& currentFrame)
 
    //-------------------Presentation of the swapchain image--------------------
    
-   VkPresentInfoKHR presentInfo{};
-   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-   // Specifies which semaphores to wait on before the presentation can happen.
-   presentInfo.waitSemaphoreCount = 1;
-   presentInfo.pWaitSemaphores = signalSemaphores.data();
-
-   // Specifies the swapchains to present images to and the index of the
-   // image for each swapchain.
-   VkSwapchainKHR swapchains[] = {m_swapchain->get()};
-   presentInfo.swapchainCount = 1;
-   presentInfo.pSwapchains = swapchains;
-   presentInfo.pImageIndices = &imageIndex;
-   // Allows us to specify an array of VkResult values to check for every
-   // individual swapchain if presentation was successful.
-   // Optional
-   presentInfo.pResults = nullptr;
-
-   vkQueuePresentKHR(m_qfHandles.presentQueue, &presentInfo);
+   m_swapchain->presentImage(
+         imageIndex,
+         signalSemaphores,
+         m_qfHandles.presentQueue
+   );
 
    // Updates the frame
    currentFrame = (currentFrame + 1) % config::MAX_FRAMES_IN_FLIGHT;
@@ -1601,9 +1232,7 @@ void Renderer::scrollCallback(
    float actualFOV = camera->getFOV();
    float newFOV = actualFOV + yoffset * -1.0f;
 
-   // TODO
-   if (newFOV || newFOV)
-      camera->setFOV(newFOV);
+   camera->setFOV(newFOV);
 }
 
 void Renderer::handleInput()
@@ -1651,11 +1280,6 @@ void Renderer::handleInput()
 
 void Renderer::mainLoop()
 {
-
-#ifdef RELEASE_MODE_ON
-   ZoneScoped;
-#endif
-
    // Tells us in which frame we are,
    // between 1 <= frame <= MAX_FRAMES_IN_FLIGHT
    uint8_t currentFrame = 0;
@@ -1672,78 +1296,123 @@ void Renderer::mainLoop()
       );
       drawFrame(currentFrame);
    }
-   vkDeviceWaitIdle(m_device.getLogicalDevice());
+   vkDeviceWaitIdle(m_device->getLogicalDevice());
+}
+
+void Renderer::loadBRDFlut()
+{
+   uint32_t bufferSize = (
+         2 * sizeof(float) *
+         config::BRDF_WIDTH *
+         config::BRDF_HEIGHT
+   );
+   float lutData[bufferSize];
+
+   m_BRDFcomp.downloadData(0, (uint8_t*)lutData, bufferSize);
+
+   gli::texture lutTexture = gli::texture2d(
+         gli::FORMAT_RG16_SFLOAT_PACK16,
+         gli::extent2d(config::BRDF_WIDTH, config::BRDF_HEIGHT),
+         1
+   );
+
+   const float* data = lutData;
+   for (int y = 0; y < config::BRDF_HEIGHT; y++)
+	{
+		for (int x = 0; x < config::BRDF_WIDTH; x++)
+		{
+			const int ofs = y * config::BRDF_HEIGHT + x;
+			const gli::vec2 value(data[ofs * 2 + 0], data[ofs * 2 + 1]);
+			const gli::texture::extent_type uv = { x, y, 0 };
+
+			lutTexture.store<glm::uint32>(uv, 0, 0, 0, gli::packHalf2x16(value));
+		}
+	}
+
+   std::string pathToTexture = (
+         std::string(SKYBOX_DIR) +
+         m_skybox->getTextureFolderName() +
+         "/" + 
+         "BRDFlut.ktx"
+   );
+
+   gli::save_ktx(
+         lutTexture,
+         pathToTexture
+   );
+
+   TextureToLoadInfo info = {
+            pathToTexture,
+            VK_FORMAT_R16G16_SFLOAT,
+            4
+   };
+
+   m_BRDFlut = std::make_shared<NormalTexture>(
+         m_device->getPhysicalDevice(),
+         m_device->getLogicalDevice(),
+         info,
+         VK_SAMPLE_COUNT_1_BIT,
+         m_commandPoolGraphics,
+         m_qfHandles.graphicsQueue,
+         UsageType::BRDF
+   );
 }
 
 void Renderer::doComputations()
 {
+   std::vector<Computation> computations = {
+      m_BRDFcomp
+   };
+
    std::cout << "Doing computations.\n";
 
    const VkCommandBuffer& commandBuffer = (
          m_commandPoolCompute->getCommandBuffer(0)
    );
 
-   // Resets the command buffer to be able to be recorded.
-   m_commandPoolCompute->resetCommandBuffer(0);
-   // Specifies some details about the usage of this specific command
-   // buffer.
-   m_commandPoolCompute->beginCommandBuffer(0, commandBuffer);
+   for (auto& computation : computations)
+   {
+      // Resets the command buffer to be able to be recorded.
+      m_commandPoolCompute->resetCommandBuffer(0);
+      // Specifies some details about the usage of this specific command
+      // buffer.
+      m_commandPoolCompute->beginCommandBuffer(0, commandBuffer);
 
-      m_BRDF.execute(commandBuffer);
+         computation.execute(commandBuffer);
 
-      // To make sure that the buffer is ready to be accessed.
-      VkMemoryBarrier readBarrier = {
-         VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-         nullptr,
-         // Specifies that we'll wait for the shader to finish writing to the
-         // buffer.
-         VK_ACCESS_SHADER_WRITE_BIT,
-         VK_ACCESS_HOST_READ_BIT
-      };
+         // To make sure that the buffer is ready to be accessed.
+         VkMemoryBarrier readBarrier = {
+            VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            nullptr,
+            // Specifies that we'll wait for the shader to finish writing to the
+            // buffer.
+            VK_ACCESS_SHADER_WRITE_BIT,
+            VK_ACCESS_HOST_READ_BIT
+         };
 
-      commandManager::synchronization::recordPipelineBarrier(
-            // Specifies that we'll wait for the Compute Queue to finish the
-            // execution of the tasks.
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            VK_PIPELINE_STAGE_HOST_BIT,
-            0,
-            commandBuffer,
-            {readBarrier},
-            {},
-            {}
+         commandManager::synchronization::recordPipelineBarrier(
+               // Specifies that we'll wait for the Compute Queue to finish the
+               // execution of the tasks.
+               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+               VK_PIPELINE_STAGE_HOST_BIT,
+               0,
+               commandBuffer,
+               {readBarrier},
+               {},
+               {}
+         );
+
+      m_commandPoolCompute->endCommandBuffer(commandBuffer);
+
+      m_commandPoolCompute->submitCommandBuffer(
+            m_qfHandles.computeQueue,
+            {commandBuffer},
+            true
       );
-
-   m_commandPoolCompute->endCommandBuffer(commandBuffer);
-
-   m_commandPoolCompute->submitCommandBuffer(
-         m_qfHandles.computeQueue,
-         {commandBuffer},
-         true
-   );
+   }
 
    std::cout << "All the computations have been completed.\n";
 
-   uint32_t bufferSize = 2 * sizeof(float) * 256 * 256;
-   float lutData[bufferSize];
-   m_BRDF.downloadData(0, (uint8_t*)lutData, bufferSize);
-   gli::texture lutTexture = gli::texture2d(
-         gli::FORMAT_RG16_SFLOAT_PACK16,
-         gli::extent2d(256, 256),
-         1
-   );
-
-   const float* data = lutData;
-   for (int y = 0; y < 256; y++)
-	{
-		for (int x = 0; x < 256; x++)
-		{
-			const int ofs = y * 256 + x;
-			const gli::vec2 value(data[ofs * 2 + 0], data[ofs * 2 + 1]);
-			const gli::texture::extent_type uv = { x, y, 0 };
-			lutTexture.store<glm::uint32>(uv, 0, 0, 0, gli::packHalf2x16(value));
-		}
-	}
-   gli::save_ktx(lutTexture, "pene.ktx");
 }
 
 void Renderer::destroySyncObjects()
@@ -1756,17 +1425,17 @@ void Renderer::destroySyncObjects()
    for (size_t i = 0; i < config::MAX_FRAMES_IN_FLIGHT; i++)
    {
       vkDestroySemaphore(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             m_imageAvailableSemaphores[i],
             nullptr
       );
       vkDestroySemaphore(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             m_renderFinishedSemaphores[i],
             nullptr
       );
       vkDestroyFence(
-            m_device.getLogicalDevice(),
+            m_device->getLogicalDevice(),
             m_inFlightFences[i],
             nullptr
       );
@@ -1799,7 +1468,7 @@ void Renderer::cleanup()
    m_graphicsPipelineShadowMap.destroy();
 
    // Computations
-   m_BRDF.destroy();
+   m_BRDFcomp.destroy();
 
    // Renderpass
    m_renderPass.destroy();
@@ -1808,29 +1477,11 @@ void Renderer::cleanup()
    // Models -> Buffers, Memories and Textures.
    m_shadowMap->destroy();
    for (auto& model : m_models)
-      model->destroy(m_device.getLogicalDevice());
+      model->destroy(m_device->getLogicalDevice());
 
    // Descriptor Pool
    m_descriptorPoolGraphics.destroy();
    m_descriptorPoolComputations.destroy();
-
-   // Descriptor Set Layouts
-   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         m_descriptorSetLayoutNormalPBR
-   );
-   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         m_descriptorSetLayoutSkybox
-   );
-   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         m_descriptorSetLayoutLight
-   );
-   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
-         m_device.getLogicalDevice(),
-         m_descriptorSetLayoutShadowMap
-   );
 
    // Sync objects
    destroySyncObjects();
@@ -1840,23 +1491,13 @@ void Renderer::cleanup()
    if (m_commandPoolCompute)  m_commandPoolCompute->destroy();
    
    // Logical Device
-   vkDestroyDevice(m_device.getLogicalDevice(), nullptr);
+   vkDestroyDevice(m_device->getLogicalDevice(), nullptr);
    
-   // Validation Layers
-   if (vLayersConfig::ARE_VALIDATION_LAYERS_ENABLED)
-   {
-         vlManager::destroyDebugUtilsMessengerEXT(
-               m_vkInstance,
-               m_debugMessenger,
-               nullptr
-         );
-   }
-
    // Window Surface
-   m_window->destroySurface(m_vkInstance);
+   m_window->destroySurface(m_vkInstance->get());
    
    // Vulkan's instance
-   vkDestroyInstance(m_vkInstance, nullptr);
+   m_vkInstance->destroy();
 
    // GLFW
    m_window->destroy();

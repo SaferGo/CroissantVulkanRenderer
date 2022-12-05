@@ -7,7 +7,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <VulkanToyRenderer/ShaderManager/shaderManager.h>
+#include <VulkanToyRenderer/Shader/shaderManager.h>
+#include <VulkanToyRenderer/Descriptor/descriptorSetLayoutManager.h>
 
 Compute::Compute() {}
 
@@ -15,10 +16,17 @@ Compute::~Compute() {}
 
 Compute::Compute(
       const VkDevice& logicalDevice,
-      const VkDescriptorSetLayout& descriptorSetLayout,
-      const ShaderInfo& shaderInfo
+      const ShaderInfo& shaderInfo,
+      const std::vector<DescriptorInfo>& bufferInfos
 ) : Pipeline(logicalDevice, PipelineType::COMPUTE)
 {
+
+   // ---------------Descriptor Set Layout----------------
+
+
+   createDescriptorSetLayout(bufferInfos);
+
+   // ------------------Shader Module---------------------
 
    VkShaderModule shaderModule;
    VkPipelineShaderStageCreateInfo shaderStageInfo;
@@ -36,7 +44,7 @@ Compute::Compute(
    // -------------------Fixed Functions------------------
 
    // Pipeline layout
-   createPipelineLayout(descriptorSetLayout);
+   createPipelineLayout(m_descriptorSetLayout);
 
    // --------------Compute pipeline creation------------
 
@@ -90,4 +98,14 @@ void Compute::createShaderStageInfo(
    shaderStageInfo.flags = 0;
    shaderStageInfo.pSpecializationInfo = nullptr;
    
+}
+
+void Compute::createDescriptorSetLayout(
+      const std::vector<DescriptorInfo>& bufferInfos
+) {
+   descriptorSetLayoutManager::compute::createDescriptorSetLayout(
+         m_logicalDevice,
+         bufferInfos,
+         m_descriptorSetLayout
+   );
 }

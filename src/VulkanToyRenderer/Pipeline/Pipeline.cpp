@@ -4,7 +4,8 @@
 #include <string>
 #include <stdexcept>
 
-#include <VulkanToyRenderer/ShaderManager/shaderManager.h>
+#include <VulkanToyRenderer/Shader/shaderManager.h>
+#include <VulkanToyRenderer/Descriptor/descriptorSetLayoutManager.h>
 
 Pipeline::Pipeline() {}
 
@@ -90,6 +91,10 @@ const VkPipelineLayout& Pipeline::getPipelineLayout() const
 
 void Pipeline::destroy()
 {
+   descriptorSetLayoutManager::destroyDescriptorSetLayout(
+         m_logicalDevice,
+         m_descriptorSetLayout
+   );
    vkDestroyPipeline(m_logicalDevice, m_pipeline, nullptr);
    vkDestroyPipelineLayout(m_logicalDevice, m_pipelineLayout, nullptr);
 }
@@ -97,4 +102,9 @@ void Pipeline::destroy()
 const PipelineType& Pipeline::getType() const
 {
    return m_type;
+}
+
+const VkDescriptorSetLayout& Pipeline::getDescriptorSetLayout() const
+{
+   return m_descriptorSetLayout;
 }

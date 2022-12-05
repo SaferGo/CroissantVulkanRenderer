@@ -5,7 +5,6 @@
 
 #include <VulkanToyRenderer/Window/Window.h>
 
-// Make it Singleton!
 class Window
 {
 public:

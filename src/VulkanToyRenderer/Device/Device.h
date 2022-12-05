@@ -12,20 +12,26 @@ class Device
 
 public:
    
-   Device();
-   ~Device();
-   void createLogicalDevice(QueueFamilyIndices& requiredQueueFamiliesIndices);
-   void pickPhysicalDevice(
-         VkInstance& m_vkInstance,
-         QueueFamilyIndices& requiredQueueFamiliesIndices,
+   Device(
+         const VkInstance& m_vkInstance,
+         QueueFamilyIndices& requiredQueueFamilyIndices,
          const VkSurfaceKHR& windowSurface
    );
+   ~Device();
+
    const VkDevice& getLogicalDevice() const;
    const VkPhysicalDevice& getPhysicalDevice() const;
    const SwapchainSupportedProperties& getSupportedProperties() const;
 
 private:
 
+   void createLogicalDevice(QueueFamilyIndices& requiredQueueFamilyIndices);
+
+   void pickPhysicalDevice(
+         const VkInstance& m_vkInstance,
+         QueueFamilyIndices& requiredQueueFamilyIndices,
+         const VkSurfaceKHR& windowSurface
+   );
    void findSupportedProperties(
       const VkPhysicalDevice& physicalDevice,
       const VkSurfaceKHR& surface,

@@ -6,8 +6,8 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
-#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Commands/CommandPool.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorPool.h>
+#include <VulkanToyRenderer/Command/CommandPool.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/Camera/Camera.h>
 #include <VulkanToyRenderer/RenderPass/RenderPass.h>
@@ -22,7 +22,7 @@ public:
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
          const VkInstance& vkInstance,
-         const Swapchain& swapchain,
+         const std::shared_ptr<Swapchain>& swapchain,
          const uint32_t& graphicsFamilyIndex,
          const VkQueue& graphicsQueue,
          const std::shared_ptr<Window>& window

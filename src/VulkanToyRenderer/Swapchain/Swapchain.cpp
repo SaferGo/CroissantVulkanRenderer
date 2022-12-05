@@ -6,11 +6,11 @@
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Queue/QueueFamilyIndices.h>
-#include <VulkanToyRenderer/Images/imageManager.h>
+#include <VulkanToyRenderer/Image/imageManager.h>
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/Features/MSAA.h>
 #include <VulkanToyRenderer/Features/DepthBuffer.h>
-#include <VulkanToyRenderer/Framebuffer/framebufferUtils.h>
+#include <VulkanToyRenderer/Framebuffer/framebufferManager.h>
 
 Swapchain::Swapchain() {}
 Swapchain::~Swapchain() {}
@@ -158,6 +158,8 @@ Swapchain::Swapchain(
         &imageCount,
         m_images.data()
    );
+
+  createAllImageViews();
 }
 
 void Swapchain::destroy()
@@ -210,7 +212,7 @@ void Swapchain::createFramebuffers(
          m_imageViews[i]
       };
 
-      framebufferUtils::createFramebuffer(
+      framebufferManager::createFramebuffer(
             m_logicalDevice,
             renderPass,
             attachments,
@@ -220,6 +222,24 @@ void Swapchain::createFramebuffers(
             m_framebuffers[i]
       );
    }
+}
+
+const uint32_t Swapchain::getNextImageIndex(const VkSemaphore& semaphore) const
+{
+   uint32_t imageIndex;
+
+   vkAcquireNextImageKHR(
+         m_logicalDevice,
+         m_swapchain,
+         UINT64_MAX,
+         // Specifies synchr. objects that have to be signaled when the
+         // presentation engine is finished using the image.
+         semaphore,
+         VK_NULL_HANDLE,
+         &imageIndex
+   );
+
+   return imageIndex;
 }
 
 const VkImageView& Swapchain::getImageView(const uint32_t index) const {
@@ -349,6 +369,32 @@ const VkFormat& Swapchain::getImageFormat() const
 const VkSwapchainKHR& Swapchain::get() const
 {
    return m_swapchain;
+}
+
+void Swapchain::presentImage(
+      const uint32_t imageIndex,
+      const std::vector<VkSemaphore> signalSemaphores,
+      const VkQueue& presentQueue
+) {
+
+   VkPresentInfoKHR presentInfo{};
+   presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+   // Specifies which semaphores to wait on before the presentation can happen.
+   presentInfo.waitSemaphoreCount = 1;
+   presentInfo.pWaitSemaphores = signalSemaphores.data();
+
+   // Specifies the swapchains to present images to and the index of the
+   // image for each swapchain.
+   //VkSwapchainKHR swapchains[] = {m_swapchain};
+   presentInfo.swapchainCount = 1;
+   presentInfo.pSwapchains = &m_swapchain;
+   presentInfo.pImageIndices = &imageIndex;
+   // Allows us to specify an array of VkResult values to check for every
+   // individual swapchain if presentation was successful.
+   // Optional
+   presentInfo.pResults = nullptr;
+
+   vkQueuePresentKHR(presentQueue, &presentInfo);
 }
 
 /*

@@ -1,11 +1,12 @@
 #include <VulkanToyRenderer/Model/Attributes.h>
+
 #include <vulkan/vulkan.h>
 
 #include <vector>
 
 // TODO: Duplicated code!
 
-// Taken from:
+// Code from:
 // https://groups.google.com/g/comp.lang.c/c/kwXeaY2HtB0
 #define array_offsetof(type, member, index) \
 (offsetof(type, member) + sizeof( ((type *)0)->member[0]) * index)

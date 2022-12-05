@@ -5,12 +5,15 @@
 #include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
 
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
-#include <VulkanToyRenderer/Descriptors/Types/Sampler/Sampler.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
-#include <VulkanToyRenderer/Commands/CommandPool.h>
-#include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBO.h>
+#include <VulkanToyRenderer/Descriptor/Types/Sampler/Sampler.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorSets.h>
+#include <VulkanToyRenderer/Descriptor/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Command/CommandPool.h>
+#include <VulkanToyRenderer/Pipeline/Graphics.h>
+#include <VulkanToyRenderer/Model/Mesh.h>
 
+template<typename T>
 class ShadowMap
 {
 
@@ -23,7 +26,8 @@ public:
          const uint32_t height,
          const VkFormat& format,
          const VkDescriptorSetLayout& descriptorSetLayout,
-         const uint32_t& uboCount
+         const uint32_t& uboCount,
+         const std::vector<Mesh<T>>* meshes
    );
    ~ShadowMap();
    void destroy();
@@ -35,6 +39,11 @@ public:
          const float zNear,
          const float zFar,
          const uint32_t& currentFrame
+   );
+   void bindData(
+         const Graphics& graphicsPipeline,
+         const VkCommandBuffer& commandBuffer,
+         const uint32_t currentFrame
    );
    void createFramebuffer(
          const VkRenderPass& renderPass,
@@ -80,5 +89,5 @@ private:
    std::vector<VkFramebuffer>       m_framebuffers;
 
    DescriptorTypes::UniformBufferObject::ShadowMap m_basicInfo;
-
+   const std::vector<Mesh<T>>* m_opMeshes;
 };

@@ -30,10 +30,16 @@ layout(std140, binding = 1) uniform Lights
 
 layout(binding = 2) uniform sampler2D   baseColorSampler;
 layout(binding = 3) uniform sampler2D   metallicRoughnessSampler;
-layout(binding = 4) uniform sampler2D   normalSampler;
+layout(binding = 4) uniform sampler2D   emissiveColorSampler;
+layout(binding = 5) uniform sampler2D   AOsampler;
+layout(binding = 6) uniform sampler2D   normalSampler;
 
-layout(binding = 5) uniform samplerCube irradianceMapSampler;
-layout(binding = 6) uniform sampler2D   shadowMapSampler;
+// PBR Samplers
+layout(binding = 7) uniform samplerCube envMapSampler;
+layout(binding = 8) uniform samplerCube irradianceMapSampler;
+layout(binding = 9) uniform sampler2D   BRDFlutSampler;
+
+layout(binding = 10) uniform sampler2D   shadowMapSampler;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
@@ -44,15 +50,41 @@ layout(location = 5) in vec4 inShadowCoords;
 
 layout(location = 0) out vec4 outColor;
 
+struct Material
+{
+   vec3 albedo;
+   float metallicFactor;
+   float roughnessFactor;
+   vec3 emissiveColor;
+   float AO;
+};
+
+struct PBRinfo
+{
+   // cos angle between normal and light direction.
+	float NdotL;          
+   // cos angle between normal and view direction.
+	float NdotV;          
+   // cos angle between normal and half vector.
+	float NdotH;          
+   // cos angle between view direction and half vector.
+	float VdotH;
+   // Roughness value, as authored by the model creator.
+   float perceptualRoughness;
+   // color contribution from diffuse lighting.
+	vec3 diffuseColor;    
+   // color contribution from specular lighting.
+	vec3 specularColor;
+};
+
+struct IBLinfo
+{
+   vec3 diffuseLight;
+   vec3 specularLight;
+   vec3 brdf;
+};
+
 const float PI = 3.14159265359;
-vec3 sampleOffsetDirections[20] = vec3[]
-(
-   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
-   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
-   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
-   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
-   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-);
 
 
 //////////////////////////////////////PBR//////////////////////////////////////
@@ -63,84 +95,139 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0);
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 calculateNormal();
-vec3 calculateDirLight(
-      int i,
-      vec3 normal,
-      vec3 view,
-      vec3 albedo,
-      float metallic,
-      float roughness,
-      vec3 F0
-);
-vec3 calculatePointLight(
-      int i,
-      vec3 normal,
-      vec3 view,
-      vec3 albedo,
-      float metallic,
-      float roughness,
-      vec3 F0
-);
+vec3 calculateDirLight(int i, Material material, PBRinfo pbrInfo);
+void calculatePointLight();
 float filterPCF(vec4 shadowCoords);
 float calculateShadow(vec4 shadowCoords, vec2 off);
 vec3 uncharted2Tonemap(vec3 color);
 vec4 tonemap(vec4 color);
 vec4 SRGBtoLINEAR(vec4 srgb);
-
-float exposure = 18.0;
-vec3 ambient = vec3(0.25);
+vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo);
+float exposure = 10.0;
+float ambient = 0.3;
 
 void main()
-{
-
-   float pp = texture(irradianceMapSampler, vec3(0.0)).r;
+{ 
    vec3 normal = calculateNormal();
    vec3 view = normalize(vec3(ubo.cameraPos) - inPosition);
-   vec3 albedo     = SRGBtoLINEAR(
-         tonemap(texture(baseColorSampler, inTexCoord))
-   ).rgb;
-   float metallic  = texture(metallicRoughnessSampler, inTexCoord).r;
-   float roughness = texture(metallicRoughnessSampler, inTexCoord).g;
-   roughness = max(0.03, metallic);
+   vec3 reflection = -normalize(reflect(view, normal));
 
-   // Material specular
-   vec3 F0 = vec3(0.04);
-   F0 = mix(F0, albedo, metallic);
-
-   vec3 Lo = vec3(0.0);
-   for (int i = 0; i < ubo.lightsCount; i++)
+   Material material;
    {
-      if (lights[i].type == 0)
-      {
-         Lo += calculateDirLight(
-               i,
-               normal,
-               view,
-               albedo,
-               metallic,
-               roughness,
-               F0
-         );
-      } else if(lights[i].type == 1)
-      {
-         Lo += calculatePointLight(
-               i,
-               normal,
-               view,
-               albedo,
-               metallic,
-               roughness,
-               F0
-         );
-      } else
-         Lo += vec3(0.0);
+      material.albedo = texture(baseColorSampler, inTexCoord).rgb;
+      
+      material.metallicFactor = texture(
+            metallicRoughnessSampler, inTexCoord
+      ).b;
+      material.roughnessFactor = texture(
+            metallicRoughnessSampler, inTexCoord
+      ).g;
+
+      material.AO = texture(AOsampler, inTexCoord).r;
+      material.AO = (material.AO < 0.01) ? 1.0 : material.AO;
+
+      material.emissiveColor = texture(emissiveColorSampler, inTexCoord).rgb;
    }
 
+   PBRinfo pbrInfo;
+   {
+      float F0 = 0.04;
+
+	   pbrInfo.NdotV = max(dot(normal, view), 0.001);
+      pbrInfo.diffuseColor = material.albedo.rgb * (vec3(1.0) - vec3(F0));
+      pbrInfo.diffuseColor *= 1.0 - material.metallicFactor;
+      pbrInfo.specularColor = mix(
+            vec3(F0),
+            material.albedo,
+            material.metallicFactor
+      );
+
+      pbrInfo.perceptualRoughness = clamp(
+            material.roughnessFactor,
+            // Min Roughness
+            0.04,
+            1.0
+      );
+   }
+
+   IBLinfo iblInfo;
+   {
+      // HDR textures are already linear
+      iblInfo.diffuseLight = texture(
+         irradianceMapSampler,
+         normal
+         // converts cubemap coords to Vulkan coordinate space
+         //normal * vec3(-1.0, -1.0, 1.0)
+      ).rgb;
+
+      vec2 brdfSamplePoint = clamp(
+            vec2(
+               pbrInfo.NdotV,
+               1.0 - pbrInfo.perceptualRoughness
+            ),
+            vec2(0.0),
+            vec2(1.0)
+      );
+
+      float mipCount = float(textureQueryLevels(envMapSampler));
+      float lod = pbrInfo.perceptualRoughness * mipCount;
+      iblInfo.brdf = textureLod(
+            BRDFlutSampler,
+            brdfSamplePoint,
+            0
+      ).rgb;
+      
+      iblInfo.specularLight = textureLod(
+            envMapSampler,
+            reflection.xyz,
+            lod
+      ).rgb;
+   }
+
+
+   vec3 color = getIBLcontribution(pbrInfo, iblInfo);
+   for (int i = 0; i < ubo.lightsCount; i++)
+   {
+      vec3 lightDir = normalize(-vec3(lights[i].dir));
+      vec3 halfway = normalize(view + lightDir);
+
+      // Fills the data left for PBR
+      {
+         pbrInfo.NdotL = max(dot(normal, lightDir), 0.0);
+         pbrInfo.NdotH = max(dot(normal, halfway), 0.0);
+         pbrInfo.VdotH = max(dot(halfway, view), 0.0);
+      }
+
+      if (lights[i].type == 0)
+         color += calculateDirLight(i, material, pbrInfo);
+      else if(lights[i].type == 1)
+         color += 0;
+      else
+         color += vec3(0.0);
+
+   }
    float shadow = filterPCF(inShadowCoords / inShadowCoords.w);
+   //vec3 color = ambient * material.albedo + (1.0 - shadow) * Lo;
 
-   vec3 color = ambient * albedo + (1.0 - shadow) * Lo;
+   // AO
+   color = material.AO * color;
 
-   outColor = SRGBtoLINEAR(vec4(color, 1.0));
+   // Emissive
+   color = material.emissiveColor + color;
+
+   outColor = ambient * vec4(color, 1.0);
+}
+
+vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo)
+{
+
+   vec3 diffuse = iblInfo.diffuseLight * pbrInfo.diffuseColor;
+   vec3 specular = (
+         iblInfo.specularLight *
+         (pbrInfo.specularColor * iblInfo.brdf.x + iblInfo.brdf.y)
+   );
+
+   return diffuse + specular;
 }
 
 vec3 uncharted2Tonemap(vec3 color)
@@ -235,50 +322,37 @@ float calculateShadow(vec4 shadowCoords, vec2 off)
 
 vec3 calculateDirLight(
       int i,
-      vec3 normal,
-      vec3 view,
-      vec3 albedo,
-      float metallic,
-      float roughness,
-      vec3 F0
+      Material material,
+      PBRinfo pbrInfo
 ) {
-   vec3 lightDir = normalize(-vec3(lights[i].dir));
-   vec3 halfway = normalize(view + lightDir);
-   float nDotV = max(dot(normal, view), 0.0);
-   float nDotL = max(dot(normal, lightDir), 0.0);
-   float nDotH = max(dot(normal, halfway), 0.0);
-   float hDotV = max(dot(halfway, view), 0.0);
    vec3 inRadiance = lights[i].intensity * lights[i].color.rbg;
 
    // Cook-torrance brdf
-   vec3 F = fresnelSchlick(hDotV, F0);
-   float D = distributionGGX(nDotH, roughness);
-   float G = geometrySmith(nDotV, nDotL, roughness);
+   vec3 F = fresnelSchlick(pbrInfo.VdotH, pbrInfo.specularColor);
+   float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
+   float G = geometrySmith(
+         pbrInfo.NdotV,
+         pbrInfo.NdotL,
+         material.roughnessFactor
+   );
 
    // Specular and Diffuse
    vec3 kS = F;
    vec3 kD = vec3(1.0) - kS;
-   kD *= 1.0 - metallic;
+   kD *= 1.0 - material.metallicFactor;
 
    vec3 numerator = D * G * F;
-   float denominator = 4.0 * nDotV * nDotL;
+   float denominator = 4.0 * pbrInfo.NdotV * pbrInfo.NdotL;
    vec3 specular = numerator / max(denominator, 0.0001);
 
-   vec3 Lo = (kD * (albedo / PI) + specular) * inRadiance * nDotL;
-
-   return Lo;
+   return (
+         (kD * (material.albedo / PI) + pbrInfo.specularColor) *
+         inRadiance * pbrInfo.NdotL
+   );
 }
 
-vec3 calculatePointLight(
-      int i,
-      vec3 view,
-      vec3 normal,
-      vec3 albedo,
-      float metallic,
-      float roughness,
-      vec3 F0
-) {
-   return vec3(0.0);
+void calculatePointLight()
+{
 }
 
 

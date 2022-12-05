@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <optional>
 #include <memory>
 
 #include <vulkan/vulkan.h>
@@ -39,13 +38,18 @@ public:
       const SwapchainSupportedProperties& supportedProperties
    );
    ~Swapchain();
-   void createAllImageViews();
    void createFramebuffers(
          const VkRenderPass& renderPass,
          const DepthBuffer& depthBuffer,
          const MSAA& msaa
    );
+   void presentImage(
+         const uint32_t imageIndex,
+         const std::vector<VkSemaphore> signalSemaphores,
+         const VkQueue& presentQueue
+   );
    void destroy();
+   const uint32_t getNextImageIndex(const VkSemaphore& semaphore) const;
    const VkExtent2D& getExtent() const;
    const VkFormat& getImageFormat() const;
    const VkFramebuffer& getFramebuffer(const uint32_t imageIndex) const;
@@ -70,6 +74,8 @@ private:
       VkPresentModeKHR& presentMode,
       VkExtent2D& extent
    );
+
+   void createAllImageViews();
    
    VkSurfaceFormatKHR chooseBestSurfaceFormat(
       const std::vector<VkSurfaceFormatKHR>& availableFormats

@@ -12,23 +12,23 @@
 #include <glm/glm.hpp>
 
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
-#include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
-#include <VulkanToyRenderer/Textures/Texture.h>
+#include <VulkanToyRenderer/Descriptor/descriptorSetLayoutManager.h>
 #include <VulkanToyRenderer/Pipeline/Graphics.h>
 #include <VulkanToyRenderer/Model/Attributes.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
-#include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBO.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorSets.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBOutils.h>
+#include <VulkanToyRenderer/Descriptor/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBO.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorSets.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorPool.h>
 #include <VulkanToyRenderer/Model/Attributes.h>
-#include <VulkanToyRenderer/BufferManager/bufferManager.h>
+#include <VulkanToyRenderer/Buffer/bufferManager.h>
 #include <VulkanToyRenderer/Math/mathUtils.h>
+#include <VulkanToyRenderer/Texture/Type/Cubemap.h>
+#include <VulkanToyRenderer/Command/commandManager.h>
 
-Skybox::Skybox(
-      const std::string& name,
-      const std::string& textureFolderName
-) : Model(name, ModelType::SKYBOX), m_textureFolderName(textureFolderName)
+Skybox::Skybox(ModelInfo& modelInfo)
+   : Model(modelInfo.name, ModelType::SKYBOX),
+     m_textureFolderName(modelInfo.modelFileName) 
 {
    loadModel((std::string(MODEL_DIR) + "Cube.gltf").c_str());
 }
@@ -93,9 +93,11 @@ void Skybox::processMesh(aiMesh* mesh, const aiScene* scene)
 
 Skybox::~Skybox() {}
 
+
 void Skybox::createDescriptorSets(
       const VkDevice& logicalDevice,
       const VkDescriptorSetLayout& descriptorSetLayout,
+      DescriptorSetInfo* info,
       DescriptorPool& descriptorPool
 ) {
 
@@ -165,7 +167,7 @@ void Skybox::uploadVertexData(
    }
 }
 
-void Skybox::loadTextures(
+void Skybox::uploadTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const VkSampleCountFlagBits& samplesCount,
@@ -176,7 +178,8 @@ void Skybox::loadTextures(
    const size_t nTextures = GRAPHICS_PIPELINE::SKYBOX::TEXTURES_PER_MESH_COUNT;
    TextureToLoadInfo info = {
       m_name,
-      VK_FORMAT_R32G32B32A32_SFLOAT
+      VK_FORMAT_R32G32B32A32_SFLOAT,
+      4
    };
 
    for (auto& mesh : m_meshes)
@@ -190,15 +193,15 @@ void Skybox::loadTextures(
          if (it == m_texturesID.end())
          {
             mesh.textures.push_back(
-                  std::make_shared<Texture>(
+                  std::make_shared<Cubemap>(
                      physicalDevice,
                      logicalDevice,
-                     false,
                      info,
                      m_textureFolderName,
                      samplesCount,
                      commandPool,
-                     graphicsQueue
+                     graphicsQueue,
+                     UsageType::ENVIRONMENTAL_MAP
                   )
             );
 
@@ -206,6 +209,9 @@ void Skybox::loadTextures(
             m_texturesID[info.name] = (
                   m_texturesLoaded.size() - 1
             );
+
+            m_envMap = mesh.textures[i];
+
          } else
             mesh.textures.push_back(m_texturesLoaded[it->second]);
       }
@@ -213,7 +219,8 @@ void Skybox::loadTextures(
 
    info = {
       "Irradiance.hdr",
-      VK_FORMAT_R32G32B32A32_SFLOAT
+      VK_FORMAT_R32G32B32A32_SFLOAT,
+      4
    };
    loadIrradianceMap(
          physicalDevice,
@@ -233,39 +240,37 @@ void Skybox::loadIrradianceMap(
       const std::shared_ptr<CommandPool>& commandPool,
       VkQueue& graphicsQueue
 ) {
-   m_irradianceMap = std::make_shared<Texture>(
+   m_irradianceMap = std::make_shared<Cubemap>(
          physicalDevice,
          logicalDevice,
-         true,
          textureInfo,
          m_textureFolderName,
          samplesCount,
          commandPool,
-         graphicsQueue
+         graphicsQueue,
+         UsageType::IRRADIANCE_MAP
    );
 }
 
 void Skybox::updateUBO(
       const VkDevice& logicalDevice,
-      const glm::vec4& cameraPos,
-      const glm::mat4& view,
-      const VkExtent2D&  extent,
-      const uint32_t& currentFrame
+      const uint32_t& currentFrame,
+      const UBOinfo& uboInfo
 ) {
 
    DescriptorTypes::UniformBufferObject::Skybox newUBO;
    
    newUBO.model = glm::translate(
       glm::mat4(1.0f),
-      glm::vec3(cameraPos)
+      glm::vec3(uboInfo.cameraPos)
    );
 
-   newUBO.view = view;
+   newUBO.view = uboInfo.view;
    
    newUBO.proj = mathUtils::getUpdatedProjMatrix(
       // Different to the original
       glm::radians(75.0f),
-      extent.width / (float)extent.height,
+      uboInfo.extent.width / (float)uboInfo.extent.height,
       0.01f,
       40.0f
    );
@@ -274,7 +279,69 @@ void Skybox::updateUBO(
    UBOutils::updateUBO(logicalDevice, m_ubo, size, &newUBO, currentFrame);
 }
 
+void Skybox::bindData(
+      const Graphics& graphicsPipeline,
+      const VkCommandBuffer& commandBuffer,
+      const uint32_t currentFrame
+) {
+   for (auto& mesh : m_meshes)
+   {
+      commandManager::state::bindVertexBuffers(
+            {mesh.vertexBuffer},
+            // Offsets.
+            {0},
+            // Index of first binding.
+            0,
+            // Bindings count.
+            1,
+            commandBuffer
+      );
+      commandManager::state::bindIndexBuffer(
+            mesh.indexBuffer,
+            // Offset.
+            0,
+            VK_INDEX_TYPE_UINT32,
+            commandBuffer
+      );
+
+      commandManager::state::bindDescriptorSets(
+            graphicsPipeline.getPipelineLayout(),
+            PipelineType::GRAPHICS,
+            // Index of first descriptor set.
+            0,
+            {mesh.descriptorSets.get(currentFrame)},
+            // Dynamic offsets.
+            {},
+            commandBuffer
+      );
+
+      commandManager::action::drawIndexed(
+            // Index Count
+            mesh.indices.size(),
+            // Instance Count
+            1,
+            // First index.
+            0,
+            // Vertex Offset.
+            0,
+            // First Intance.
+            0,
+            commandBuffer
+      );
+   }
+}
+
+const std::string& Skybox::getTextureFolderName() const
+{
+   return m_textureFolderName;
+}
+
 const Texture& Skybox::getIrradianceMap() const
 {
    return *m_irradianceMap;
+}
+
+const Texture& Skybox::getEnvMap() const
+{
+   return *m_envMap;
 }

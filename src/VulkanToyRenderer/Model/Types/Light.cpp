@@ -1,36 +1,33 @@
 #include <VulkanToyRenderer/Model/Types/Light.h>
 
-#include <VulkanToyRenderer/Settings/config.h>
-#include <VulkanToyRenderer/Descriptors/Types/DescriptorTypes.h>
-#include <VulkanToyRenderer/Descriptors/Types/UBO/UBOutils.h>
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
-#include <VulkanToyRenderer/BufferManager/bufferManager.h>
+#include <VulkanToyRenderer/Descriptor/Types/DescriptorTypes.h>
+#include <VulkanToyRenderer/Descriptor/Types/UBO/UBOutils.h>
+#include <VulkanToyRenderer/Buffer/bufferManager.h>
 #include <VulkanToyRenderer/Math/mathUtils.h>
+#include <VulkanToyRenderer/Texture/Type/NormalTexture.h>
+#include <VulkanToyRenderer/Command/commandManager.h>
 
-Light::Light(
-      const std::string& name,
-      const std::string& modelFileName,
-      const LightType& lightType,
-      const glm::fvec4& lightColor,
-      const glm::fvec4& pos,
-      const glm::fvec4& targetPos,
-      const glm::fvec3& rot,
-      const glm::fvec3& size,
-      const float attenuation,
-      const float radius
-) : Model(name, ModelType::LIGHT, pos, rot, size),
-    m_targetPos(targetPos),
-    m_color(lightColor),
-    m_attenuation(attenuation),
-    m_radius(radius),
-    m_lightType(lightType)
+Light::Light(ModelInfo& modelInfo)
+   : Model(
+         modelInfo.name,
+         ModelType::LIGHT,
+         glm::fvec4(modelInfo.pos, 1.0f),
+         modelInfo.rot,
+         modelInfo.size
+    ),
+    m_targetPos(glm::fvec4(modelInfo.endPos, 1.0f)),
+    m_color(glm::fvec4(modelInfo.color, 1.0f)),
+    m_attenuation(modelInfo.attenuation),
+    m_radius(modelInfo.radius),
+    m_lightType(modelInfo.lType)
 {
-   if (lightType == LightType::DIRECTIONAL_LIGHT)
+   if (modelInfo.lType == LightType::DIRECTIONAL_LIGHT)
       m_intensity = 3.0f;
    else
       m_intensity = 70.0f;
 
-   loadModel((std::string(MODEL_DIR) + modelFileName).c_str());
+   loadModel((std::string(MODEL_DIR) + modelInfo.modelFileName).c_str());
 
    m_rot = glm::fvec3(0.0f);
 }
@@ -111,10 +108,10 @@ void Light::createUniformBuffers(
          sizeof(DescriptorTypes::UniformBufferObject::Light)
    );
 }
-
 void Light::createDescriptorSets(
       const VkDevice& logicalDevice,
       const VkDescriptorSetLayout& descriptorSetLayout,
+      DescriptorSetInfo* info,
       DescriptorPool& descriptorPool
 ) {
    std::vector<UBO*> opUBOs = {m_ubo.get()};
@@ -128,10 +125,59 @@ void Light::createDescriptorSets(
             mesh.textures,
             opUBOs,
             descriptorSetLayout,
-            descriptorPool,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt
+            descriptorPool
+      );
+   }
+}
+
+void Light::bindData(
+      const Graphics& graphicsPipeline,
+      const VkCommandBuffer& commandBuffer,
+      const uint32_t currentFrame
+) {
+   for (auto& mesh : m_meshes)
+   {
+      commandManager::state::bindVertexBuffers(
+            {mesh.vertexBuffer},
+            // Offsets.
+            {0},
+            // Index of first binding.
+            0,
+            // Bindings count.
+            1,
+            commandBuffer
+      );
+      commandManager::state::bindIndexBuffer(
+            mesh.indexBuffer,
+            // Offset.
+            0,
+            VK_INDEX_TYPE_UINT32,
+            commandBuffer
+      );
+
+      commandManager::state::bindDescriptorSets(
+            graphicsPipeline.getPipelineLayout(),
+            PipelineType::GRAPHICS,
+            // Index of first descriptor set.
+            0,
+            {mesh.descriptorSets.get(currentFrame)},
+            // Dynamic offsets.
+            {},
+            commandBuffer
+      );
+
+      commandManager::action::drawIndexed(
+            // Index Count
+            mesh.indices.size(),
+            // Instance Count
+            1,
+            // First index.
+            0,
+            // Vertex Offset.
+            0,
+            // First Intance.
+            0,
+            commandBuffer
       );
    }
 }
@@ -173,7 +219,7 @@ void Light::uploadVertexData(
    }
 }
 
-void Light::loadTextures(
+void Light::uploadTextures(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const VkSampleCountFlagBits& samplesCount,
@@ -183,7 +229,9 @@ void Light::loadTextures(
    const size_t nTextures = GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT;
    const TextureToLoadInfo info = {
       "textures/default.png",
-      VK_FORMAT_R8G8B8A8_SRGB
+      VK_FORMAT_R8G8B8A8_SRGB,
+      // channels
+      4
    };
 
    for (auto& mesh : m_meshes)
@@ -195,13 +243,14 @@ void Light::loadTextures(
          if (it == m_texturesID.end())
          {
             mesh.textures.push_back(
-                  std::make_shared<Texture>(
+                  std::make_shared<NormalTexture>(
                      physicalDevice,
                      logicalDevice,
                      info,
                      samplesCount,
                      commandPool,
-                     graphicsQueue
+                     graphicsQueue,
+                     UsageType::TO_COLOR
                   )
             );
 
@@ -215,10 +264,8 @@ void Light::loadTextures(
 
 void Light::updateUBO(
       const VkDevice& logicalDevice,
-      const glm::vec4& cameraPos,
-      const glm::mat4& view,
-      const glm::mat4& proj,
-      const uint32_t& currentFrame
+      const uint32_t& currentFrame,
+      const UBOinfo& uboInfo
 ) {
 
    m_dataInShader.model = mathUtils::getUpdatedModelMatrix(
@@ -226,8 +273,8 @@ void Light::updateUBO(
          m_rot,
          m_size
    );
-   m_dataInShader.view = view;
-   m_dataInShader.proj = proj;
+   m_dataInShader.view = uboInfo.view;
+   m_dataInShader.proj = uboInfo.proj;
 
    m_dataInShader.lightColor = m_color;
 

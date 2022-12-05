@@ -14,8 +14,8 @@
 #include <glm/glm.hpp>
 
 #include <VulkanToyRenderer/Settings/config.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Commands/CommandPool.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorPool.h>
+#include <VulkanToyRenderer/Command/CommandPool.h>
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
 #include <VulkanToyRenderer/RenderPass/subPassUtils.h>
@@ -27,11 +27,11 @@ GUI::GUI(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const VkInstance& vkInstance,
-      const Swapchain& swapchain,
+      const std::shared_ptr<Swapchain>& swapchain,
       const uint32_t& graphicsFamilyIndex,
       const VkQueue& graphicsQueue,
       const std::shared_ptr<Window>& window
-) : m_logicalDevice(logicalDevice), m_opSwapchain(&swapchain)
+) : m_logicalDevice(logicalDevice), m_opSwapchain(&(*swapchain))
 {
 
    // - Descriptor Pool

@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include <VulkanToyRenderer/Images/imageManager.h>
-#include <VulkanToyRenderer/Images/Image.h>
+#include <VulkanToyRenderer/Image/imageManager.h>
+#include <VulkanToyRenderer/Image/Image.h>
 #include <VulkanToyRenderer/Features/featuresUtils.h>
 
 DepthBuffer::DepthBuffer() {}

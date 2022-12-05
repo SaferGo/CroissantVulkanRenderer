@@ -4,10 +4,10 @@
 
 #include <VulkanToyRenderer/Settings/config.h>
 #include <VulkanToyRenderer/Settings/computePipelineConfig.h>
-#include <VulkanToyRenderer/Descriptors/DescriptorPool.h>
-#include <VulkanToyRenderer/Descriptors/descriptorSetLayoutUtils.h>
-#include <VulkanToyRenderer/Commands/commandManager.h>
-#include <VulkanToyRenderer/BufferManager/bufferManager.h>
+#include <VulkanToyRenderer/Descriptor/DescriptorPool.h>
+#include <VulkanToyRenderer/Descriptor/descriptorSetLayoutManager.h>
+#include <VulkanToyRenderer/Command/commandManager.h>
+#include <VulkanToyRenderer/Buffer/bufferManager.h>
 
 Computation::Computation() {}
 
@@ -18,7 +18,8 @@ Computation::Computation(
       const uint32_t& inSize,
       const uint32_t& outSize,
       const QueueFamilyIndices& queueFamilyIndices,
-      DescriptorPool& descriptorPool
+      DescriptorPool& descriptorPool,
+      const std::vector<DescriptorInfo>& bufferInfos
 ) : m_logicalDevice(logicalDevice)
 {
 
@@ -49,11 +50,15 @@ Computation::Computation(
          m_outBuffer
    );
 
-   descriptorSetLayoutUtils::compute::createDescriptorSetLayout(
+   m_pipeline = Compute(
          m_logicalDevice,
-         COMPUTE_PIPELINE::BRDF::BUFFERS_INFO,
-         m_descriptorSetLayout
+         ShaderInfo(
+            shaderType::COMPUTE,
+            "BRDF"
+         ),
+         bufferInfos
    );
+
 
    m_descriptorSet = DescriptorSets(
          m_logicalDevice,
@@ -62,19 +67,9 @@ Computation::Computation(
             m_inBuffer,
             m_outBuffer
          },
-         m_descriptorSetLayout,
+         m_pipeline.getDescriptorSetLayout(),
          descriptorPool
    );
-
-   m_pipeline = Compute(
-         m_logicalDevice,
-         m_descriptorSetLayout,
-         {
-            shaderType::COMPUTE,
-            "BRDF"
-         }
-   );
-
 }
 
 Computation::~Computation() {}
@@ -118,6 +113,11 @@ void Computation::downloadData(
    );
 }
 
+const VkBuffer& Computation::getOutBuffer() const
+{
+   return m_outBuffer;
+}
+
 void Computation::destroy()
 {
    vkDestroyBuffer(m_logicalDevice, m_inBuffer, nullptr);
@@ -125,10 +125,6 @@ void Computation::destroy()
    vkFreeMemory(m_logicalDevice, m_inMemory, nullptr);
    vkFreeMemory(m_logicalDevice, m_outMemory, nullptr);
 
-   descriptorSetLayoutUtils::destroyDescriptorSetLayout(
-         m_logicalDevice,
-         m_descriptorSetLayout
-   );
-
    m_pipeline.destroy();
 }
+

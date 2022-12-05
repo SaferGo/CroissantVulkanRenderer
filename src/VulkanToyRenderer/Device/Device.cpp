@@ -10,21 +10,32 @@
 #include <VulkanToyRenderer/Swapchain/Swapchain.h>
 #include <VulkanToyRenderer/Settings/vLayersConfig.h>
 
-Device::Device() {}
+Device::Device(
+         const VkInstance& vkInstance,
+         QueueFamilyIndices& requiredQueueFamilyIndices,
+         const VkSurfaceKHR& windowSurface
+) {
+   pickPhysicalDevice(
+         vkInstance,
+         requiredQueueFamilyIndices,
+         windowSurface
+   );
+   createLogicalDevice(requiredQueueFamilyIndices);
+}
 
 Device::~Device() {}
 
 void Device::createLogicalDevice(
-      QueueFamilyIndices& requiredQueueFamiliesIndices
+      QueueFamilyIndices& requiredQueueFamilyIndices
 ) {
    // - Specifies which QUEUES we want to create.
    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
    // We use a set because we need to not repeat them to create the new one
    // for the logical device.
    std::set<uint32_t> uniqueQueueFamilies = {
-         requiredQueueFamiliesIndices.graphicsFamily.value(),
-         requiredQueueFamiliesIndices.presentFamily.value(),
-         requiredQueueFamiliesIndices.computeFamily.value(),
+         requiredQueueFamilyIndices.graphicsFamily.value(),
+         requiredQueueFamilyIndices.presentFamily.value(),
+         requiredQueueFamilyIndices.computeFamily.value(),
    };
 
    float queuePriority = 1.0f;
@@ -92,8 +103,8 @@ void Device::createLogicalDevice(
 
 }
 void Device::pickPhysicalDevice(
-      VkInstance& vkInstance,
-      QueueFamilyIndices& requiredQueueFamiliesIndices,
+      const VkInstance& vkInstance,
+      QueueFamilyIndices& requiredQueueFamilyIndices,
       const VkSurfaceKHR& windowSurface
 ) {
    uint32_t deviceCount = 0;
@@ -108,7 +119,7 @@ void Device::pickPhysicalDevice(
    for (const auto& device : devices)
    {
       if (isPhysicalDeviceSuitable(
-               requiredQueueFamiliesIndices,
+               requiredQueueFamilyIndices,
                windowSurface,
                device
          )
@@ -123,19 +134,19 @@ void Device::pickPhysicalDevice(
 }
 
 bool Device::isPhysicalDeviceSuitable(
-      QueueFamilyIndices& requiredQueueFamiliesIndices,
+      QueueFamilyIndices& requiredQueueFamilyIndices,
       const VkSurfaceKHR& windowSurface,
       const VkPhysicalDevice& possiblePhysicalDevice
 ) {
 
    // - Queue-Families
    // Verifies if the device has the Queue families that we need.
-   requiredQueueFamiliesIndices.getIndicesOfRequiredQueueFamilies(
+   requiredQueueFamilyIndices.getIndicesOfRequiredQueueFamilies(
          possiblePhysicalDevice,
          windowSurface
    );
 
-   if (requiredQueueFamiliesIndices.areAllQueueFamiliesSupported == false)
+   if (requiredQueueFamilyIndices.areAllQueueFamiliesSupported == false)
       return false;
    
    // - Device Properties
