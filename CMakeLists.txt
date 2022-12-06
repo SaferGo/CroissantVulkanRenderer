@@ -148,6 +148,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/featuresUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Framebuffer/framebufferManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Math/mathUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Scene/Scene.cpp"
 )
 
 target_include_directories(

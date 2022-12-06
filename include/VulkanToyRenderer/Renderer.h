@@ -28,6 +28,7 @@
 #include <VulkanToyRenderer/Camera/Types/Arcball.h>
 #include <VulkanToyRenderer/Features/ShadowMap.h>
 #include <VulkanToyRenderer/VKinstance/VKinstance.h>
+#include <VulkanToyRenderer/Scene/Scene.h>
 
 class Renderer
 {
@@ -80,8 +81,6 @@ private:
    void createPipelines();
    void createCommandPools();
    void uploadModels();
-   void loadModel(const size_t startI, const size_t chunckSize);
-   void loadModels();
    void initVK();
    void initComputations();
    void handleInput();
@@ -93,7 +92,6 @@ private:
    void mainLoop();
    void cleanup();
    void createShadowMapRenderPass();
-   void createSceneRenderPass();
    void doComputations();
    void loadBRDFlut();
    void configureUserInputs();
@@ -101,7 +99,7 @@ private:
          const VkFramebuffer& framebuffer,
          const RenderPass& renderPass,
          const VkExtent2D& extent,
-         const std::vector<Graphics>& graphicsPipelines,
+         const std::vector<const Graphics*>& graphicsPipelines,
          const uint32_t currentFrame,
          const VkCommandBuffer& commandBuffer,
          const std::vector<VkClearValue>& clearValues,
@@ -122,7 +120,9 @@ private:
    QueueFamilyHandles                  m_qfHandles;
 
    std::shared_ptr<Swapchain>          m_swapchain;
-   RenderPass                          m_renderPass;
+
+   Scene                               m_scene;
+
    RenderPass                          m_renderPassShadowMap;
 
    std::vector<VkSemaphore>            m_imageAvailableSemaphores;
@@ -130,26 +130,12 @@ private:
    std::vector<VkFence>                m_inFlightFences;
 
    std::vector<ModelInfo>              m_modelsToLoadInfo;
-   std::shared_ptr<Skybox>             m_skybox;
-   std::vector<std::shared_ptr<Model>> m_models;
-   std::vector<size_t>                 m_objectModelIndices;
-   std::vector<size_t>                 m_lightModelIndices;
-   std::vector<size_t>                 m_skyboxModelIndex;
-   std::optional<size_t>               m_directionalLightIndex;
 
-   // TODO:
-   size_t                              m_mainModelIndex;
-
-   // Pipelines
-   Graphics                            m_graphicsPipelinePBR;
-   Graphics                            m_graphicsPipelineSkybox;
-   Graphics                            m_graphicsPipelineLight;
    Graphics                            m_graphicsPipelineShadowMap;
 
    //Computations
    Computation                         m_BRDFcomp;
 
-   //
    std::shared_ptr<Texture>            m_BRDFlut;
 
    // Command Pool for main drawing commands.
@@ -165,8 +151,8 @@ private:
    bool m_isMouseInMotion;
 
    //---------------------------Features--------------------------------------
-   DepthBuffer  m_depthBuffer;
-   MSAA         m_msaa;
+   DepthBuffer                                         m_depthBuffer;
+   MSAA                                                m_msaa;
    std::shared_ptr<ShadowMap<Attributes::PBR::Vertex>> m_shadowMap;
 
 };

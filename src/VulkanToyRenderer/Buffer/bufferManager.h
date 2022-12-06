@@ -34,7 +34,7 @@ namespace bufferManager
          const VkDevice& logicalDevice,
          T* data,
          size_t size,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
@@ -52,7 +52,7 @@ namespace bufferManager
       const VkDeviceSize size,
       VkBuffer& srcBuffer,
       VkBuffer& dstBuffer,
-      VkQueue& graphicsQueue
+      const VkQueue& graphicsQueue
    );
    template<typename T>
    void fillBuffer(

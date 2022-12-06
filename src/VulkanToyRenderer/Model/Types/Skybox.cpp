@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <cstring>
-#include <iostream>
 
 #include <vulkan/vulkan.h>
 #include <assimp/Importer.hpp>
@@ -26,7 +25,7 @@
 #include <VulkanToyRenderer/Texture/Type/Cubemap.h>
 #include <VulkanToyRenderer/Command/commandManager.h>
 
-Skybox::Skybox(ModelInfo& modelInfo)
+Skybox::Skybox(const ModelInfo& modelInfo)
    : Model(modelInfo.name, ModelType::SKYBOX),
      m_textureFolderName(modelInfo.modelFileName) 
 {
@@ -133,7 +132,7 @@ void Skybox::createUniformBuffers(
 void Skybox::uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      VkQueue& graphicsQueue,
+      const VkQueue& graphicsQueue,
       const std::shared_ptr<CommandPool>& commandPool
 ) {
 
@@ -172,7 +171,7 @@ void Skybox::uploadTextures(
       const VkDevice& logicalDevice,
       const VkSampleCountFlagBits& samplesCount,
       const std::shared_ptr<CommandPool>& commandPool,
-      VkQueue& graphicsQueue
+      const VkQueue& graphicsQueue
 ) {
 
    const size_t nTextures = GRAPHICS_PIPELINE::SKYBOX::TEXTURES_PER_MESH_COUNT;
@@ -238,7 +237,7 @@ void Skybox::loadIrradianceMap(
       const TextureToLoadInfo& textureInfo,
       const VkSampleCountFlagBits& samplesCount,
       const std::shared_ptr<CommandPool>& commandPool,
-      VkQueue& graphicsQueue
+      const VkQueue& graphicsQueue
 ) {
    m_irradianceMap = std::make_shared<Cubemap>(
          physicalDevice,
@@ -280,7 +279,7 @@ void Skybox::updateUBO(
 }
 
 void Skybox::bindData(
-      const Graphics& graphicsPipeline,
+      const Graphics* graphicsPipeline,
       const VkCommandBuffer& commandBuffer,
       const uint32_t currentFrame
 ) {
@@ -305,7 +304,7 @@ void Skybox::bindData(
       );
 
       commandManager::state::bindDescriptorSets(
-            graphicsPipeline.getPipelineLayout(),
+            graphicsPipeline->getPipelineLayout(),
             PipelineType::GRAPHICS,
             // Index of first descriptor set.
             0,

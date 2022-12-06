@@ -24,12 +24,12 @@ Graphics::Graphics(
       const VkSampleCountFlagBits& samplesCount,
       VkVertexInputBindingDescription vertexBindingDescriptions,
       std::vector<VkVertexInputAttributeDescription> vertexAttribDescriptions,
-      std::vector<size_t>* modelIndices,
+      const std::vector<size_t>& modelIndices,
       const std::vector<DescriptorInfo>& uboInfo,
       const std::vector<DescriptorInfo>& samplersInfo
 ) : Pipeline(logicalDevice, PipelineType::GRAPHICS),
     m_gType(type),
-    m_opModelIndices(modelIndices)
+    m_modelIndices(modelIndices)
 {
 
    createDescriptorSetLayout(uboInfo, samplersInfo);
@@ -401,7 +401,7 @@ void Graphics::createColorBlendingGlobalInfo(
 // TODO: make this safer.
 const std::vector<size_t>& Graphics::getModelIndices() const
 {
-   return *m_opModelIndices;
+   return m_modelIndices;
 }
 
 const GraphicsPipelineType Graphics::getGraphicsPipelineType() const

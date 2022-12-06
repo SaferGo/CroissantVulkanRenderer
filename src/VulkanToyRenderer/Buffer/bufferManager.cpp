@@ -150,7 +150,7 @@ void bufferManager::copyBuffer(
       const VkDeviceSize size,
       VkBuffer& srcBuffer,
       VkBuffer& dstBuffer,
-      VkQueue& graphicsQueue
+      const VkQueue& graphicsQueue
 ) {
    VkCommandBuffer commandBuffer;
 
@@ -242,7 +242,7 @@ void bufferManager::createBufferAndTransferToDevice(
          const VkDevice& logicalDevice,
          T* data,
          const size_t size,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
@@ -302,7 +302,7 @@ template void bufferManager::createBufferAndTransferToDevice<uint32_t>(
          const VkDevice& logicalDevice,
          uint32_t* data,
          const size_t size,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
@@ -316,7 +316,7 @@ template void bufferManager::createBufferAndTransferToDevice<
          const VkDevice& logicalDevice,
          Attributes::PBR::Vertex* data,
          const size_t size,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
@@ -330,7 +330,7 @@ template void bufferManager::createBufferAndTransferToDevice<
          const VkDevice& logicalDevice,
          Attributes::LIGHT::Vertex* data,
          const size_t size,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer
@@ -345,7 +345,7 @@ template void bufferManager::createBufferAndTransferToDevice<
          const VkDevice& logicalDevice,
          Attributes::SKYBOX::Vertex* data,
          const size_t size,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const VkBufferUsageFlags usageDstBuffer,
          VkDeviceMemory& memory,
          VkBuffer& buffer

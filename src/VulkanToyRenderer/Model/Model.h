@@ -44,13 +44,13 @@ public:
    void upload(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const std::shared_ptr<CommandPool>& commandPool,
          const uint32_t uboCount
    );
    virtual void bindData(
-         const Graphics& graphicsPipeline,
-         const VkCommandBuffer& commandBUffer,
+         const Graphics* graphicsPipeline,
+         const VkCommandBuffer& commandBuffer,
          const uint32_t currentFrame
    ) = 0;
    virtual void createDescriptorSets(
@@ -82,7 +82,7 @@ protected:
    virtual void uploadVertexData(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         VkQueue& graphicsQueue,
+         const VkQueue& graphicsQueue,
          const std::shared_ptr<CommandPool>& commandPool
    ) = 0;
    virtual void uploadTextures(
@@ -90,7 +90,7 @@ protected:
          const VkDevice& logicalDevice,
          const VkSampleCountFlagBits& samplesCount,
          const std::shared_ptr<CommandPool>& commandPool,
-         VkQueue& graphicsQueue
+         const VkQueue& graphicsQueue
    ) = 0;
    virtual void createUniformBuffers(
          const VkPhysicalDevice& physicalDevice,

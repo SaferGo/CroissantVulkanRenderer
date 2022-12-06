@@ -101,7 +101,7 @@ void Model::loadModel(const char* pathToModel)
 void Model::upload(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      VkQueue& graphicsQueue,
+      const VkQueue& graphicsQueue,
       const std::shared_ptr<CommandPool>& commandPool,
       const uint32_t uboCount
 ) {

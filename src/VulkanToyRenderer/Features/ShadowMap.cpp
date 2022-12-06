@@ -266,7 +266,7 @@ const glm::mat4& ShadowMap<T>::getLightSpace() const
 
 template<typename T>
 void ShadowMap<T>::createFramebuffer(
-      const VkRenderPass& renderPass,
+      const RenderPass& renderPass,
       const uint32_t& imagesCount
 ) {
 
@@ -279,7 +279,7 @@ void ShadowMap<T>::createFramebuffer(
    {
       framebufferManager::createFramebuffer(
             m_logicalDevice,
-            renderPass,
+            renderPass.get(),
             attachments,
             m_width,
             m_height,

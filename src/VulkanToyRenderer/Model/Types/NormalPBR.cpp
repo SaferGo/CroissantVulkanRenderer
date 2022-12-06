@@ -1,7 +1,5 @@
 #include <VulkanToyRenderer/Model/Types/NormalPBR.h>
 
-#include <iostream>
-
 #include <VulkanToyRenderer/Settings/graphicsPipelineConfig.h>
 #include <VulkanToyRenderer/Descriptor/Types/DescriptorTypes.h>
 #include <VulkanToyRenderer/Descriptor/Types/UBO/UBOutils.h>
@@ -11,7 +9,7 @@
 #include <VulkanToyRenderer/Texture/Type/NormalTexture.h>
 #include <VulkanToyRenderer/Command/commandManager.h>
 
-NormalPBR::NormalPBR(ModelInfo& modelInfo)
+NormalPBR::NormalPBR(const ModelInfo& modelInfo)
    : Model(
       modelInfo.name,
       ModelType::NORMAL_PBR,
@@ -239,10 +237,11 @@ void NormalPBR::createUniformBuffers(
 }
 
 void NormalPBR::bindData(
-      const Graphics& graphicsPipeline,
+      const Graphics* graphicsPipeline,
       const VkCommandBuffer& commandBuffer,
       const uint32_t currentFrame
 ) {
+
    for (auto& mesh : m_meshes)
    {
       commandManager::state::bindVertexBuffers(
@@ -264,7 +263,7 @@ void NormalPBR::bindData(
       );
 
       commandManager::state::bindDescriptorSets(
-            graphicsPipeline.getPipelineLayout(),
+            graphicsPipeline->getPipelineLayout(),
             PipelineType::GRAPHICS,
             // Index of first descriptor set.
             0,
@@ -322,7 +321,7 @@ void NormalPBR::createDescriptorSets(
 void NormalPBR::uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      VkQueue& graphicsQueue,
+      const VkQueue& graphicsQueue,
       const std::shared_ptr<CommandPool>& commandPool
 ) {
 
@@ -364,7 +363,7 @@ void NormalPBR::uploadTextures(
       const VkDevice& logicalDevice,
       const VkSampleCountFlagBits& samplesCount,
       const std::shared_ptr<CommandPool>& commandPool,
-      VkQueue& graphicsQueue
+      const VkQueue& graphicsQueue
 ) {
 
    const size_t nTextures = GRAPHICS_PIPELINE::PBR::TEXTURES_PER_MESH_COUNT;

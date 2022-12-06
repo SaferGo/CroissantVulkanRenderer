@@ -12,6 +12,7 @@
 #include <VulkanToyRenderer/Command/CommandPool.h>
 #include <VulkanToyRenderer/Pipeline/Graphics.h>
 #include <VulkanToyRenderer/Model/Mesh.h>
+#include <VulkanToyRenderer/RenderPass/RenderPass.h>
 
 template<typename T>
 class ShadowMap
@@ -46,7 +47,7 @@ public:
          const uint32_t currentFrame
    );
    void createFramebuffer(
-         const VkRenderPass& renderPass,
+         const RenderPass& renderPass,
          const uint32_t& imagesCount
    );
    void createCommandPool(

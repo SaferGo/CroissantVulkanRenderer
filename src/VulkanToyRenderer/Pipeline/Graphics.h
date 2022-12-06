@@ -33,7 +33,7 @@ public:
          VkVertexInputBindingDescription vertexBindingDescriptions,
          std::vector<VkVertexInputAttributeDescription>
             vertexAttribDescriptions,
-         std::vector<size_t>* modelIndices,
+         const std::vector<size_t>& modelIndices,
          const std::vector<DescriptorInfo>& uboInfo,
          const std::vector<DescriptorInfo>& samplersInfo
    );
@@ -87,6 +87,5 @@ private:
 
    GraphicsPipelineType m_gType;
 
-   // Observer pointer
-   std::vector<size_t>* m_opModelIndices;
+   std::vector<size_t> m_modelIndices;
 };

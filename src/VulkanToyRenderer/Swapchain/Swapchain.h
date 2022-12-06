@@ -8,6 +8,7 @@
 #include <VulkanToyRenderer/Window/Window.h>
 #include <VulkanToyRenderer/Features/MSAA.h>
 #include <VulkanToyRenderer/Features/DepthBuffer.h>
+#include <VulkanToyRenderer/RenderPass/RenderPass.h>
 
 struct SwapchainSupportedProperties
 {
@@ -39,7 +40,7 @@ public:
    );
    ~Swapchain();
    void createFramebuffers(
-         const VkRenderPass& renderPass,
+         const RenderPass& renderPass,
          const DepthBuffer& depthBuffer,
          const MSAA& msaa
    );

@@ -8,7 +8,7 @@
 #include <VulkanToyRenderer/Texture/Type/NormalTexture.h>
 #include <VulkanToyRenderer/Command/commandManager.h>
 
-Light::Light(ModelInfo& modelInfo)
+Light::Light(const ModelInfo& modelInfo)
    : Model(
          modelInfo.name,
          ModelType::LIGHT,
@@ -131,7 +131,7 @@ void Light::createDescriptorSets(
 }
 
 void Light::bindData(
-      const Graphics& graphicsPipeline,
+      const Graphics* graphicsPipeline,
       const VkCommandBuffer& commandBuffer,
       const uint32_t currentFrame
 ) {
@@ -156,7 +156,7 @@ void Light::bindData(
       );
 
       commandManager::state::bindDescriptorSets(
-            graphicsPipeline.getPipelineLayout(),
+            graphicsPipeline->getPipelineLayout(),
             PipelineType::GRAPHICS,
             // Index of first descriptor set.
             0,
@@ -185,7 +185,7 @@ void Light::bindData(
 void Light::uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      VkQueue& graphicsQueue,
+      const VkQueue& graphicsQueue,
       const std::shared_ptr<CommandPool>& commandPool
 ) {
 
@@ -224,7 +224,7 @@ void Light::uploadTextures(
       const VkDevice& logicalDevice,
       const VkSampleCountFlagBits& samplesCount,
       const std::shared_ptr<CommandPool>& commandPool,
-      VkQueue& graphicsQueue
+      const VkQueue& graphicsQueue
 ) {
    const size_t nTextures = GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT;
    const TextureToLoadInfo info = {

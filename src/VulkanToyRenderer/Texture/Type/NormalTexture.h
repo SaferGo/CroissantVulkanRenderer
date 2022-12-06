@@ -21,7 +21,7 @@ public:
       const TextureToLoadInfo& textureInfo,
       const VkSampleCountFlagBits& samplesCount,
       const std::shared_ptr<CommandPool>& commandPool,
-      VkQueue& graphicsQueue,
+      const VkQueue& graphicsQueue,
       const UsageType& usage = UsageType::TO_COLOR
    );
    ~NormalTexture() override;
