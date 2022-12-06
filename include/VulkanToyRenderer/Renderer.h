@@ -78,9 +78,7 @@ public:
 
 private:
 
-   void createPipelines();
    void createCommandPools();
-   void uploadModels();
    void initVK();
    void initComputations();
    void handleInput();
@@ -91,7 +89,6 @@ private:
    );
    void mainLoop();
    void cleanup();
-   void createShadowMapRenderPass();
    void doComputations();
    void loadBRDFlut();
    void configureUserInputs();
@@ -123,15 +120,11 @@ private:
 
    Scene                               m_scene;
 
-   RenderPass                          m_renderPassShadowMap;
-
    std::vector<VkSemaphore>            m_imageAvailableSemaphores;
    std::vector<VkSemaphore>            m_renderFinishedSemaphores;
    std::vector<VkFence>                m_inFlightFences;
 
    std::vector<ModelInfo>              m_modelsToLoadInfo;
-
-   Graphics                            m_graphicsPipelineShadowMap;
 
    //Computations
    Computation                         m_BRDFcomp;

@@ -19,7 +19,7 @@ Graphics::Graphics(
       const VkDevice& logicalDevice,
       const GraphicsPipelineType type,
       const VkExtent2D& extent,
-      const VkRenderPass& renderPass,
+      const RenderPass& renderPass,
       const std::vector<ShaderInfo>& shaderInfos,
       const VkSampleCountFlagBits& samplesCount,
       VkVertexInputBindingDescription vertexBindingDescriptions,
@@ -150,7 +150,7 @@ Graphics::Graphics(
    pipelineInfo.layout = m_pipelineLayout;
    // Render pass and the index of the sub pass where this graphics
    // pipeline will be used.
-   pipelineInfo.renderPass = renderPass;
+   pipelineInfo.renderPass = renderPass.get();
    pipelineInfo.subpass = 0;
    // Pipelines derivatives(less expensive to set up pipelines when they
    // have much functionality in common whith an existing pupeline and

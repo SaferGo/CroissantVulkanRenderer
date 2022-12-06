@@ -23,12 +23,12 @@ public:
    ShadowMap(
          const VkPhysicalDevice& physicalDevice,
          const VkDevice& logicalDevice,
-         const uint32_t width,
-         const uint32_t height,
+         const VkExtent2D& extent,
+         const uint32_t imagesCount,
          const VkFormat& format,
-         const VkDescriptorSetLayout& descriptorSetLayout,
          const uint32_t& uboCount,
-         const std::vector<Mesh<T>>* meshes
+         const std::vector<Mesh<T>>* meshes,
+         const std::vector<size_t>& modelIndices
    );
    ~ShadowMap();
    void destroy();
@@ -42,14 +42,10 @@ public:
          const uint32_t& currentFrame
    );
    void bindData(
-         const Graphics& graphicsPipeline,
          const VkCommandBuffer& commandBuffer,
          const uint32_t currentFrame
    );
-   void createFramebuffer(
-         const RenderPass& renderPass,
-         const uint32_t& imagesCount
-   );
+
    void createCommandPool(
          const VkCommandPoolCreateFlags& flags,
          const uint32_t& graphicsFamilyIndex
@@ -61,7 +57,9 @@ public:
    const VkDescriptorSet& getDescriptorSet(const uint32_t index) const;
    const VkFramebuffer& getFramebuffer(const uint32_t imageIndex) const;
    const VkCommandBuffer& getCommandBuffer(const uint32_t index) const;
-   const std::shared_ptr<CommandPool>& getCommandPool();
+   const std::shared_ptr<CommandPool>& getCommandPool() const;
+   const Graphics& getGraphicsPipeline() const;
+   const RenderPass& getRenderPass() const;
 
 private:
 
@@ -70,9 +68,10 @@ private:
          const uint32_t& uboCount
    );
    void createDescriptorPool();
-   void createDescriptorSets(
-         const VkDescriptorSetLayout& descriptorSetLayout
-   );
+   void createDescriptorSets();
+   void createGraphicsPipeline(const VkExtent2D& extent);
+   void createRenderPass(const VkFormat& depthBufferFormat);
+   void createFramebuffer(const uint32_t& imagesCount);
 
    VkDevice                         m_logicalDevice;
 
@@ -82,6 +81,8 @@ private:
    Image                            m_image;
    std::shared_ptr<UBO>             m_ubo;
 
+   RenderPass                       m_renderPass;
+
    DescriptorSets                   m_descriptorSets;
    DescriptorPool                   m_descriptorPool;
 
@@ -89,6 +90,9 @@ private:
 
    std::vector<VkFramebuffer>       m_framebuffers;
 
+   Graphics                         m_graphicsPipeline;
+
    DescriptorTypes::UniformBufferObject::ShadowMap m_basicInfo;
    const std::vector<Mesh<T>>* m_opMeshes;
+   const std::vector<size_t> m_modelIndices;
 };

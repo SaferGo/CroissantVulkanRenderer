@@ -8,6 +8,7 @@
 
 #include <VulkanToyRenderer/Pipeline/Pipeline.h>
 #include <VulkanToyRenderer/Descriptor/DescriptorInfo.h>
+#include <VulkanToyRenderer/RenderPass/RenderPass.h>
 
 enum class GraphicsPipelineType
 {
@@ -27,7 +28,7 @@ public:
          const VkDevice& logicalDevice,
          const GraphicsPipelineType type,
          const VkExtent2D& extent,
-         const VkRenderPass& renderPass,
+         const RenderPass& renderPass,
          const std::vector<ShaderInfo>& shaderInfos,
          const VkSampleCountFlagBits& samplesCount,
          VkVertexInputBindingDescription vertexBindingDescriptions,

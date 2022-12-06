@@ -158,7 +158,7 @@ void Scene::createPipelines(
          m_logicalDevice,
          GraphicsPipelineType::SKYBOX,
          extent,
-         m_renderPass.get(),
+         m_renderPass,
          {
             {
                shaderType::VERTEX,
@@ -181,7 +181,7 @@ void Scene::createPipelines(
          m_logicalDevice,
          GraphicsPipelineType::PBR,
          extent,
-         m_renderPass.get(),
+         m_renderPass,
          {
             {
                shaderType::VERTEX,
@@ -207,7 +207,7 @@ void Scene::createPipelines(
          m_logicalDevice,
          GraphicsPipelineType::LIGHT,
          extent,
-         m_renderPass.get(),
+         m_renderPass,
          {
             {
                shaderType::VERTEX,

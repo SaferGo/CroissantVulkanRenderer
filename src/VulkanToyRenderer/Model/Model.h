@@ -117,4 +117,4 @@ private:
 
    void processNode(aiNode* node, const aiScene* scene);
 
-  };
+};

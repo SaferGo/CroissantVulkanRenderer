@@ -17,28 +17,29 @@
 #include <VulkanToyRenderer/Math/mathUtils.h>
 #include <VulkanToyRenderer/Command/commandManager.h>
 #include <VulkanToyRenderer/Model/Attributes.h>
+#include <VulkanToyRenderer/RenderPass/attachmentUtils.h>
 
 template<typename T>
 ShadowMap<T>::ShadowMap(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
-      const uint32_t width,
-      const uint32_t height,
+      const VkExtent2D& extent,
+      const uint32_t imagesCount,
       const VkFormat& format,
-      const VkDescriptorSetLayout& descriptorSetLayout,
       const uint32_t& uboCount,
-      const std::vector<Mesh<T>>* meshes
+      const std::vector<Mesh<T>>* meshes,
+      const std::vector<size_t>& modelIndices
 ) : m_logicalDevice(logicalDevice), 
-    m_width(width),
-    m_height(height),
+    m_width(extent.width),
+    m_height(extent.height),
     m_opMeshes(meshes)
 {
 
    m_image = Image(
          physicalDevice,
          logicalDevice,
-         width,
-         height,
+         m_width,
+         m_height,
          format,
          VK_IMAGE_TILING_OPTIMAL,
          (
@@ -59,8 +60,34 @@ ShadowMap<T>::ShadowMap(
    );
 
    createUBO(physicalDevice, uboCount);
+   createRenderPass(format);
+   createFramebuffer(imagesCount);
+   createGraphicsPipeline(extent);
    createDescriptorPool();
-   createDescriptorSets(descriptorSetLayout);
+   createDescriptorSets();
+}
+
+template<typename T>
+void ShadowMap<T>::createGraphicsPipeline(const VkExtent2D& extent)
+{
+   m_graphicsPipeline = Graphics(
+         m_logicalDevice,
+         GraphicsPipelineType::SHADOWMAP,
+         extent,
+         m_renderPass,
+         {
+            {
+               shaderType::VERTEX,
+               "shadowMap"
+            }
+         },
+         VK_SAMPLE_COUNT_1_BIT,
+         Attributes::PBR::getBindingDescription(),
+         Attributes::PBR::getAttributeDescriptions(),
+         m_modelIndices,
+         GRAPHICS_PIPELINE::SHADOWMAP::UBOS_INFO,
+         {}
+   );
 }
 
 template<typename T>
@@ -158,9 +185,8 @@ void ShadowMap<T>::createUBO(
 }
 
 template<typename T>
-void ShadowMap<T>::createDescriptorSets(
-      const VkDescriptorSetLayout& descriptorSetLayout
-) {
+void ShadowMap<T>::createDescriptorSets()
+{
    std::vector<UBO*> opUBOs = {m_ubo.get()};
 
    m_descriptorSets = DescriptorSets(
@@ -169,7 +195,7 @@ void ShadowMap<T>::createDescriptorSets(
          {},
          {},
          opUBOs,
-         descriptorSetLayout,
+         m_graphicsPipeline.getDescriptorSetLayout(),
          m_descriptorPool
    );
 }
@@ -188,7 +214,6 @@ const VkSampler& ShadowMap<T>::getSampler() const
 
 template<typename T>
 void ShadowMap<T>::bindData(
-      const Graphics& graphicsPipeline,
       const VkCommandBuffer& commandBuffer,
       const uint32_t currentFrame
 ) {
@@ -213,7 +238,7 @@ void ShadowMap<T>::bindData(
       );
 
       commandManager::state::bindDescriptorSets(
-            graphicsPipeline.getPipelineLayout(),
+            m_graphicsPipeline.getPipelineLayout(),
             PipelineType::GRAPHICS,
             // Index of first descriptor set.
             0,
@@ -253,7 +278,7 @@ const VkFramebuffer& ShadowMap<T>::getFramebuffer(const uint32_t imageIndex) con
 }
 
 template<typename T>
-const std::shared_ptr<CommandPool>& ShadowMap<T>::getCommandPool()
+const std::shared_ptr<CommandPool>& ShadowMap<T>::getCommandPool() const
 {
    return m_commandPool;
 }
@@ -265,11 +290,20 @@ const glm::mat4& ShadowMap<T>::getLightSpace() const
 }
 
 template<typename T>
-void ShadowMap<T>::createFramebuffer(
-      const RenderPass& renderPass,
-      const uint32_t& imagesCount
-) {
+const RenderPass& ShadowMap<T>::getRenderPass() const
+{
+   return m_renderPass;
+}
 
+template<typename T>
+const Graphics& ShadowMap<T>::getGraphicsPipeline() const
+{
+   return m_graphicsPipeline;
+}
+
+template<typename T>
+void ShadowMap<T>::createFramebuffer(const uint32_t& imagesCount)
+{
    m_framebuffers.resize(imagesCount);
 
    // We'll write in the sampler to later use it in the scene fragment shader.
@@ -279,7 +313,7 @@ void ShadowMap<T>::createFramebuffer(
    {
       framebufferManager::createFramebuffer(
             m_logicalDevice,
-            renderPass.get(),
+            m_renderPass.get(),
             attachments,
             m_width,
             m_height,
@@ -292,13 +326,60 @@ void ShadowMap<T>::createFramebuffer(
 template<typename T>
 void ShadowMap<T>::destroy()
 {
+   m_graphicsPipeline.destroy();
    m_descriptorPool.destroy();
    m_image.destroy();
    m_ubo->destroy();
    m_commandPool->destroy();
 
+   m_renderPass.destroy();
+
    for (auto& framebuffer : m_framebuffers)
       vkDestroyFramebuffer(m_logicalDevice, framebuffer, nullptr);
+}
+
+template<typename T>
+void ShadowMap<T>::createRenderPass(const VkFormat& depthBufferFormat)
+{
+   // - Attachments
+
+   VkAttachmentDescription shadowMapAttachment{};
+   attachmentUtils::createAttachmentDescriptionWithStencil(
+         depthBufferFormat,
+         VK_SAMPLE_COUNT_1_BIT,
+         VK_ATTACHMENT_LOAD_OP_CLEAR,
+         VK_ATTACHMENT_STORE_OP_STORE,
+         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+         VK_ATTACHMENT_STORE_OP_DONT_CARE,
+         VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+         shadowMapAttachment
+   );
+
+
+   // Attachment references
+   
+   VkAttachmentReference shadowMapAttachmentRef{};
+   attachmentUtils::createAttachmentReference(
+         0,
+         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+         shadowMapAttachmentRef
+   );
+
+   // Subpasses
+   VkSubpassDescription subpass = {};
+   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+   subpass.flags = 0;
+   subpass.pDepthStencilAttachment = &shadowMapAttachmentRef;
+
+   m_renderPass = RenderPass(
+         m_logicalDevice,
+         {shadowMapAttachment},
+         {subpass},
+         {}
+         //dependencies
+   );
+
 }
 
 

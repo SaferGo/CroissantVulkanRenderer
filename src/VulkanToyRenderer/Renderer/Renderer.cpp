@@ -315,86 +315,6 @@ void Renderer::createSyncObjects()
    }
 }
 
-void Renderer::createShadowMapRenderPass()
-{
-
-#ifdef RELEASE_MODE_ON
-   ZoneScoped;
-#endif
-
-   // - Attachments
-
-   VkAttachmentDescription shadowMapAttachment{};
-   attachmentUtils::createAttachmentDescriptionWithStencil(
-         m_depthBuffer.getFormat(),
-         VK_SAMPLE_COUNT_1_BIT,
-         VK_ATTACHMENT_LOAD_OP_CLEAR,
-         VK_ATTACHMENT_STORE_OP_STORE,
-         VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-         VK_ATTACHMENT_STORE_OP_DONT_CARE,
-         VK_IMAGE_LAYOUT_UNDEFINED,
-         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-         shadowMapAttachment
-   );
-
-
-   // Attachment references
-   
-   VkAttachmentReference shadowMapAttachmentRef{};
-   attachmentUtils::createAttachmentReference(
-         0,
-         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-         shadowMapAttachmentRef
-   );
-
-   // Subpasses
-   VkSubpassDescription subpass = {};
-   subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-   subpass.flags = 0;
-   subpass.pDepthStencilAttachment = &shadowMapAttachmentRef;
-
-   m_renderPassShadowMap = RenderPass(
-         m_device->getLogicalDevice(),
-         {shadowMapAttachment},
-         {subpass},
-         {}
-         //dependencies
-   );
-
-   
-}
-
-void Renderer::createPipelines()
-{
-
-#ifdef RELEASE_MODE_ON
-   ZoneScoped;
-#endif
-
-   // - Features
-   {
-      m_graphicsPipelineShadowMap = Graphics(
-            m_device->getLogicalDevice(),
-            GraphicsPipelineType::SHADOWMAP,
-            m_swapchain->getExtent(),
-            m_renderPassShadowMap.get(),
-            {
-               {
-                  shaderType::VERTEX,
-                  "shadowMap"
-               }
-            },
-            VK_SAMPLE_COUNT_1_BIT,
-            Attributes::PBR::getBindingDescription(),
-            Attributes::PBR::getAttributeDescriptions(),
-            m_scene.getObjectModelIndices(),
-            GRAPHICS_PIPELINE::SHADOWMAP::UBOS_INFO,
-            {}
-      );
-   }
-
-}
-
 void Renderer::createCommandPools()
 {
    // Graphics Command Pool
@@ -541,43 +461,31 @@ void Renderer::initVK()
          m_depthBuffer.getFormat(),
          m_modelsToLoadInfo
    );
-   //----------------------------------RenderPasses----------------------------
-
-   createShadowMapRenderPass();
-
-   //----------------------------------Pipelines-------------------------------
-
-   createPipelines();
 
    //-----------------------------Secondary Features---------------------------
-   //(these features they are not used by all the pipelines and need
-   //dependencies)
+   //(these features are not used by all the pipelines and need dependencies)
 
    m_shadowMap = std::make_shared<ShadowMap<Attributes::PBR::Vertex>>(
          m_device->getPhysicalDevice(),
          m_device->getLogicalDevice(),
-         m_swapchain->getExtent().width,
-         m_swapchain->getExtent().height,
+         m_swapchain->getExtent(),
+         m_swapchain->getImageCount(),
          m_depthBuffer.getFormat(),
-         m_graphicsPipelineShadowMap.getDescriptorSetLayout(),
          config::MAX_FRAMES_IN_FLIGHT,
          &(
-          std::dynamic_pointer_cast<NormalPBR>(
-             m_scene.getMainModel()
-          )->getMeshes()
-         )
+            std::dynamic_pointer_cast<NormalPBR>(
+               m_scene.getMainModel()
+            )->getMeshes()
+         ),
+         m_scene.getObjectModelIndices()
    );
 
-   //----------------------------------Framebuffers----------------------------
+   //----------------------------------Framebuffer-----------------------------
 
    m_swapchain->createFramebuffers(
          m_scene.getRenderPass(),
          m_depthBuffer,
          m_msaa
-   );
-   m_shadowMap->createFramebuffer(
-         m_renderPassShadowMap,
-         m_swapchain->getImageCount()
    );
 
    //--------------------------------------------------------------------------
@@ -650,11 +558,9 @@ void Renderer::recordCommandBuffer(
             if (graphicsPipeline->getGraphicsPipelineType() ==
                 GraphicsPipelineType::SHADOWMAP
             ) {
-               m_shadowMap->bindData(
-                     *graphicsPipeline,
-                     commandBuffer,
-                     currentFrame
-               );
+
+               m_shadowMap->bindData(commandBuffer, currentFrame);
+
                continue;
             }
 
@@ -745,13 +651,13 @@ void Renderer::drawFrame(uint8_t& currentFrame)
 
    //---------------------Records all the command buffer-----------------------
 
-   // Shadow Mapping
+   // Shadow Map
    recordCommandBuffer(
          m_shadowMap->getFramebuffer(imageIndex),
-         m_renderPassShadowMap,
+         m_shadowMap->getRenderPass(),
          m_swapchain->getExtent(),
          {
-            &m_graphicsPipelineShadowMap
+            &m_shadowMap->getGraphicsPipeline()
          },
          currentFrame,
          m_shadowMap->getCommandBuffer(currentFrame),
@@ -774,7 +680,6 @@ void Renderer::drawFrame(uint8_t& currentFrame)
          m_clearValues,
          m_commandPoolGraphics
    );
-
    // GUI
    m_GUI->recordCommandBuffer(currentFrame,  imageIndex, m_clearValues);
 
@@ -896,6 +801,7 @@ void Renderer::mainLoop()
             m_scene.getObjectModelIndices(),
             m_scene.getLightModelIndices()
       );
+
       drawFrame(currentFrame);
    }
    vkDeviceWaitIdle(m_device->getLogicalDevice());
@@ -1064,21 +970,16 @@ void Renderer::cleanup()
    // Swapchain
    m_swapchain->destroy();
 
-   // Graphics Pipelines
-   m_graphicsPipelineShadowMap.destroy();
-
    // Computations
    m_BRDFcomp.destroy();
+
+   m_BRDFlut->destroy();
 
    // Scenes
    m_scene.destroy();
 
-   // Renderpass
-   m_renderPassShadowMap.destroy();
-
    // Models -> Buffers, Memories and Textures.
    m_shadowMap->destroy();
-
 
    // Descriptor Pool
    m_descriptorPoolGraphics.destroy();
