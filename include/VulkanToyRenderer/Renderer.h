@@ -58,18 +58,14 @@ public:
          const glm::fvec3& pos,
          const glm::fvec3& endPos,
          const glm::fvec3& rot,
-         const glm::fvec3& size,
-         const float attenuation,
-         const float radius
+         const glm::fvec3& size
    );
    void addPointLight(
          const std::string& name,
          const std::string& modelFileName,
          const glm::fvec3& color,
          const glm::fvec3& pos,
-         const glm::fvec3& size,
-         const float attenuation,
-         const float radius
+         const glm::fvec3& size
    );
    void addSkybox(
          const std::string& name,

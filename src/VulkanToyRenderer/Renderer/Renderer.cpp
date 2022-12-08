@@ -149,9 +149,7 @@ void Renderer::addSkybox(
          glm::fvec3(0.0f),
          glm::fvec3(0.0f),
          LightType::NONE,
-         glm::fvec3(0.0f),
-         0.0f,
-         0.0f
+         glm::fvec3(0.0f)
    });
 
 }
@@ -173,9 +171,7 @@ void Renderer::addObjectPBR(
          rot,
          size,
          LightType::NONE,
-         glm::fvec3(0.0f),
-         0.0f,
-         0.0f
+         glm::fvec3(0.0f)
    });
 
 }
@@ -198,9 +194,7 @@ void Renderer::addDirectionalLight(
          glm::fvec3(0.0f),
          size,
          LightType::DIRECTIONAL_LIGHT,
-         endPos,
-         0.0f,
-         0.0f
+         endPos
    });
 }
 
@@ -209,9 +203,7 @@ void Renderer::addPointLight(
       const std::string& modelFileName,
       const glm::fvec3& color,
       const glm::fvec3& pos,
-      const glm::fvec3& size,
-      const float attenuation,
-      const float radius
+      const glm::fvec3& size
 ) {
 
    m_modelsToLoadInfo.push_back({
@@ -223,9 +215,7 @@ void Renderer::addPointLight(
          glm::fvec3(0.0f),
          size,
          LightType::POINT_LIGHT,
-         glm::fvec3(0.0f),
-         attenuation,
-         radius
+         glm::fvec3(0.0f)
    });
 
 }
@@ -237,9 +227,7 @@ void Renderer::addSpotLight(
       const glm::fvec3& pos,
       const glm::fvec3& endPos,
       const glm::fvec3& rot,
-      const glm::fvec3& size,
-      const float attenuation,
-      const float radius
+      const glm::fvec3& size
 ) {
 
    m_modelsToLoadInfo.push_back({
@@ -251,9 +239,7 @@ void Renderer::addSpotLight(
          rot,
          size,
          LightType::SPOT_LIGHT,
-         endPos,
-         attenuation,
-         radius
+         endPos
    });
 }
 

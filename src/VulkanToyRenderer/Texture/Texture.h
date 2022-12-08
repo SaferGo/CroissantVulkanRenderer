@@ -61,14 +61,6 @@ public:
 
 protected:
 
-   void transitionImageLayout(
-         const VkFormat& format,
-         const VkImageLayout& oldLayout,
-         const VkImageLayout& newLayout,
-         const std::shared_ptr<CommandPool>& commandPool,
-         const VkQueue& graphicsQueue
-   );
-
    VkDevice              m_logicalDevice;
 
    Image                 m_image;

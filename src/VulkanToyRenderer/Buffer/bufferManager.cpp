@@ -249,24 +249,20 @@ void bufferManager::createBufferAndTransferToDevice(
 ) {
    VkBuffer stagingBuffer;
    VkDeviceMemory stagingBufferMemory;
-   // Creates the staging buffer.
-   createBuffer(
+
+   createAndFillStagingBuffer(
          physicalDevice,
          logicalDevice,
          size,
-         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-         stagingBufferMemory,
-         stagingBuffer
-   );
-
-   fillBuffer(
-         logicalDevice,
-         data,
          0,
-         size,
-         stagingBufferMemory
+         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+         (
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+         ),
+         stagingBufferMemory,
+         stagingBuffer,
+         data
    );
 
    // Creates the vertex buffer in the device(gpu).
@@ -418,6 +414,50 @@ template void bufferManager::fillBuffer<Attributes::LIGHT::Vertex>(
       const VkDeviceSize size,
       VkDeviceMemory& memory
 );
+///////////////////////////////////////////////////////////////////////////////
+template<typename T>
+void bufferManager::createAndFillStagingBuffer(
+      const VkPhysicalDevice& physicalDevice,
+      const VkDevice& logicalDevice,
+      const VkDeviceSize size,
+      const uint32_t offset,
+      const VkBufferUsageFlags usage,
+      const VkMemoryPropertyFlags memoryProperties,
+      VkDeviceMemory& memory,
+      VkBuffer& buffer,
+      T* data
+) {
+   bufferManager::createBuffer(
+         physicalDevice,
+         logicalDevice,
+         size,
+         usage,
+         memoryProperties,
+         memory,
+         buffer
+   );
+
+   bufferManager::fillBuffer(
+         logicalDevice,
+         data,
+         offset,
+         size,
+         memory
+   );
+}
+////////////////////////////////////Instances//////////////////////////////////
+template void bufferManager::createAndFillStagingBuffer<uint8_t>(
+      const VkPhysicalDevice& physicalDevice,
+      const VkDevice& logicalDevice,
+      const VkDeviceSize size,
+      const uint32_t offset,
+      const VkBufferUsageFlags usage,
+      const VkMemoryPropertyFlags memoryProperties,
+      VkDeviceMemory& memory,
+      VkBuffer& buffer,
+      uint8_t* data
+);
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void bufferManager::downloadDataFromBuffer(

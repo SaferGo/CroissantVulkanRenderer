@@ -34,13 +34,31 @@ namespace imageManager
          const VkComponentSwizzle& componentMapA,
          VkImageView& imageView
    );
-   void copyBufferToImage(
+   template<typename T>
+   void copyDataToImage(
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         const VkDeviceSize size,
+         const uint32_t offset,
+         T* data,
          const uint32_t width,
          const uint32_t height,
+         const VkFormat& format,
+         const uint32_t mipLevels,
          const bool isCubemap,
          const VkQueue& graphicsQueue,
-         const VkBuffer& buffer,
          const std::shared_ptr<CommandPool>& commandPool,
+         const VkImage& image
+   );
+
+   void transitionImageLayout(
+         const VkFormat& format,
+         const uint32_t mipLevels,
+         const VkImageLayout& oldLayout,
+         const VkImageLayout& newLayout,
+         const bool isCubemap,
+         const std::shared_ptr<CommandPool>& commandPool,
+         const VkQueue& graphicsQueue,
          const VkImage& image
    );
 };

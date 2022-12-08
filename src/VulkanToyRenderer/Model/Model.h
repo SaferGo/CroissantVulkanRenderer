@@ -109,6 +109,8 @@ protected:
 
    bool                 m_hideStatus;
 
+   // We need these to not reload the textures again if they are used multiple
+   // times in different(or in the same) meshes.
    std::vector<std::shared_ptr<Texture>>   m_texturesLoaded;
    std::unordered_map<std::string, size_t> m_texturesID;
 

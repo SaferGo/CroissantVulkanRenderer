@@ -18,8 +18,6 @@ Light::Light(const ModelInfo& modelInfo)
     ),
     m_targetPos(glm::fvec4(modelInfo.endPos, 1.0f)),
     m_color(glm::fvec4(modelInfo.color, 1.0f)),
-    m_attenuation(modelInfo.attenuation),
-    m_radius(modelInfo.radius),
     m_lightType(modelInfo.lType)
 {
    if (modelInfo.lType == LightType::DIRECTIONAL_LIGHT)
@@ -228,7 +226,7 @@ void Light::uploadTextures(
 ) {
    const size_t nTextures = GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT;
    const TextureToLoadInfo info = {
-      "textures/default.png",
+      "textures/default/baseColor.png",
       VK_FORMAT_R8G8B8A8_SRGB,
       // channels
       4
@@ -303,16 +301,6 @@ const glm::fvec4& Light::getTargetPos() const
    return m_targetPos;
 }
 
-const float& Light::getAttenuation() const
-{
-   return m_attenuation;
-}
-
-const float& Light::getRadius() const
-{
-   return m_radius;
-}
-
 const LightType& Light::getLightType() const
 {
    return m_lightType;
@@ -328,17 +316,8 @@ void Light::setTargetPos(const glm::fvec4& pos)
    m_targetPos = pos;
 }
 
-void Light::setAttenuation(const float& attenuation)
-{
-   m_attenuation = attenuation;
-}
-
 void Light::setIntensity(const float& intensity)
 {
    m_intensity = intensity;
 }
 
-void Light::setRadius(const float& radius)
-{
-   m_radius = radius;
-}

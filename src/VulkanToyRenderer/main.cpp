@@ -13,14 +13,58 @@ int main()
    {
 
       // SCENE 1
+      {
+         app.addSkybox("piazza.hdr", "Piazza");
+         app.addObjectPBR(
+               "Sponza",
+               "Sponza.gltf",
+               glm::fvec3(0.0f),
+               glm::fvec3(1.0f, -1.555, 1.0f),
+               glm::fvec3(0.05f)
+         );
+         //app.addPointLight(
+         //      "Point",
+         //      "lightSphere.obj",
+         //      glm::fvec3(1.0f),
+         //      glm::fvec3(0.0f),
+         //      glm::fvec3(0.125f)
+         //);
+         app.addSpotLight(
+               "Spot1",
+               "lightSphere.obj",
+               glm::fvec3(1.0f),
+               glm::fvec3(0.0f),
+               glm::fvec3(0.0f),
+               glm::fvec3(0.0f),
+               glm::fvec3(0.125f)
+         );
+         app.addDirectionalLight(
+               "Sun",
+               "lightSphere.obj",
+               glm::fvec3(1.0f),
+               glm::fvec3(1.0f, 87.0f, -49.0f),
+               glm::fvec3(1.461f, 2.619f, 57.457f),
+               glm::fvec3(0.125f)
+         );
+      }
+
+      // Scene 2
       //{
-      //   app.addSkybox("piazza.hdr", "Piazza");
+      //   app.addSkybox("Apartment.hdr", "Apartment");
+      //   //app.addSkybox("piazza.hdr", "Piazza");
+      //   //app.addObjectPBR(
+      //   //      "Gun",
+      //   //      "gun.gltf",
+      //   //      glm::fvec3(0.0f),
+      //   //      glm::fvec3(1.227f, 0.0f, 0.0f),
+      //   //      glm::fvec3(1.0f)
+      //   //);
       //   app.addObjectPBR(
-      //         "Sponza",
-      //         "Sponza.gltf",
+      //         "DamagedHelmet",
+      //         "DamagedHelmet.gltf",
       //         glm::fvec3(0.0f),
-      //         glm::fvec3(1.0f, -1.555, 1.0f),
-      //         glm::fvec3(0.05f)
+      //         glm::fvec3(1.227f, 0.0f, 0.0f),
+      //         glm::fvec3(1.0f)
       //   );
       //   app.addDirectionalLight(
       //         "Sun",
@@ -31,34 +75,6 @@ int main()
       //         glm::fvec3(0.125f)
       //   );
       //}
-
-      // Scene 2
-      {
-         app.addSkybox("Apartment.hdr", "Apartment");
-         //app.addSkybox("piazza.hdr", "Piazza");
-         //app.addObjectPBR(
-         //      "Gun",
-         //      "gun.gltf",
-         //      glm::fvec3(0.0f),
-         //      glm::fvec3(1.227f, 0.0f, 0.0f),
-         //      glm::fvec3(1.0f)
-         //);
-         app.addObjectPBR(
-               "DamagedHelmet",
-               "DamagedHelmet.gltf",
-               glm::fvec3(0.0f),
-               glm::fvec3(1.227f, 0.0f, 0.0f),
-               glm::fvec3(1.0f)
-         ),
-         app.addDirectionalLight(
-               "Sun",
-               "lightSphere.obj",
-               glm::fvec3(1.0f),
-               glm::fvec3(1.0f, 87.0f, -49.0f),
-               glm::fvec3(1.461f, 2.619f, 57.457f),
-               glm::fvec3(0.125f)
-         );
-      }
       
       
       app.run();

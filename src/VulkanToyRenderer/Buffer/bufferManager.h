@@ -28,6 +28,18 @@ namespace bufferManager
             VkBuffer& buffer
    );
    template<typename T>
+   void createAndFillStagingBuffer(
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         const VkDeviceSize size,
+         const uint32_t offset,
+         const VkBufferUsageFlags usage,
+         const VkMemoryPropertyFlags memoryProperties,
+         VkDeviceMemory& memory,
+         VkBuffer& buffer,
+         T* data
+   );
+   template<typename T>
    void createBufferAndTransferToDevice(
          const std::shared_ptr<CommandPool>& commandPool,
          const VkPhysicalDevice& physicalDevice,

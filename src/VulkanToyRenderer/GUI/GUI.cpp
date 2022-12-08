@@ -385,47 +385,6 @@ void GUI::createLightsWindow(
                      modelName
                );
 
-               if (model.get()->getLightType() != LightType::DIRECTIONAL_LIGHT)
-               {
-                  float radius = model.get()->getRadius();
-                  float attenuation = model.get()->getAttenuation();
-
-                  // Attenuation
-
-                  subMenuName = (
-                        "Attenuation###LightProperty::Attenuation" + modelName
-                  );
-                  sliderName = (
-                        "###Attenuation::" + modelName
-                  );
-
-                  createSlider(
-                        subMenuName,
-                        sliderName,
-                        1.0f,
-                        0.0f,
-                        attenuation
-                  );
-
-                  // Radius
-                  subMenuName = (
-                        "Radius###LightProperty::Radius" + modelName
-                  );
-                  sliderName = (
-                        "###Radius::" + modelName
-                  );
-                  createSlider(
-                        subMenuName,
-                        sliderName,
-                        100.0f,
-                        0.0f,
-                        radius
-                  );
-
-                  model.get()->setAttenuation(attenuation);
-                  model.get()->setRadius(radius);
-               }
-
                if (model.get()->getLightType() != LightType::POINT_LIGHT)
                {
                   glm::fvec4 targetPos = model.get()->getTargetPos();

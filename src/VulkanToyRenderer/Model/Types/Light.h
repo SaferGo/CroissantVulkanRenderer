@@ -33,14 +33,10 @@ public:
 
    const glm::fvec4& getColor() const;
    const glm::fvec4& getTargetPos() const;
-   const float& getAttenuation() const;
-   const float& getRadius() const;
    const float& getIntensity() const;
    const LightType& getLightType() const;
    void setColor(const glm::fvec4& newColor);
-   void setAttenuation(const float& attenuation);
    void setIntensity(const float& intensity);
-   void setRadius(const float& radius);
    void setTargetPos(const glm::fvec4& pos);
          
 
@@ -69,8 +65,6 @@ private:
    // To get the direction of directional and spot lights(m_endPos - m_Pos);
    glm::fvec4 m_targetPos;
    glm::fvec4 m_color;
-   float      m_attenuation;
-   float      m_radius;
    float      m_intensity;
    LightType  m_lightType;
 

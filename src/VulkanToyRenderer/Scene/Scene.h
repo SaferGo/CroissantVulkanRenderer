@@ -88,6 +88,6 @@ private:
    std::vector<size_t>                 m_skyboxModelIndex;
 
    // For now, this will be the only shadowable model of the scene.
-   size_t                              m_mainModelIndex;
-   size_t                              m_directionalLightIndex;
+   int                              m_mainModelIndex;
+   int                              m_directionalLightIndex;
 };

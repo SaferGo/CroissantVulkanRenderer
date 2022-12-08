@@ -5,6 +5,7 @@
 #include <VulkanToyRenderer/Command/commandManager.h>
 #include <VulkanToyRenderer/Command/CommandPool.h>
 #include <VulkanToyRenderer/Buffer/bufferUtils.h>
+#include <VulkanToyRenderer/Buffer/bufferManager.h>
 
 void imageManager::createImage(
       const VkPhysicalDevice& physicalDevice,
@@ -160,15 +161,54 @@ void imageManager::createImageView(
  
 }
 
-void imageManager::copyBufferToImage(
+template<typename T>
+void imageManager::copyDataToImage(
+      const VkPhysicalDevice& physicalDevice,
+      const VkDevice& logicalDevice,
+      const VkDeviceSize size,
+      const uint32_t offset,
+      T* data,
       const uint32_t width,
       const uint32_t height,
+      const VkFormat& format,
+      const uint32_t mipLevels,
       const bool isCubemap,
       const VkQueue& graphicsQueue,
-      const VkBuffer& buffer,
       const std::shared_ptr<CommandPool>& commandPool,
       const VkImage& image
 ) {
+
+   VkBuffer stagingBuffer;
+   VkDeviceMemory stagingBufferMemory;
+
+   bufferManager::createAndFillStagingBuffer(
+         physicalDevice,
+         logicalDevice,
+         size,
+         0,
+         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+         (
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+         ),
+         stagingBufferMemory,
+         stagingBuffer,
+         data
+   );
+
+   // We will transfer the pixels to the image object with a cmd buffer.
+   // (staging buffer to the image obj)
+   transitionImageLayout(
+         format,
+         mipLevels,
+         VK_IMAGE_LAYOUT_UNDEFINED,
+         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+         isCubemap,
+         commandPool,
+         graphicsQueue,
+         image
+   );
+
 
    VkCommandBuffer commandBuffer;
 
@@ -205,7 +245,7 @@ void imageManager::copyBufferToImage(
       };
 
       commandManager::action::copyBufferToImage(
-            buffer,
+            stagingBuffer,
             image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1,
@@ -221,6 +261,142 @@ void imageManager::copyBufferToImage(
          {commandBuffer},
          true
    );
+
+   bufferManager::destroyBuffer(logicalDevice, stagingBuffer);
+   bufferManager::freeMemory(logicalDevice, stagingBufferMemory);
+
+   // Another transition to sample from the shader.
+   if (isCubemap)
+   {
+      transitionImageLayout(
+            format,
+            mipLevels,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            isCubemap,
+            commandPool,
+            graphicsQueue,
+            image
+      );
+   }
 }
 
+/////////////////////////////////Instances/////////////////////////////////////
+template void imageManager::copyDataToImage<uint8_t>(
+         const VkPhysicalDevice& physicalDevice,
+         const VkDevice& logicalDevice,
+         const VkDeviceSize size,
+         const uint32_t offset,
+         uint8_t* data,
+         const uint32_t width,
+         const uint32_t height,
+         const VkFormat& format,
+         const uint32_t mipLevels,
+         const bool isCubemap,
+         const VkQueue& graphicsQueue,
+         const std::shared_ptr<CommandPool>& commandPool,
+         const VkImage& image
+);
+///////////////////////////////////////////////////////////////////////////////
 
+void imageManager::transitionImageLayout(
+      const VkFormat& format,
+      const uint32_t mipLevels,
+      const VkImageLayout& oldLayout,
+      const VkImageLayout& newLayout,
+      const bool isCubemap,
+      const std::shared_ptr<CommandPool>& commandPool,
+      const VkQueue& graphicsQueue,
+      const VkImage& image
+) {
+   VkCommandBuffer commandBuffer;
+
+   commandPool->allocCommandBuffer(commandBuffer, true);
+
+   commandPool->beginCommandBuffer(
+         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+         commandBuffer
+   );
+
+      VkImageMemoryBarrier imgMemoryBarrier{};
+      imgMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      // We could use VK_IMAGE_LAYOUT_UNDEFINED if we don't care about the
+      // existing contents of the image.
+      imgMemoryBarrier.oldLayout = oldLayout;
+      imgMemoryBarrier.newLayout = newLayout;
+      // Since we are not using the barrier to transfer queue family ownership,
+      // we'll ignore these two.
+      imgMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      imgMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+      imgMemoryBarrier.image = image;
+      imgMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      imgMemoryBarrier.subresourceRange.baseMipLevel = 0;
+      // In this case, our image is not an array(it has 2D coords -> texel).
+      imgMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+
+      if (isCubemap)
+      {
+         imgMemoryBarrier.subresourceRange.layerCount = 6;
+         imgMemoryBarrier.subresourceRange.levelCount = 1;
+      } else
+      {
+         imgMemoryBarrier.subresourceRange.levelCount = mipLevels;
+         imgMemoryBarrier.subresourceRange.layerCount = 1;
+      }
+
+      //Barriers are primarily used for synchronization purposes, so you must
+      //specify which types of operations that involve the resource must happen
+      //before the barrier, and which operations that involve the resource must
+      //wait on the barrier. We need to do that despite already using
+      //vkQueueWaitIdle to manually synchronize. The right values depend on the
+      //old and new layout.
+      imgMemoryBarrier.srcAccessMask = 0;
+      imgMemoryBarrier.dstAccessMask = 0;
+
+      // Defines the (pseudo)pipelines stages.
+      // (this prevents that the transfer doesn't collide with the writing and
+      // reading from other resources)
+      VkPipelineStageFlags sourceStage;
+      VkPipelineStageFlags destinationStage;
+
+      if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+          newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+      ) {
+
+         imgMemoryBarrier.srcAccessMask = 0;
+         imgMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+      } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+                 newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+      ) {
+
+         imgMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+         imgMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+      } else
+         throw std::invalid_argument("Unsupported layout transition!");
+
+
+      commandManager::synchronization::recordPipelineBarrier(
+            sourceStage,
+            destinationStage,
+            0,
+            commandBuffer,
+            {},
+            {},
+            {imgMemoryBarrier}
+      );
+            
+   commandPool->endCommandBuffer(commandBuffer);
+
+   commandPool->submitCommandBuffer(
+         graphicsQueue,
+         {commandBuffer},
+         true
+   );
+}

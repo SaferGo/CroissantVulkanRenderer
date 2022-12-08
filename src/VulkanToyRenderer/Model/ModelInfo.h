@@ -23,6 +23,4 @@ struct ModelInfo
    // For light models.
    LightType   lType;
    glm::fvec3  endPos;
-   const float attenuation;
-   const float radius;
 };

@@ -12,7 +12,9 @@ Scene::Scene(
       const VkSampleCountFlagBits& msaaSamplesCount,
       const VkFormat& depthBufferFormat,
       const std::vector<ModelInfo>& modelsToLoadInfo
-) : m_logicalDevice(logicalDevice)
+) : m_logicalDevice(logicalDevice),
+    m_mainModelIndex(-1),
+    m_directionalLightIndex(-1)
 {
    loadModels(modelsToLoadInfo);
 
@@ -267,6 +269,22 @@ void Scene::loadModels(const std::vector<ModelInfo>& modelsToLoadInfo)
    for (auto& thread : threads)
       thread.join();
 
+   if (m_objectModelIndices.size() == 0)
+      throw std::runtime_error(
+            "Add at least 1 model."
+      );
+   if (m_directionalLightIndex == -1)
+      throw std::runtime_error(
+            "Add at least 1 directional light."
+      );
+   if (m_skyboxModelIndex.size() == 0)
+      throw std::runtime_error(
+            "Add at least 1 skybox."
+      );
+   if (m_skyboxModelIndex.size() > 1)
+      throw std::runtime_error(
+            "You can't add more than 1 skybox per scene."
+      );
 }
 
 void Scene::loadModel(
@@ -299,8 +317,9 @@ void Scene::loadModel(
             m_models.push_back(std::make_shared<NormalPBR>(modelInfo));
             m_objectModelIndices.push_back(m_models.size() - 1);
       
-            // TODO: delete this
-            m_mainModelIndex = m_models.size() - 1;
+            // Just the first model added will be shadowable.
+            if (m_mainModelIndex == -1)
+               m_mainModelIndex = m_models.size() - 1;
       
             break;
       
@@ -310,9 +329,16 @@ void Scene::loadModel(
             m_models.push_back(std::make_shared<Light>(modelInfo));
             m_lightModelIndices.push_back(m_models.size() - 1);
 
-            // TODO: Improve this.
             if (modelInfo.lType == LightType::DIRECTIONAL_LIGHT)
+            {
+               if (m_directionalLightIndex != -1)
+                  throw std::runtime_error(
+                        "You can't add more than 1 directional light per scene!"
+                  );
+               
                m_directionalLightIndex = m_models.size() - 1;
+            }
+
 
             break;
          }
@@ -457,15 +483,12 @@ void Scene::upload(
                m_graphicsPipelinePBR.getDescriptorSetLayout()
          );
   
-      } else if (type == ModelType::LIGHT)
-      {
-         descriptorSetLayout = (
-               m_graphicsPipelineLight.getDescriptorSetLayout()
-         );
-            
       } else
       {
-         std::cout << "TODO";
+         if (type == ModelType::LIGHT)
+            descriptorSetLayout = (
+                  m_graphicsPipelineLight.getDescriptorSetLayout()
+            );
       }
 
       model->createDescriptorSets(
