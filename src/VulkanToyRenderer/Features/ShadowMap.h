@@ -83,8 +83,8 @@ private:
 
    RenderPass                       m_renderPass;
 
-   DescriptorSets                   m_descriptorSets;
    DescriptorPool                   m_descriptorPool;
+   DescriptorSets                   m_descriptorSets;
 
    std::shared_ptr<CommandPool>     m_commandPool;
 

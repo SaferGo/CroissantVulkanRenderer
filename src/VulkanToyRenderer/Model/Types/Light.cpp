@@ -11,6 +11,7 @@
 Light::Light(const ModelInfo& modelInfo)
    : Model(
          modelInfo.name,
+         modelInfo.folderName,
          ModelType::LIGHT,
          glm::fvec4(modelInfo.pos, 1.0f),
          modelInfo.rot,
@@ -25,7 +26,13 @@ Light::Light(const ModelInfo& modelInfo)
    else
       m_intensity = 70.0f;
 
-   loadModel((std::string(MODEL_DIR) + modelInfo.modelFileName).c_str());
+   loadModel(
+         (
+            std::string(MODEL_DIR) +
+            modelInfo.folderName + "/" +
+            modelInfo.fileName
+         ).c_str()
+   );
 
    m_rot = glm::fvec3(0.0f);
 }
@@ -121,9 +128,10 @@ void Light::createDescriptorSets(
             GRAPHICS_PIPELINE::LIGHT::UBOS_INFO,
             GRAPHICS_PIPELINE::LIGHT::SAMPLERS_INFO,
             mesh.textures,
-            opUBOs,
             descriptorSetLayout,
-            descriptorPool
+            descriptorPool,
+            nullptr,
+            opUBOs
       );
    }
 }
@@ -226,7 +234,8 @@ void Light::uploadTextures(
 ) {
    const size_t nTextures = GRAPHICS_PIPELINE::LIGHT::TEXTURES_PER_MESH_COUNT;
    const TextureToLoadInfo info = {
-      "textures/default/baseColor.png",
+      "baseColor.png",
+      "defaultTextures",
       VK_FORMAT_R8G8B8A8_SRGB,
       // channels
       4

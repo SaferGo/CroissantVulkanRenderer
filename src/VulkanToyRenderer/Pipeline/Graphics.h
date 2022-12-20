@@ -15,7 +15,8 @@ enum class GraphicsPipelineType
    PBR = 0,
    LIGHT = 1,
    SKYBOX = 2,
-   SHADOWMAP = 3
+   SHADOWMAP = 3,
+   PREFILTER_ENV_MAP = 4
 };
 
 class Graphics : public Pipeline
@@ -36,7 +37,8 @@ public:
             vertexAttribDescriptions,
          const std::vector<size_t>& modelIndices,
          const std::vector<DescriptorInfo>& uboInfo,
-         const std::vector<DescriptorInfo>& samplersInfo
+         const std::vector<DescriptorInfo>& samplersInfo,
+         const std::vector<VkPushConstantRange>& pushConstantRanges
    );
    ~Graphics();
    const GraphicsPipelineType getGraphicsPipelineType() const;

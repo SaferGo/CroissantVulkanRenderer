@@ -124,7 +124,9 @@ void Device::pickPhysicalDevice(
                device
          )
       ) {
+
          m_physicalDevice = device;
+
          break;
       }
    }
@@ -155,6 +157,8 @@ bool Device::isPhysicalDeviceSuitable(
    // Gives us basic device properties like the name, type and supported
    // Vulkan version.
    vkGetPhysicalDeviceProperties(possiblePhysicalDevice, &deviceProperties);
+   m_deviceName = deviceProperties.deviceName;
+   m_apiVersion = deviceProperties.apiVersion;
 
    // - Device Features
    // Verifies if the device has the features we want.
@@ -313,4 +317,12 @@ void Device::findSupportedProperties(
    }
 }
 
+const std::string& Device::getDeviceName() const
+{
+   return m_deviceName;
+}
 
+const uint32_t& Device::getApiVersion() const
+{
+   return m_apiVersion;
+}

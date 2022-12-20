@@ -81,17 +81,14 @@ void Renderer::run()
 
    initVK();
 
-   initComputations();
    doComputations();
-   loadBRDFlut();
 
    m_scene.upload(
          m_device->getPhysicalDevice(),
          m_qfHandles.graphicsQueue,
-         m_commandPoolGraphics,
-         m_descriptorPoolGraphics,
-         m_shadowMap,
-         m_BRDFlut
+         m_commandPoolForGraphics,
+         m_descriptorPoolForGraphics,
+         m_shadowMap
    );
 
    m_camera = std::make_shared<Arcball>(
@@ -136,14 +133,15 @@ void Renderer::configureUserInputs()
 }
 
 void Renderer::addSkybox(
-      const std::string& name,
+      const std::string& fileName,
       const std::string& textureFolderName
 ) {
 
    m_modelsToLoadInfo.push_back({
          ModelType::SKYBOX,
-         name,
+         fileName,
          textureFolderName,
+         fileName,
          glm::fvec3(0.0f),
          glm::fvec3(0.0f),
          glm::fvec3(0.0f),
@@ -156,7 +154,8 @@ void Renderer::addSkybox(
 
 void Renderer::addObjectPBR(
       const std::string& name,
-      const std::string& modelFileName,
+      const std::string& folderName,
+      const std::string& fileName,
       const glm::fvec3& pos,
       const glm::fvec3& rot,
       const glm::fvec3& size
@@ -165,7 +164,8 @@ void Renderer::addObjectPBR(
    m_modelsToLoadInfo.push_back({
          ModelType::NORMAL_PBR,
          name,
-         modelFileName,
+         folderName,
+         fileName,
          glm::fvec3(0.0f),
          pos,
          rot,
@@ -178,7 +178,8 @@ void Renderer::addObjectPBR(
 
 void Renderer::addDirectionalLight(
       const std::string& name,
-      const std::string& modelFileName,
+      const std::string& folderName,
+      const std::string& fileName,
       const glm::fvec3& color,
       const glm::fvec3& pos,
       const glm::fvec3& endPos,
@@ -188,7 +189,8 @@ void Renderer::addDirectionalLight(
    m_modelsToLoadInfo.push_back({
          ModelType::LIGHT,
          name,
-         modelFileName,
+         folderName,
+         fileName,
          color,
          pos,
          glm::fvec3(0.0f),
@@ -200,7 +202,8 @@ void Renderer::addDirectionalLight(
 
 void Renderer::addPointLight(
       const std::string& name,
-      const std::string& modelFileName,
+      const std::string& folderName,
+      const std::string& fileName,
       const glm::fvec3& color,
       const glm::fvec3& pos,
       const glm::fvec3& size
@@ -209,7 +212,8 @@ void Renderer::addPointLight(
    m_modelsToLoadInfo.push_back({
          ModelType::LIGHT,
          name,
-         modelFileName,
+         folderName,
+         fileName,
          color,
          pos,
          glm::fvec3(0.0f),
@@ -222,7 +226,8 @@ void Renderer::addPointLight(
 
 void Renderer::addSpotLight(
       const std::string& name,
-      const std::string& modelFileName,
+      const std::string& folderName,
+      const std::string& fileName,
       const glm::fvec3& color,
       const glm::fvec3& pos,
       const glm::fvec3& endPos,
@@ -233,7 +238,8 @@ void Renderer::addSpotLight(
    m_modelsToLoadInfo.push_back({
          ModelType::LIGHT,
          name,
-         modelFileName,
+         folderName,
+         fileName,
          color,
          pos,
          rot,
@@ -305,26 +311,26 @@ void Renderer::createCommandPools()
 {
    // Graphics Command Pool
    {
-      m_commandPoolGraphics = std::make_shared<CommandPool>(
+      m_commandPoolForGraphics = std::make_shared<CommandPool>(
             m_device->getLogicalDevice(),
             VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             m_qfIndices.graphicsFamily.value()
       );
       
-      m_commandPoolGraphics->allocCommandBuffers(
+      m_commandPoolForGraphics->allocCommandBuffers(
             config::MAX_FRAMES_IN_FLIGHT
       );
    }
 
    // Compute Command Pool
    {
-      m_commandPoolCompute = std::make_shared<CommandPool>(
+      m_commandPoolForCompute = std::make_shared<CommandPool>(
             m_device->getLogicalDevice(),
             VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
             m_qfIndices.computeFamily.value()
       );
 
-      m_commandPoolCompute->allocCommandBuffers(1);
+      m_commandPoolForCompute->allocCommandBuffers(1);
    }
 
    // Features Command Pool
@@ -341,19 +347,6 @@ void Renderer::createCommandPools()
 
 }
 
-void Renderer::initComputations()
-{
-   m_BRDFcomp = Computation(
-         m_device->getPhysicalDevice(),
-         m_device->getLogicalDevice(),
-         "BRDF",
-         sizeof(float),
-         2 * sizeof(float) * config::BRDF_HEIGHT * config::BRDF_WIDTH,
-         m_qfIndices,
-         m_descriptorPoolComputations,
-         COMPUTE_PIPELINE::BRDF::BUFFERS_INFO
-   );
-}
 
 void Renderer::initVK()
 {
@@ -383,34 +376,27 @@ void Renderer::initVK()
 
    //------------------------------Descriptor Pools----------------------------
 
-   m_descriptorPoolGraphics = DescriptorPool(
+   m_descriptorPoolForGraphics = DescriptorPool(
          m_device->getLogicalDevice(),
          // Type of descriptors / Count of each type of descriptor in the pool.
          {
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-               // TODO: Make the size more precise.
-               1500
-               //static_cast<uint32_t> (
-               //      m_models.size() * config::MAX_FRAMES_IN_FLIGHT
-               //)
+               // framesInFlight * #allmeshes
+               m_modelsToLoadInfo.size() * config::MAX_FRAMES_IN_FLIGHT * 100
             },
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-               // TODO: Make the size more precise.
-               1500
-               //static_cast<uint32_t> (
-               //      m_models.size() * config::MAX_FRAMES_IN_FLIGHT
-               //)
+               // framesInFlight * #allTextures
+               config::MAX_FRAMES_IN_FLIGHT * 100
             }
          },
          // Descriptor SETS count.
-         // TODO: Make the size more precise.
-         1500
-         //m_models.size() * config::MAX_FRAMES_IN_FLIGHT
+         // framesInFlight * #allMeshes
+         m_modelsToLoadInfo.size() * config::MAX_FRAMES_IN_FLIGHT * 100
    );
 
-   m_descriptorPoolComputations = DescriptorPool(
+   m_descriptorPoolForComputations = DescriptorPool(
          m_device->getLogicalDevice(),
          {
             {
@@ -445,7 +431,11 @@ void Renderer::initVK()
          m_swapchain->getExtent(),
          m_msaa.getSamplesCount(),
          m_depthBuffer.getFormat(),
-         m_modelsToLoadInfo
+         m_modelsToLoadInfo,
+         // Parameters needed by the computations.
+         m_device->getPhysicalDevice(),
+         m_qfIndices,
+         m_descriptorPoolForComputations
    );
 
    //-----------------------------Secondary Features---------------------------
@@ -662,9 +652,9 @@ void Renderer::drawFrame(uint8_t& currentFrame)
             &m_scene.getSkyboxPipeline()
          },
          currentFrame,
-         m_commandPoolGraphics->getCommandBuffer(currentFrame),
+         m_commandPoolForGraphics->getCommandBuffer(currentFrame),
          m_clearValues,
-         m_commandPoolGraphics
+         m_commandPoolForGraphics
    );
    // GUI
    m_GUI->recordCommandBuffer(currentFrame,  imageIndex, m_clearValues);
@@ -673,7 +663,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
 
    std::vector<VkCommandBuffer> commandBuffersToSubmit = {
       m_shadowMap->getCommandBuffer(currentFrame),
-      m_commandPoolGraphics->getCommandBuffer(currentFrame),
+      m_commandPoolForGraphics->getCommandBuffer(currentFrame),
       m_GUI->getCommandBuffer(currentFrame)
    };
    std::vector<VkSemaphore> waitSemaphores = {
@@ -683,7 +673,7 @@ void Renderer::drawFrame(uint8_t& currentFrame)
       m_renderFinishedSemaphores[currentFrame]
    };
 
-   m_commandPoolGraphics->submitCommandBuffer(
+   m_commandPoolForGraphics->submitCommandBuffer(
          m_qfHandles.graphicsQueue,
          commandBuffersToSubmit,
          false,
@@ -771,107 +761,73 @@ void Renderer::handleInput()
    }
 }
 
+void Renderer::calculateFrames(double& lastTime, int& framesCounter)
+{
+      double currentTime = glfwGetTime();
+      framesCounter++;
+
+      // more than 1s.
+      if (currentTime - lastTime >= 1.0)
+      {
+         m_mpf = 1000.0 / double(framesCounter);
+
+         framesCounter = 0;
+         lastTime += 1.0;
+      }
+}
+
 void Renderer::mainLoop()
 {
    // Tells us in which frame we are,
    // between 1 <= frame <= MAX_FRAMES_IN_FLIGHT
    uint8_t currentFrame = 0;
+
+   double lastTime = glfwGetTime();
+   int framesCounter = 0;
+
    while (m_window->isWindowClosed() == false)
    {
-      handleInput();
 
+      calculateFrames(lastTime, framesCounter);
+
+      handleInput();
       // Draws Imgui
       m_GUI->draw(
             m_scene.getModels(),
             m_camera,
             m_scene.getObjectModelIndices(),
-            m_scene.getLightModelIndices()
+            m_scene.getLightModelIndices(),
+            m_device->getDeviceName(),
+            m_mpf,
+            m_msaa.getSamplesCount(),
+            m_device->getApiVersion()
       );
-
       drawFrame(currentFrame);
    }
    vkDeviceWaitIdle(m_device->getLogicalDevice());
 }
 
-void Renderer::loadBRDFlut()
-{
-   uint32_t bufferSize = (
-         2 * sizeof(float) *
-         config::BRDF_WIDTH *
-         config::BRDF_HEIGHT
-   );
-   float lutData[bufferSize];
-
-   m_BRDFcomp.downloadData(0, (uint8_t*)lutData, bufferSize);
-
-   gli::texture lutTexture = gli::texture2d(
-         gli::FORMAT_RG16_SFLOAT_PACK16,
-         gli::extent2d(config::BRDF_WIDTH, config::BRDF_HEIGHT),
-         1
-   );
-
-   const float* data = lutData;
-   for (int y = 0; y < config::BRDF_HEIGHT; y++)
-	{
-		for (int x = 0; x < config::BRDF_WIDTH; x++)
-		{
-			const int ofs = y * config::BRDF_HEIGHT + x;
-			const gli::vec2 value(data[ofs * 2 + 0], data[ofs * 2 + 1]);
-			const gli::texture::extent_type uv = { x, y, 0 };
-
-			lutTexture.store<glm::uint32>(uv, 0, 0, 0, gli::packHalf2x16(value));
-		}
-	}
-
-   std::string pathToTexture = (
-         std::string(SKYBOX_DIR) +
-         "Apartment"
-         //m_skybox->getTextureFolderName() +
-         "/" + 
-         "BRDFlut.ktx"
-   );
-
-   gli::save_ktx(
-         lutTexture,
-         pathToTexture
-   );
-
-   TextureToLoadInfo info = {
-            pathToTexture,
-            VK_FORMAT_R16G16_SFLOAT,
-            4
-   };
-
-   m_BRDFlut = std::make_shared<NormalTexture>(
-         m_device->getPhysicalDevice(),
-         m_device->getLogicalDevice(),
-         info,
-         VK_SAMPLE_COUNT_1_BIT,
-         m_commandPoolGraphics,
-         m_qfHandles.graphicsQueue,
-         UsageType::BRDF
-   );
-}
 
 void Renderer::doComputations()
 {
+
    std::vector<Computation> computations = {
-      m_BRDFcomp
+      m_scene.getComputation()
    };
 
    std::cout << "Doing computations.\n";
 
    const VkCommandBuffer& commandBuffer = (
-         m_commandPoolCompute->getCommandBuffer(0)
+         m_commandPoolForCompute->getCommandBuffer(0)
    );
 
    for (auto& computation : computations)
    {
       // Resets the command buffer to be able to be recorded.
-      m_commandPoolCompute->resetCommandBuffer(0);
+      m_commandPoolForCompute->resetCommandBuffer(0);
       // Specifies some details about the usage of this specific command
       // buffer.
-      m_commandPoolCompute->beginCommandBuffer(0, commandBuffer);
+      m_commandPoolForCompute->beginCommandBuffer(0, commandBuffer);
 
          computation.execute(commandBuffer);
 
@@ -897,9 +853,9 @@ void Renderer::doComputations()
                {}
          );
 
-      m_commandPoolCompute->endCommandBuffer(commandBuffer);
+      m_commandPoolForCompute->endCommandBuffer(commandBuffer);
 
-      m_commandPoolCompute->submitCommandBuffer(
+      m_commandPoolForCompute->submitCommandBuffer(
             m_qfHandles.computeQueue,
             {commandBuffer},
             true
@@ -956,11 +912,6 @@ void Renderer::cleanup()
    // Swapchain
    m_swapchain->destroy();
 
-   // Computations
-   m_BRDFcomp.destroy();
-
-   m_BRDFlut->destroy();
-
    // Scenes
    m_scene.destroy();
 
@@ -968,15 +919,15 @@ void Renderer::cleanup()
    m_shadowMap->destroy();
 
    // Descriptor Pool
-   m_descriptorPoolGraphics.destroy();
-   m_descriptorPoolComputations.destroy();
+   m_descriptorPoolForGraphics.destroy();
+   m_descriptorPoolForComputations.destroy();
 
    // Sync objects
    destroySyncObjects();
 
    // Command Pools
-   if (m_commandPoolGraphics) m_commandPoolGraphics->destroy();
-   if (m_commandPoolCompute)  m_commandPoolCompute->destroy();
+   if (m_commandPoolForGraphics) m_commandPoolForGraphics->destroy();
+   if (m_commandPoolForCompute)  m_commandPoolForCompute->destroy();
    
    // Logical Device
    vkDestroyDevice(m_device->getLogicalDevice(), nullptr);

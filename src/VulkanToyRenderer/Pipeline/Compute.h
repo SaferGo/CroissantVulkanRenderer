@@ -17,7 +17,8 @@ public:
    Compute(
          const VkDevice& logicalDevice,
          const ShaderInfo& shaderInfo,
-         const std::vector<DescriptorInfo>& bufferInfos
+         const std::vector<DescriptorInfo>& bufferInfos,
+         const std::vector<VkPushConstantRange>& pushConstantRanges
    );
    ~Compute();
 

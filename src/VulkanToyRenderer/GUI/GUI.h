@@ -37,7 +37,11 @@ public:
          const std::vector<std::shared_ptr<Model>>& models,
          const std::shared_ptr<Camera>& camera,
          const std::vector<size_t>& normalModelIndices,
-         const std::vector<size_t>& lightModelIndices
+         const std::vector<size_t>& lightModelIndices,
+         const std::string& deviceName,
+         const double mpf,
+         const VkSampleCountFlagBits samplesCount,
+         const uint32_t apiVersion
    );
    const VkCommandBuffer& getCommandBuffer(const uint32_t index) const;
    const bool isCursorPositionInGUI() const;
@@ -46,22 +50,30 @@ public:
 private:
 
       
-   void createLightsWindow(
+   void displayLightModels(
          std::vector<std::shared_ptr<Model>> models,
          const std::vector<size_t> indices
    );
+   void displayCamera(const std::shared_ptr<Camera>& camera);
    void createModelsWindow(
          std::vector<std::shared_ptr<Model>> models,
-         const std::vector<size_t> indices
+
+         const std::vector<size_t> objectIndices,
+         const std::vector<size_t> lightIndices,
+         const std::shared_ptr<Camera>& camera
+   );
+   void createProfilingWindow(
+         const std::string& deviceName,
+         const double mpf,
+         const VkSampleCountFlagBits samplesCount,
+         const uint32_t apiVersion
    );
    void createSlider(
-         const std::string& subMenuName,
-         const std::string& sliceName,
+         const std::string& subMenuName, const std::string& sliceName,
          const float& maxV,
          const float& minV,
          float& value
    );
-   void createCameraWindow(const std::shared_ptr<Camera>& camera);
    void createTransformationsInfo(
          glm::vec4& pos,
          glm::vec3& rot,

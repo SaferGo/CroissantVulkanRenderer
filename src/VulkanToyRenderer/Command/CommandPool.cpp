@@ -80,7 +80,6 @@ void CommandPool::allocCommandBuffer(
       m_commandBuffers.push_back(commandBuffer);
 }
 
-
 void CommandPool::submitCommandBuffer(
       const VkQueue& queue,
       const std::vector<VkCommandBuffer>& commandBuffers,

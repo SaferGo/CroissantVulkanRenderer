@@ -19,7 +19,6 @@ public:
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,
       const TextureToLoadInfo& textureInfo,
-      const std::string& textureFolderName,
       const VkSampleCountFlagBits& samplesCount,
       const std::shared_ptr<CommandPool>& commandPool,
       const VkQueue& graphicsQueue,

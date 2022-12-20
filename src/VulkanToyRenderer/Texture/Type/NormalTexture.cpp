@@ -1,5 +1,7 @@
 #include <VulkanToyRenderer/Texture/Type/NormalTexture.h>
 
+#include <iostream>
+
 #include <vulkan/vulkan.h>
 
 #include <VulkanToyRenderer/Texture/mipmapUtils.h>
@@ -36,7 +38,11 @@ NormalTexture::NormalTexture(
 
    if (usage == UsageType::TO_COLOR)
    {
-      pathToTexture = std::string(MODEL_DIR) + textureInfo.name;
+      pathToTexture = (
+            std::string(MODEL_DIR) +
+            textureInfo.folderName + "/" +
+            textureInfo.name
+      );
 
       pixels = stbi_load(
             pathToTexture.c_str(),
@@ -61,7 +67,11 @@ NormalTexture::NormalTexture(
    } else if (usage == UsageType::BRDF)
    {
 
-      pathToTexture = textureInfo.name;
+      pathToTexture = (
+            std::string(SKYBOX_DIR) +
+            textureInfo.folderName + "/" +
+            textureInfo.name
+      );
 
       gli::texture pixelsTmp = gli::load_ktx(pathToTexture.c_str());
       glm::tvec3<uint32_t> extent(pixelsTmp.extent(0));

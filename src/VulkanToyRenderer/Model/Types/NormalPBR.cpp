@@ -12,13 +12,20 @@
 NormalPBR::NormalPBR(const ModelInfo& modelInfo)
    : Model(
       modelInfo.name,
+      modelInfo.folderName,
       ModelType::NORMAL_PBR,
       glm::fvec4(modelInfo.pos, 1.0f),
       modelInfo.rot,
       modelInfo.size
    )
 {
-   loadModel((std::string(MODEL_DIR) + modelInfo.modelFileName).c_str());
+   loadModel(
+         (
+            std::string(MODEL_DIR) +
+            modelInfo.folderName + "/" +
+            modelInfo.fileName
+         ).c_str()
+   );
 }
 
 NormalPBR::~NormalPBR() {}
@@ -54,11 +61,12 @@ void NormalPBR::destroy(const VkDevice& logicalDevice)
    }
 }
 
-std::string NormalPBR::getMaterialTextureName(
+void NormalPBR::getMaterialTextureInfo(
       aiMaterial* material,
       const aiTextureType& type,
       const std::string& typeName,
-      const std::string& defaultTextureFile
+      const std::string& defaultTextureFile,
+      TextureToLoadInfo& info
 ) {
    if (material->GetTextureCount(type) > 0)
    {
@@ -66,16 +74,26 @@ std::string NormalPBR::getMaterialTextureName(
       material->GetTexture(type, 0, &str);
 
       if (typeName == "NORMALS")
-         m_hasNormalMap = true;
+         m_dataInShader.hasNormalMap = 1;
 
-      return str.C_Str();
+      if (typeName == "METALIC_ROUGHNESS")
+         m_dataInShader.hasMetallicRoughnessMap = 1;
+
+      info.folderName = m_folderName;
+
+      info.name = str.C_Str();
 
    } else
    {
       if (typeName == "NORMALS")
-         m_hasNormalMap = false;
+         m_dataInShader.hasNormalMap = 0;
 
-      return defaultTextureFile;
+      if (typeName == "METALIC_ROUGHNESS")
+         m_dataInShader.hasMetallicRoughnessMap = 0;
+
+      info.folderName = "/defaultTextures";
+
+      info.name = defaultTextureFile;
    }
 }
 
@@ -149,6 +167,19 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
 
       aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 
+      // Roughness and metallic factor.
+      aiGetMaterialFloat(
+            material,
+            AI_MATKEY_METALLIC_FACTOR,
+            &m_dataInShader.metallicFactor
+      );
+      aiGetMaterialFloat(
+            material,
+            AI_MATKEY_ROUGHNESS_FACTOR,
+            &m_dataInShader.roughnessFactor
+      );
+
+      // Material Textures
       struct materialInfo
       {
          aiTextureType type;
@@ -163,35 +194,35 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
          {
             aiTextureType_DIFFUSE,
             "DIFFUSE",
-            "textures/default/baseColor.png",
+            "baseColor.png",
             VK_FORMAT_R8G8B8A8_SRGB,
             4
          },
          {
             aiTextureType_UNKNOWN,
             "METALIC_ROUGHNESS",
-            "textures/default/metallicRoughness.png",
+            "metallicRoughness.png",
             VK_FORMAT_R8G8B8A8_SRGB,
             4
          },
          {
             aiTextureType_EMISSIVE,
             "EMISSIVE",
-            "textures/default/emissiveColor.png",
+            "emissiveColor.png",
             VK_FORMAT_R8G8B8A8_SRGB,
             4
          },
          {
             aiTextureType_LIGHTMAP,
             "AO",
-            "textures/default/ambientOcclusion.png",
+            "ambientOcclusion.png",
             VK_FORMAT_R8G8B8A8_SRGB,
             4
          },
          {
             aiTextureType_NORMALS,
             "NORMALS",
-            "textures/default/baseColor.png",
+            "baseColor.png",
             VK_FORMAT_R8G8B8A8_UNORM,
             4
          }
@@ -201,11 +232,12 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
       TextureToLoadInfo info;
       for (auto& m : materials)
       {
-         info.name = getMaterialTextureName(
+         getMaterialTextureInfo(
                material,
                m.type,
                m.typeName,
-               m.defaultTextureFile
+               m.defaultTextureFile,
+               info
          );
 
          info.format = m.format;
@@ -310,11 +342,10 @@ void NormalPBR::createDescriptorSets(
             GRAPHICS_PIPELINE::PBR::UBOS_INFO,
             GRAPHICS_PIPELINE::PBR::SAMPLERS_INFO,
             mesh.textures,
-            opUBOs,
             descriptorSetLayout,
             descriptorPool,
-            // TODO: Improve this
-            info
+            info,
+            opUBOs
       );
    }
 
@@ -426,7 +457,6 @@ void NormalPBR::updateUBO(
 
    m_dataInShader.cameraPos = uboInfo.cameraPos;
    m_dataInShader.lightsCount = uboInfo.lightsCount;
-   m_dataInShader.hasNormalMap = m_hasNormalMap;
 
    size_t size = sizeof(m_dataInShader);
    UBOutils::updateUBO(

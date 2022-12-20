@@ -43,20 +43,13 @@ public:
    ) override;
 
    const std::string& getTextureFolderName() const;
-   const Texture& getEnvMap() const;
-   const Texture& getIrradianceMap() const;
+   const std::shared_ptr<Texture>& getEnvMap() const;
+   const std::shared_ptr<Texture>& getIrradianceMap() const;
+   const std::vector<Mesh<Attributes::SKYBOX::Vertex>>& getMeshes() const;
 
 private:
 
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
-   void loadIrradianceMap(
-         const VkPhysicalDevice& physicalDevice,
-         const VkDevice& logicalDevice,
-         const TextureToLoadInfo& textureInfo,
-         const VkSampleCountFlagBits& samplesCount,
-         const std::shared_ptr<CommandPool>& commandPool,
-         const VkQueue& graphicsQueue
-   );
    void uploadVertexData(
       const VkPhysicalDevice& physicalDevice,
       const VkDevice& logicalDevice,

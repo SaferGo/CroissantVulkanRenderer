@@ -80,8 +80,17 @@ namespace GRAPHICS_PIPELINE
          },
          {
             // BRDF lut
-            // (IMPORTANT: Always leave it positioned before the shadow map)
+            // (IMPORTANT: Always leave it positioned before the pref. env. map)
             9,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            (VkShaderStageFlagBits)(
+                  VK_SHADER_STAGE_FRAGMENT_BIT
+            )
+         },
+         {
+            // Prefiltered env. map 
+            // (IMPORTANT: Always leave it positioned before the shadowMap)
+            10,
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             (VkShaderStageFlagBits)(
                   VK_SHADER_STAGE_FRAGMENT_BIT
@@ -90,7 +99,7 @@ namespace GRAPHICS_PIPELINE
          // Shadow Map
          // (IMPORTANT: Always leave it as the last sampler)
          {
-            10,
+            11,
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
             (VkShaderStageFlagBits)(
                   VK_SHADER_STAGE_FRAGMENT_BIT
@@ -98,8 +107,8 @@ namespace GRAPHICS_PIPELINE
          }
       };
 
-      // We don't count the shadow , env., BRDF and irradiance map.
-      inline const uint32_t TEXTURES_PER_MESH_COUNT = SAMPLERS_INFO.size() - 4;
+      // We don't count the shadow , BRDF, prefilteredEnvMap and irradiance map.
+      inline const uint32_t TEXTURES_PER_MESH_COUNT = SAMPLERS_INFO.size() - 5;
       //inline const uint32_t TEXTURES_PER_MESH_COUNT = SAMPLERS_INFO.size() - 3;
       inline const uint32_t SAMPLERS_PER_MESH_COUNT = SAMPLERS_INFO.size();
       inline const uint32_t UBOS_PER_MESH_COUNT = UBOS_INFO.size();
@@ -183,5 +192,20 @@ namespace GRAPHICS_PIPELINE
       inline const uint32_t SAMPLERS_COUNT = 0;
    };
 
+   namespace PREFILTER_ENV_MAP
+   {
+      inline const std::vector<DescriptorInfo> SAMPLERS_INFO = {
+         {
+            0,
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            (VkShaderStageFlagBits)(
+                  VK_SHADER_STAGE_FRAGMENT_BIT
+            )
+         }
+      };
+ 
+      inline const uint32_t UBOS_COUNT = 0;
+      inline const uint32_t SAMPLERS_COUNT = SAMPLERS_INFO.size();
+   };
 
 };

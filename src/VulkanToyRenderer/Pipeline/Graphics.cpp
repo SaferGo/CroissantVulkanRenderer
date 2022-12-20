@@ -26,7 +26,8 @@ Graphics::Graphics(
       std::vector<VkVertexInputAttributeDescription> vertexAttribDescriptions,
       const std::vector<size_t>& modelIndices,
       const std::vector<DescriptorInfo>& uboInfo,
-      const std::vector<DescriptorInfo>& samplersInfo
+      const std::vector<DescriptorInfo>& samplersInfo,
+      const std::vector<VkPushConstantRange>& pushConstantRanges
 ) : Pipeline(logicalDevice, PipelineType::GRAPHICS),
     m_gType(type),
     m_modelIndices(modelIndices)
@@ -122,7 +123,7 @@ Graphics::Graphics(
    createColorBlendingGlobalInfo(colorBlendAttachment, colorBlendingInfo);
    
    // Pipeline layout
-   createPipelineLayout(m_descriptorSetLayout);
+   createPipelineLayout(m_descriptorSetLayout, pushConstantRanges);
 
    // Depth and stencil
    VkPipelineDepthStencilStateCreateInfo depthStencil{};
@@ -326,8 +327,12 @@ void Graphics::createRasterizerInfo(
    if (m_gType == GraphicsPipelineType::SKYBOX)
    {
       rasterizerInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
-   }
-   else
+
+   } else if (m_gType == GraphicsPipelineType::PREFILTER_ENV_MAP)
+   {
+      rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
+
+   } else
       rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 
    rasterizerInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;

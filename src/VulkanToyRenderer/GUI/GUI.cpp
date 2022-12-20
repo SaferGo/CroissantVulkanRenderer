@@ -1,5 +1,6 @@
 #include <VulkanToyRenderer/GUI/GUI.h>
 
+#include <iostream>
 #include <string>
 #include <cstring>
 
@@ -333,102 +334,191 @@ void GUI::draw(
       const std::vector<std::shared_ptr<Model>>& models,
       const std::shared_ptr<Camera>& camera,
       const std::vector<size_t>& normalModelIndices,
-      const std::vector<size_t>& lightModelIndices
+      const std::vector<size_t>& lightModelIndices,
+      const std::string& deviceName,
+      const double mpf,
+      const VkSampleCountFlagBits samplesCount,
+      const uint32_t apiVersion
 ) {
 
    ImGui_ImplVulkan_NewFrame();
    ImGui_ImplGlfw_NewFrame();
    ImGui::NewFrame();
 
-      createModelsWindow(models, normalModelIndices);
-      createLightsWindow(models, lightModelIndices);
-      createCameraWindow(camera);
+      float sizeX, sizeY, paddingY;
+
+      {
+         sizeX = float(ImGui::GetIO().DisplaySize.x) * 0.2f;
+         sizeY = float(ImGui::GetIO().DisplaySize.y) * 0.2f;
+         paddingY = 0.05f;
+         ImGui::SetNextWindowSize(
+               ImVec2(sizeX, sizeY),
+               ImGuiCond_Always
+         );
+         ImGui::SetNextWindowPos(
+               ImVec2(
+                  ImGui::GetIO().DisplaySize.x,
+                  0.0f
+               ),
+               ImGuiCond_Always,
+               ImVec2(1.0f, 0.0f)
+         );
+         createProfilingWindow(deviceName, mpf, samplesCount, apiVersion);
+      }
+      {
+         sizeX = float(ImGui::GetIO().DisplaySize.x) * 0.2f;
+         sizeY = float(ImGui::GetIO().DisplaySize.y);
+         paddingY = 0.05f;
+         ImGui::SetNextWindowSize(
+               ImVec2(sizeX, sizeY),
+               ImGuiCond_Always
+         );
+         ImGui::SetNextWindowPos(
+               ImVec2(
+                  sizeX,
+                  paddingY
+               ),
+               ImGuiCond_Always,
+               ImVec2(1.0f, 0.0f)
+         );
+         createModelsWindow(
+               models,
+               normalModelIndices,
+               lightModelIndices,
+               camera
+         );
+      }
 
    ImGui::Render();
 }
 
-void GUI::createLightsWindow(
+void GUI::createProfilingWindow(
+      const std::string& deviceName,
+      const double mpf,
+      const VkSampleCountFlagBits samplesCount,
+      const uint32_t apiVersion
+) {
+   ImGui::Begin(
+         "Profiling",
+         NULL,
+         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+   );
+ 
+      ImGui::Columns(2);
+
+      ImGui::Text("GPU: ");
+      ImGui::NextColumn();
+      ImGui::Text(deviceName.c_str());
+      ImGui::NextColumn();
+      ImGui::Separator();
+
+      ImGui::Text("Vulkan: ");
+      ImGui::NextColumn();
+      ImGui::Text(
+            (
+               std::to_string(VK_VERSION_MAJOR(apiVersion)) + "." +
+               std::to_string(VK_VERSION_MINOR(apiVersion)) + "." +
+               std::to_string(VK_VERSION_PATCH(apiVersion))
+            ).c_str()
+      );
+      ImGui::NextColumn();
+      ImGui::Separator();
+
+      ImGui::Text(("Ms/frame: "));
+      ImGui::NextColumn();
+      ImGui::Text(std::to_string(mpf).c_str());
+      ImGui::NextColumn();
+      ImGui::Separator();
+
+      ImGui::Text(("MSAA: "));
+      ImGui::NextColumn();
+      ImGui::Text(std::string(std::to_string(samplesCount) + "x").c_str());
+      ImGui::NextColumn();
+      ImGui::Separator();
+
+   ImGui::End();
+
+}
+
+void GUI::displayLightModels(
       std::vector<std::shared_ptr<Model>> models,
       const std::vector<size_t> indices
 ) {
-   ImGui::Begin("Lights");
 
-      for (const size_t& j : indices)
-      {
-         if (auto model =
-             std::dynamic_pointer_cast<Light>(models[j])
-         ) {
-            const std::string modelName = model.get()->getName();
-            std::string subMenuName;
-            std::string sliderName;
-
-            glm::fvec4 newPos = model.get()->getPos();
-            glm::fvec3 newRot = model.get()->getRot();
-            glm::fvec3 newSize = model.get()->getSize();
-            glm::fvec4 color = model.get()->getColor();
-            float intensity = model.get()->getIntensity();
-            bool isHided = model.get()->isHided();
-
-            if (ImGui::TreeNode(modelName.c_str()))
+   for (const size_t& j : indices)
+   {
+      if (auto model =
+          std::dynamic_pointer_cast<Light>(models[j])
+      ) {
+         const std::string modelName = model.get()->getName();
+         std::string subMenuName;
+         std::string sliderName;
+   
+         glm::fvec4 newPos = model.get()->getPos();
+         glm::fvec3 newRot = model.get()->getRot();
+         glm::fvec3 newSize = model.get()->getSize();
+         glm::fvec4 color = model.get()->getColor();
+         float intensity = model.get()->getIntensity();
+         bool isHided = model.get()->isHided();
+   
+         if (ImGui::TreeNode(modelName.c_str()))
+         {
+            ImGui::ColorEdit4(
+               ("Color###" + modelName).c_str(),
+               &(color.x)
+            );
+   
+            ImGui::Checkbox("Hide", &isHided);
+   
+            createTransformationsInfo(
+                  newPos,
+                  newRot,
+                  newSize,
+                  modelName
+            );
+   
+            if (model.get()->getLightType() != LightType::POINT_LIGHT)
             {
-               ImGui::ColorEdit4(
-                  ("Color###" + modelName).c_str(),
-                  &(color.x)
+               glm::fvec4 targetPos = model.get()->getTargetPos();
+   
+               // Target's position.
+               createTranslationSliders(
+                     modelName,
+                     "Target Pos.",
+                     targetPos,
+                     -100.0f,
+                     100.0f
                );
-
-	            ImGui::Checkbox("Hide", &isHided);
-
-               createTransformationsInfo(
-                     newPos,
-                     newRot,
-                     newSize,
-                     modelName
-               );
-
-               if (model.get()->getLightType() != LightType::POINT_LIGHT)
-               {
-                  glm::fvec4 targetPos = model.get()->getTargetPos();
-
-                  // Target's position.
-                  createTranslationSliders(
-                        modelName,
-                        "Target Pos.",
-                        targetPos,
-                        -100.0f,
-                        100.0f
-                  );
-
-                  model.get()->setTargetPos(targetPos);
-               }
-
-               // Intensity
-               subMenuName = (
-                     "Intensity###LightProperty::Intensity" + modelName
-               );
-               sliderName = (
-                     "###Intensity::" + modelName
-               );
-               createSlider(
-                     subMenuName,
-                     sliderName,
-                     100.0f,
-                     0.0f,
-                     intensity
-               );
-
-               ImGui::TreePop();
-               ImGui::Separator();
-           }
-           model.get()->setPos(newPos);
-           model.get()->setRot(newRot);
-           model.get()->setSize(newSize);
-           model.get()->setIntensity(intensity);
-           model.get()->setColor(color);
-           model.get()->setHideStatus(isHided);
-         }
+   
+               model.get()->setTargetPos(targetPos);
+            }
+   
+            // Intensity
+            subMenuName = (
+                  "Intensity###LightProperty::Intensity" + modelName
+            );
+            sliderName = (
+                  "###Intensity::" + modelName
+            );
+            createSlider(
+                  subMenuName,
+                  sliderName,
+                  100.0f,
+                  0.0f,
+                  intensity
+            );
+   
+            ImGui::TreePop();
+            ImGui::Separator();
+        }
+        model.get()->setPos(newPos);
+        model.get()->setRot(newRot);
+        model.get()->setSize(newSize);
+        model.get()->setIntensity(intensity);
+        model.get()->setColor(color);
+        model.get()->setHideStatus(isHided);
       }
-
-   ImGui::End();
+   }
 }
 
 void GUI::createSlider(
@@ -454,13 +544,20 @@ void GUI::createSlider(
 
 void GUI::createModelsWindow(
       std::vector<std::shared_ptr<Model>> models,
-      const std::vector<size_t> indices
+      const std::vector<size_t> objectIndices,
+      const std::vector<size_t> lightIndices,
+      const std::shared_ptr<Camera>& camera
 ) {
-   ImGui::Begin("Models");
-   
-      for (const size_t& j : indices)
+   ImGui::Begin(
+         "Models",
+         NULL,
+         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+   );
+ 
+      ImGui::Text("Objects");
+      ImGui::Separator();  
+      for (const size_t& j : objectIndices)
       {
-         // TODO: update to accept more models.
          if (auto model = std::dynamic_pointer_cast<NormalPBR>(models[j]))
          {
             const std::string modelName = model.get()->getName();
@@ -491,6 +588,14 @@ void GUI::createModelsWindow(
             model.get()->setHideStatus(isHided);
          }
       }
+
+      ImGui::Text("Lights");
+      ImGui::Separator();
+      displayLightModels(models, lightIndices);
+
+      ImGui::Text("Camera");
+      ImGui::Separator();
+      displayCamera(camera);
 
    ImGui::End();
 }
@@ -634,12 +739,15 @@ void GUI::createTransformationsInfo(
    );
 }
 
-void GUI::createCameraWindow(const std::shared_ptr<Camera>& camera)
+void GUI::displayCamera(const std::shared_ptr<Camera>& camera)
 {
    glm::fvec4 cameraPos = camera->getPos();
    glm::fvec4 targetPos = camera->getTargetPos();
 
-   ImGui::Begin("Camera");
+
+   // TODO: Name based on the camera type.
+   if (ImGui::TreeNode("Arcball"))
+   {
       // Moves the camera.
       createTranslationSliders(
             "Camera",
@@ -657,7 +765,8 @@ void GUI::createCameraWindow(const std::shared_ptr<Camera>& camera)
             100.0f
       );
 
-   ImGui::End();
+      ImGui::TreePop();
+   }
 
    camera->setPos(cameraPos);
    camera->setTargetPos(targetPos);

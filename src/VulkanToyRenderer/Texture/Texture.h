@@ -25,15 +25,16 @@ enum UsageType
 {
    // It's just used to color meshes.
    // (this is the most common one).
-   TO_COLOR          = 0,
-   ENVIRONMENTAL_MAP = 1,
-   IRRADIANCE_MAP    = 2,
-   BRDF              = 3
+   TO_COLOR            = 0,
+   ENVIRONMENTAL_MAP   = 1,
+   IRRADIANCE_MAP      = 2,
+   BRDF                = 3
 };
 
 struct TextureToLoadInfo
 {
    std::string name;
+   std::string folderName;
    VkFormat    format;
    int         desiredChannels;
 };

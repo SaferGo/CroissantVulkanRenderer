@@ -16,6 +16,7 @@ struct DescriptorSetInfo
    const Texture*               BRDFlut;
    const VkImageView*           shadowMapView;
    const VkSampler*             shadowMapSampler;
+   const Image*                 prefilteredEnvMap;
 };
 
 class DescriptorSets
@@ -29,10 +30,10 @@ public:
          const std::vector<DescriptorInfo>& bindingUBOs,
          const std::vector<DescriptorInfo>& bindingSamplers,
          const std::vector<std::shared_ptr<Texture>>& textures,
-         std::vector<UBO*>& UBOs,
          const VkDescriptorSetLayout& descriptorSetLayout,
          DescriptorPool& descriptorPool,
-         DescriptorSetInfo* additionalTextures = nullptr
+         DescriptorSetInfo* additionalTextures = nullptr,
+         const std::vector<UBO*>& UBOs = {}
    );
    DescriptorSets(
       const VkDevice logicalDevice,

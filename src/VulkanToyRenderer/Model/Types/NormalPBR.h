@@ -46,11 +46,12 @@ public:
 private:
 
    void processMesh(aiMesh* mesh, const aiScene* scene) override;
-   std::string getMaterialTextureName(
+   void getMaterialTextureInfo(
       aiMaterial* material,
       const aiTextureType& type,
       const std::string& typeName,
-      const std::string& defaultTextureFile
+      const std::string& defaultTextureFile,
+      TextureToLoadInfo& info
    );
    void uploadVertexData(
          const VkPhysicalDevice& physicalDevice,
@@ -72,7 +73,6 @@ private:
    ) override;
 
    std::shared_ptr<UBO> m_uboLights;
-   bool                 m_hasNormalMap;
 
    DescriptorTypes::UniformBufferObject::NormalPBR m_dataInShader;
    DescriptorTypes::UniformBufferObject::LightInfo m_lightsInfo[config::LIGHTS_COUNT];

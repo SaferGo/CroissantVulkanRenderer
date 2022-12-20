@@ -55,17 +55,16 @@ void Pipeline::createShaderModule(
  * values and push constants in the shaders.
 */
 void Pipeline::createPipelineLayout(
-      const VkDescriptorSetLayout& descriptorSetLayout
+      const VkDescriptorSetLayout& descriptorSetLayout,
+      const std::vector<VkPushConstantRange>& pushConstantRanges
 ) {
    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
    // In this case we gonna bind the descriptor layout.
    pipelineLayoutInfo.setLayoutCount= 1;
    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-   // Optional
-   pipelineLayoutInfo.pushConstantRangeCount = 0;
-   // Optional
-   pipelineLayoutInfo.pPushConstantRanges = nullptr;
+   pipelineLayoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+   pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
 
    auto status = vkCreatePipelineLayout(
          m_logicalDevice,

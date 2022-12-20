@@ -21,6 +21,8 @@ public:
 
    const VkDevice& getLogicalDevice() const;
    const VkPhysicalDevice& getPhysicalDevice() const;
+   const std::string& getDeviceName() const;
+   const uint32_t& getApiVersion() const;
    const SwapchainSupportedProperties& getSupportedProperties() const;
 
 private:
@@ -54,6 +56,8 @@ private:
 
    VkPhysicalDevice               m_physicalDevice;
    VkDevice                       m_logicalDevice;
+   std::string                    m_deviceName;
+   uint32_t                       m_apiVersion;
    SwapchainSupportedProperties   m_supportedProperties;
    const std::vector<const char*> m_requiredExtensions = {
          VK_KHR_SWAPCHAIN_EXTENSION_NAME

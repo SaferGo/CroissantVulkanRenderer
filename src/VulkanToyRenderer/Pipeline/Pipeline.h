@@ -58,7 +58,8 @@ protected:
       VkShaderModule& shaderModule
    );
    void createPipelineLayout(
-         const VkDescriptorSetLayout& descriptorSetLayout
+         const VkDescriptorSetLayout& descriptorSetLayout,
+         const std::vector<VkPushConstantRange>& pushConstantRanges
    );
 
    PipelineType            m_type;

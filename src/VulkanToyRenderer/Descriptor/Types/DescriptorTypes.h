@@ -26,7 +26,11 @@ namespace DescriptorTypes
          glm::mat4 lightSpace;
          glm::vec4 cameraPos;
          int lightsCount;
-         bool hasNormalMap;
+         // TODO: Wrap this data in a diff. UBO called Material.
+         float metallicFactor;
+         float roughnessFactor;
+         int hasNormalMap;
+         int hasMetallicRoughnessMap;
       };
 
       struct alignas(16) Light

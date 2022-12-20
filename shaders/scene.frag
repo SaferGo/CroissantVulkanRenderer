@@ -8,7 +8,11 @@ layout(std140, binding = 0) uniform UniformBufferObject
    mat4 lightSpace;
    vec4 cameraPos;
    int  lightsCount;
-   bool hasNormalMap;
+   // TODO: Wrap this data in a diff. UBO called Material.
+   float metallicFactor;
+   float roughnessFactor;
+   int hasNormalMap;
+   int hasMetallicRoughnessMap;
 
 } ubo;
 
@@ -34,12 +38,13 @@ layout(binding = 4) uniform sampler2D   emissiveColorSampler;
 layout(binding = 5) uniform sampler2D   AOsampler;
 layout(binding = 6) uniform sampler2D   normalSampler;
 
-// PBR Samplers
+// IBL Samplers
 layout(binding = 7) uniform samplerCube envMapSampler;
 layout(binding = 8) uniform samplerCube irradianceMapSampler;
 layout(binding = 9) uniform sampler2D   BRDFlutSampler;
+layout(binding = 10) uniform samplerCube prefilteredEnvMapSampler;
 
-layout(binding = 10) uniform sampler2D   shadowMapSampler;
+layout(binding = 11) uniform sampler2D   shadowMapSampler;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
@@ -71,10 +76,16 @@ struct PBRinfo
 	float VdotH;
    // Roughness value, as authored by the model creator.
    float perceptualRoughness;
+   // Roughness mapped to a more linear value.
+   float alphaRoughness;
    // color contribution from diffuse lighting.
 	vec3 diffuseColor;    
    // color contribution from specular lighting.
 	vec3 specularColor;
+   // full reflectance color(normal incidence angle)
+   vec3 reflectance0;
+   // reflectance color at grazing angle
+   vec3 reflectance90;
 };
 
 struct IBLinfo
@@ -89,9 +100,8 @@ const float PI = 3.14159265359;
 
 //////////////////////////////////////PBR//////////////////////////////////////
 float distributionGGX(float nDotH, float rough);
-float geometrySchlickGGX(float nDotV, float rough);
-float geometrySmith(float nDotV, float nDotL, float rough);
-vec3 fresnelSchlick(float cosTheta, vec3 F0);
+float geometricOcclusion(PBRinfo pbrInfo);
+vec3 fresnelSchlick(PBRinfo pbrInfo);
 ///////////////////////////////////////////////////////////////////////////////
 
 vec3 calculateNormal();
@@ -119,10 +129,7 @@ vec3 calculateSpotLight(
 float filterPCF(vec4 shadowCoords);
 float calculateShadow(vec4 shadowCoords, vec2 off);
 vec3 uncharted2Tonemap(vec3 color);
-vec4 tonemap(vec4 color);
-vec4 SRGBtoLINEAR(vec4 srgb);
-vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo);
-float exposure = 10.0;
+vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo, Material material);
 float ambient = 0.3;
 
 void main()
@@ -130,17 +137,26 @@ void main()
    vec3 normal = calculateNormal();
    vec3 view = normalize(vec3(ubo.cameraPos) - inPosition);
    vec3 reflection = -normalize(reflect(view, normal));
+   reflection.y *= -1.0f;
 
    Material material;
    {
+
       material.albedo = texture(baseColorSampler, inTexCoord).rgb;
       
-      material.metallicFactor = texture(
-            metallicRoughnessSampler, inTexCoord
-      ).b;
-      material.roughnessFactor = texture(
-            metallicRoughnessSampler, inTexCoord
-      ).g;
+      if (ubo.hasMetallicRoughnessMap == 1)
+      {
+         material.metallicFactor = texture(
+               metallicRoughnessSampler, inTexCoord
+         ).b;
+         material.roughnessFactor = texture(
+               metallicRoughnessSampler, inTexCoord
+         ).g;
+      } else
+      {
+         material.metallicFactor = clamp(ubo.metallicFactor, 0.0, 1.0);
+         material.roughnessFactor = clamp(ubo.roughnessFactor, 0.04, 1.0);
+      }
 
       material.AO = texture(AOsampler, inTexCoord).r;
       material.AO = (material.AO < 0.01) ? 1.0 : material.AO;
@@ -161,23 +177,28 @@ void main()
             material.metallicFactor
       );
 
-      pbrInfo.perceptualRoughness = clamp(
-            material.roughnessFactor,
-            // Min Roughness
-            0.04,
-            1.0
+      pbrInfo.perceptualRoughness = clamp(material.roughnessFactor, 0.04, 1.0);
+      pbrInfo.alphaRoughness = (
+            pbrInfo.perceptualRoughness * pbrInfo.perceptualRoughness
       );
+
+      // Reflectance
+      float reflectance = max(
+            max(pbrInfo.specularColor.r, pbrInfo.specularColor.g),
+            pbrInfo.specularColor.b
+      );
+      // - For typical incident reflectance range (between 4% to 100%) set the
+      // grazing reflectance to 100% for typical fresnel effect.
+	   // - For very low reflectance range on highly diffuse objects (below 4%),
+      // incrementally reduce grazing reflecance to 0%.
+      pbrInfo.reflectance0 = pbrInfo.specularColor.rgb;
+      pbrInfo.reflectance90 = vec3(clamp(reflectance * 25.0, 0.0, 1.0));
    }
 
    IBLinfo iblInfo;
    {
       // HDR textures are already linear
-      iblInfo.diffuseLight = texture(
-         irradianceMapSampler,
-         normal
-         // converts cubemap coords to Vulkan coordinate space
-         //normal * vec3(-1.0, -1.0, 1.0)
-      ).rgb;
+      iblInfo.diffuseLight = texture(irradianceMapSampler, normal).rgb;
 
       vec2 brdfSamplePoint = clamp(
             vec2(
@@ -188,7 +209,7 @@ void main()
             vec2(1.0)
       );
 
-      float mipCount = float(textureQueryLevels(envMapSampler));
+      float mipCount = float(textureQueryLevels(prefilteredEnvMapSampler));
       float lod = pbrInfo.perceptualRoughness * mipCount;
       iblInfo.brdf = textureLod(
             BRDFlutSampler,
@@ -197,14 +218,14 @@ void main()
       ).rgb;
       
       iblInfo.specularLight = textureLod(
-            envMapSampler,
+            prefilteredEnvMapSampler,
             reflection.xyz,
             lod
       ).rgb;
    }
 
 
-   vec3 color = getIBLcontribution(pbrInfo, iblInfo);
+   vec3 color = getIBLcontribution(pbrInfo, iblInfo, material);
    for (int i = 0; i < ubo.lightsCount; i++)
    {
 
@@ -252,7 +273,7 @@ void main()
    outColor = ambient * vec4(color, 1.0);
 }
 
-vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo)
+vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo, Material material)
 {
 
    vec3 diffuse = iblInfo.diffuseLight * pbrInfo.diffuseColor;
@@ -280,32 +301,11 @@ vec3 uncharted2Tonemap(vec3 color)
    ) - E / F;
 }
 
-vec4 tonemap(vec4 color)
-{
-   vec3 newColor = uncharted2Tonemap(color.rgb * exposure);
-   newColor *= (1.0f / uncharted2Tonemap(vec3(11.2f)));
-
-   return vec4(
-         pow(
-            newColor,
-            vec3(1.0f / 2.2)
-         ),
-         color.a
-   );
-}
-
-vec4 SRGBtoLINEAR(vec4 srgb)
-{
-	vec3 linOut = pow(srgb.xyz,vec3(2.2));
-
-	return vec4(linOut,srgb.w);;
-}
-
 vec3 calculateNormal()
 {
    mat3 TBN = mat3(inTangent, inBitangent, inNormal);
 
-   if (ubo.hasNormalMap)
+   if (ubo.hasNormalMap == 1)
    {
       return normalize(
             TBN * (texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0)
@@ -377,13 +377,9 @@ vec3 calculateDirLight(
    vec3 inRadiance = lights[i].intensity * lights[i].color.rbg;
 
    // Cook-torrance brdf
-   vec3 F = fresnelSchlick(pbrInfo.VdotH, pbrInfo.specularColor);
+   vec3 F = fresnelSchlick(pbrInfo);
    float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
-   float G = geometrySmith(
-         pbrInfo.NdotV,
-         pbrInfo.NdotL,
-         material.roughnessFactor
-   );
+   float G = geometricOcclusion(pbrInfo);
 
    // Specular and Diffuse
    vec3 kS = F;
@@ -393,7 +389,7 @@ vec3 calculateDirLight(
    vec3 numerator = D * G * F;
    float denominator = 4.0 * pbrInfo.NdotV * pbrInfo.NdotL;
 
-   vec3 diffuse = kD * (material.albedo / PI);
+   vec3 diffuse = kD * (pbrInfo.diffuseColor / PI);
    vec3 specular = numerator / max(denominator, 0.0001);
 
    return (
@@ -425,13 +421,9 @@ vec3 calculatePointLight(
    vec3 inRadiance = lights[i].intensity * lights[i].color.rgb;
 
    // Cook-torrance brdf
-   vec3 F = fresnelSchlick(pbrInfo.VdotH, pbrInfo.specularColor);
+   vec3 F = fresnelSchlick(pbrInfo);
    float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
-   float G = geometrySmith(
-         pbrInfo.NdotV,
-         pbrInfo.NdotL,
-         material.roughnessFactor
-   );
+   float G = geometricOcclusion(pbrInfo);
 
    // Specular and Diffuse
    vec3 kS = F;
@@ -441,7 +433,7 @@ vec3 calculatePointLight(
    vec3 numerator = D * G * F;
    float denominator = 4.0 * pbrInfo.NdotV * pbrInfo.NdotL;
 
-   vec3 diffuse = kD * (material.albedo / PI);
+   vec3 diffuse = kD * (pbrInfo.diffuseColor / PI);
    vec3 specular = numerator / max(denominator, 0.0001);
 
    // TODO: Make these const. adjustable by the GUI.
@@ -492,13 +484,9 @@ vec3 calculateSpotLight(
    vec3 inRadiance = lights[i].intensity * lights[i].color.rgb;
 
    // Cook-torrance brdf
-   vec3 F = fresnelSchlick(pbrInfo.VdotH, pbrInfo.specularColor);
+   vec3 F = fresnelSchlick(pbrInfo);
    float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
-   float G = geometrySmith(
-         pbrInfo.NdotV,
-         pbrInfo.NdotL,
-         material.roughnessFactor
-   );
+   float G = geometricOcclusion(pbrInfo);
 
    // Specular and Diffuse
    vec3 kS = F;
@@ -508,7 +496,7 @@ vec3 calculateSpotLight(
    vec3 numerator = D * G * F;
    float denominator = 4.0 * pbrInfo.NdotV * pbrInfo.NdotL;
 
-   vec3 diffuse = kD * (material.albedo / PI) * intensity;
+   vec3 diffuse = kD * (pbrInfo.diffuseColor / PI) * intensity;
    vec3 specular = numerator / max(denominator, 0.0001) * intensity;
 
    // TODO: Make these const. adjustable by the GUI.
@@ -530,84 +518,6 @@ vec3 calculateSpotLight(
    return (attenuation * (diffuse + specular) * inRadiance * pbrInfo.NdotL);
 }
 
-//vec3 calculateSpotLight(
-//      int i,
-//      vec3 normal,
-//      vec3 view,
-//      Material material,
-//      PBRinfo pbrInfo
-//) {
-//
-//
-//   // Fills the data left for PBR
-//   vec3 lightDir = normalize(vec3(lights[i].pos) - inPosition);
-//   vec3 halfway = normalize(view + lightDir);
-//
-//   {
-//      pbrInfo.NdotL = max(dot(normal, lightDir), 0.0);
-//      pbrInfo.NdotH = max(dot(normal, halfway), 0.0);
-//      pbrInfo.VdotH = max(dot(halfway, view), 0.0);
-//   }
-//   ////////////////////////////////////////////////////////////////////////////
-//
-//   // TODO: Make these const. adjustable by the GUI.
-//   float innerCutOff = 0.9978;
-//   float outerCutOff = 0.953;
-//   float theta = dot(
-//         normalize(lightDir),
-//         normalize(-vec3(lights[i].dir))
-//   );
-//
-//   // Makes smooth edges.
-//   float epsilon = innerCutOff - outerCutOff;
-//   float intensity = clamp((theta - outerCutOff) / epsilon, 0.0, 1.0);
-//
-//   ////////////////////////////////////////////////////////////////////////////
-//
-//   vec3 inRadiance = intensity * lights[i].color.rgb;
-//
-//   // Cook-torrance brdf
-//   vec3 F = fresnelSchlick(pbrInfo.VdotH, pbrInfo.specularColor);
-//   float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
-//   float G = geometrySmith(
-//         pbrInfo.NdotV,
-//         pbrInfo.NdotL,
-//         material.roughnessFactor
-//   );
-//
-//   // Specular and Diffuse
-//   vec3 kS = F;
-//   vec3 kD = vec3(1.0) - kS;
-//   kD *= 1.0 - material.metallicFactor;
-//
-//   vec3 numerator = D * G * F;
-//   float denominator = 4.0 * pbrInfo.NdotV * pbrInfo.NdotL;
-//
-//   vec3 diffuse = kD * (material.albedo / PI);
-//   vec3 specular = numerator / max(denominator, 0.0001);
-//
-//   // TODO: Make these const. adjustable by the GUI.
-//   // Distance of 50:
-//   float lightConst = 1.0;
-//   float lightLinear = 0.09;
-//   float lightQuadratic = 0.032;
-//   
-//   float distance = length(vec3(lights[i].pos) - inPosition);
-//   float attenuation = (
-//         1.0 /
-//         (
-//            lightConst +
-//            lightLinear * distance +
-//            lightQuadratic * (distance * distance)
-//         )
-//   );
-//
-//   return (attenuation * (diffuse + specular) * inRadiance * pbrInfo.NdotL);
-//}
-
-
-///////////////////////////////PBR - Helper functions//////////////////////////
-
 /*
  * Trowbridge-Reitz GGX approximation.
  */
@@ -622,31 +532,37 @@ float distributionGGX(float nDotH, float rough)
    return a2 * denominator;
 }
 
-float geometrySchlickGGX(float nDotV, float rough)
+float geometricOcclusion(PBRinfo pbrInfo)
 {
-   float r = (rough + 1.0);
-   float k = r * r / 8.0;
+   float alphaRoughness2 = pbrInfo.alphaRoughness * pbrInfo.alphaRoughness;
+   float NdotL2 = pbrInfo.NdotL * pbrInfo.NdotL;
+   float NdotV2 = pbrInfo.NdotV * pbrInfo.NdotV;
 
-   float geometryObstruction = nDotV;
-   float geometryShadowing = 1 / (nDotV * (1.0 - k) + k);
+   float attenuationL = (
+         2.0 * pbrInfo.NdotL /
+         (
+            pbrInfo.NdotL +
+            sqrt(alphaRoughness2 + (1.0 - alphaRoughness2) * (NdotL2))
+         )
+   );
+   float attenuationV = (
+         2.0 * pbrInfo.NdotV /
+         (
+            pbrInfo.NdotV +
+            sqrt(alphaRoughness2 + (1.0 - alphaRoughness2) * (NdotV2))
+         )
+   );
 
-   return geometryObstruction * geometryShadowing;
-}
-
-float geometrySmith(float nDotV, float nDotL, float rough)
-{
-   float ggx2 = geometrySchlickGGX(nDotV, rough);
-   float ggx1 = geometrySchlickGGX(nDotL, rough);
-
-   return ggx1 * ggx2;
+   return attenuationL * attenuationV;
 }
 
 /*
- * Fresnel Schlick approximation.
+ * Fresnel Schlick approximation(for specular reflection).
  */
-vec3 fresnelSchlick(float cosTheta, vec3 F0)
+vec3 fresnelSchlick(PBRinfo pbrInfo)
 {
-   float val = 1.0 - cosTheta;
-
-   return F0 + (1.0 - F0) * pow(val, 5.0);
+   return (
+         pbrInfo.reflectance0 + (pbrInfo.reflectance90 - pbrInfo.reflectance0) *
+         pow(1.0 - pbrInfo.VdotH, 5.0)
+   );
 }

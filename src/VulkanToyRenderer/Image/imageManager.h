@@ -61,4 +61,15 @@ namespace imageManager
          const VkQueue& graphicsQueue,
          const VkImage& image
    );
+
+   void createImageMemoryBarrier(
+      const uint32_t mipLevels,
+      const VkImageLayout& oldLayout,
+      const VkImageLayout& newLayout,
+      const bool isCubemap,
+      const VkImage& image,
+      VkImageMemoryBarrier& imgMemoryBarrier,
+      VkPipelineStageFlags& sourceStage,
+      VkPipelineStageFlags& destinationStage
+   );
 };

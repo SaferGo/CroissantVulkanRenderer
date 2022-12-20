@@ -21,23 +21,13 @@ namespace config
    inline const float Z_NEAR = 0.01f;
    inline const float Z_FAR = 200.0f;
 
-   // Textures - Naming Convention For Cubemaps
-   inline const std::vector<std::string> TEXTURE_CUBEMAP_NAMING_CONV =
-   {
-      "px",
-      "nx",
-      "py",
-      "ny",
-      "pz",
-      "nz"
-   };
-   inline const std::string TEXTURE_CUBEMAP_FORMAT = "png";
-   
-
    // Scene
    inline const uint32_t LIGHTS_COUNT = 10;
 
    // BRDF
    inline const uint32_t BRDF_WIDTH  = 256;
    inline const uint32_t BRDF_HEIGHT = 256;
+
+   // Prefiltered Env. Map
+   inline const uint32_t PREF_ENV_MAP_DIM = 512;
 };

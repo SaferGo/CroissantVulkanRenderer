@@ -50,13 +50,15 @@ Computation::Computation(
          m_outBuffer
    );
 
+   // TODO: Make it custom.
    m_pipeline = Compute(
          m_logicalDevice,
          ShaderInfo(
             shaderType::COMPUTE,
             "BRDF"
          ),
-         bufferInfos
+         bufferInfos,
+         {}
    );
 
 

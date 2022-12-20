@@ -26,10 +26,9 @@
 #include <VulkanToyRenderer/Command/commandManager.h>
 
 Skybox::Skybox(const ModelInfo& modelInfo)
-   : Model(modelInfo.name, ModelType::SKYBOX),
-     m_textureFolderName(modelInfo.modelFileName) 
+   : Model(modelInfo.name, modelInfo.folderName, ModelType::SKYBOX)
 {
-   loadModel((std::string(MODEL_DIR) + "Cube.gltf").c_str());
+   loadModel((std::string(MODEL_DIR) + "cubeDefault/Cube.gltf").c_str());
 }
 
 void Skybox::destroy(const VkDevice& logicalDevice)
@@ -109,9 +108,10 @@ void Skybox::createDescriptorSets(
             GRAPHICS_PIPELINE::SKYBOX::UBOS_INFO,
             GRAPHICS_PIPELINE::SKYBOX::SAMPLERS_INFO,
             mesh.textures,
-            opUBOs,
             descriptorSetLayout,
-            descriptorPool
+            descriptorPool,
+            nullptr,
+            opUBOs
       );
    }
 }
@@ -177,6 +177,7 @@ void Skybox::uploadTextures(
    const size_t nTextures = GRAPHICS_PIPELINE::SKYBOX::TEXTURES_PER_MESH_COUNT;
    TextureToLoadInfo info = {
       m_name,
+      m_folderName,
       VK_FORMAT_R32G32B32A32_SFLOAT,
       4
    };
@@ -196,7 +197,6 @@ void Skybox::uploadTextures(
                      physicalDevice,
                      logicalDevice,
                      info,
-                     m_textureFolderName,
                      samplesCount,
                      commandPool,
                      graphicsQueue,
@@ -218,37 +218,20 @@ void Skybox::uploadTextures(
 
    info = {
       "Irradiance.hdr",
+      m_folderName,
       VK_FORMAT_R32G32B32A32_SFLOAT,
       4
    };
-   loadIrradianceMap(
+   m_irradianceMap = std::make_shared<Cubemap>(
          physicalDevice,
          logicalDevice,
          info,
          samplesCount,
          commandPool,
-         graphicsQueue
-   );
-}
-
-void Skybox::loadIrradianceMap(
-      const VkPhysicalDevice& physicalDevice,
-      const VkDevice& logicalDevice,
-      const TextureToLoadInfo& textureInfo,
-      const VkSampleCountFlagBits& samplesCount,
-      const std::shared_ptr<CommandPool>& commandPool,
-      const VkQueue& graphicsQueue
-) {
-   m_irradianceMap = std::make_shared<Cubemap>(
-         physicalDevice,
-         logicalDevice,
-         textureInfo,
-         m_textureFolderName,
-         samplesCount,
-         commandPool,
          graphicsQueue,
          UsageType::IRRADIANCE_MAP
    );
+
 }
 
 void Skybox::updateUBO(
@@ -332,15 +315,20 @@ void Skybox::bindData(
 
 const std::string& Skybox::getTextureFolderName() const
 {
-   return m_textureFolderName;
+   return m_folderName;
 }
 
-const Texture& Skybox::getIrradianceMap() const
+const std::shared_ptr<Texture>& Skybox::getIrradianceMap() const
 {
-   return *m_irradianceMap;
+   return m_irradianceMap;
 }
 
-const Texture& Skybox::getEnvMap() const
+const std::shared_ptr<Texture>& Skybox::getEnvMap() const
 {
-   return *m_envMap;
+   return m_envMap;
+}
+
+const std::vector<Mesh<Attributes::SKYBOX::Vertex>>& Skybox::getMeshes() const
+{
+   return m_meshes;
 }

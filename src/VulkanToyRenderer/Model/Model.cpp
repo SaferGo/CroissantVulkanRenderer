@@ -17,12 +17,14 @@
 
 Model::Model(
       const std::string& name,
+      const std::string& folderName,
       const ModelType& type,
       const glm::fvec4& pos,
       const glm::fvec3& rot,
       const glm::fvec3& size
 ) : m_type(type),
     m_name(name),
+    m_folderName(folderName),
     m_pos(pos),
     m_rot(rot),
     m_size(size),
@@ -69,7 +71,8 @@ void Model::loadModel(const char* pathToModel)
       flags = (
             aiProcess_Triangulate |
             aiProcess_FlipUVs |
-            aiProcess_CalcTangentSpace
+            aiProcess_CalcTangentSpace |
+            aiProcess_PreTransformVertices
       );
    } else
    {

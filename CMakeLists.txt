@@ -146,6 +146,7 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/MSAA.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/DepthBuffer.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/featuresUtils.cpp"
+   "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Features/PrefilteredEnvMap.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Framebuffer/framebufferManager.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Math/mathUtils.cpp"
    "${PROJECT_SOURCE_DIR}/VulkanToyRenderer/Scene/Scene.cpp"

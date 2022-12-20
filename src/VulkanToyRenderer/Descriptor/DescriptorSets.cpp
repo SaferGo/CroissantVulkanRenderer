@@ -22,10 +22,10 @@ DescriptorSets::DescriptorSets(
       const std::vector<DescriptorInfo>& uboInfo,
       const std::vector<DescriptorInfo>& samplersInfo,
       const std::vector<std::shared_ptr<Texture>>& textures,
-      std::vector<UBO*>& UBOs,
       const VkDescriptorSetLayout& descriptorSetLayout,
       DescriptorPool& descriptorPool,
-      DescriptorSetInfo* additionalTextures
+      DescriptorSetInfo* additionalTextures,
+      const std::vector<UBO*>& UBOs
 ) {
 
 
@@ -77,18 +77,24 @@ DescriptorSets::DescriptorSets(
          descriptorTypesUtils::createDescriptorImageInfo(
                additionalTextures->envMap->getImageView(),
                additionalTextures->envMap->getSampler(),
-               imageInfos[samplersInfo.size() - 4]
+               imageInfos[samplersInfo.size() - 5]
          );
          descriptorTypesUtils::createDescriptorImageInfo(
                additionalTextures->irradianceMap->getImageView(),
                additionalTextures->irradianceMap->getSampler(),
-               imageInfos[samplersInfo.size() - 3]
+               imageInfos[samplersInfo.size() - 4]
          );
          descriptorTypesUtils::createDescriptorImageInfo(
                additionalTextures->BRDFlut->getImageView(),
                additionalTextures->BRDFlut->getSampler(),
+               imageInfos[samplersInfo.size() - 3]
+         );
+         descriptorTypesUtils::createDescriptorImageInfo(
+               additionalTextures->prefilteredEnvMap->getImageView(),
+               additionalTextures->prefilteredEnvMap->getSampler(),
                imageInfos[samplersInfo.size() - 2]
          );
+
 
          descriptorTypesUtils::createDescriptorImageInfo(
                *(additionalTextures->shadowMapView),

@@ -14,7 +14,8 @@ struct ModelInfo
 {
    ModelType   type;
    std::string name;
-   std::string modelFileName;
+   std::string folderName;
+   std::string fileName;
    glm::fvec3  color;
    glm::fvec3  pos;
    glm::fvec3  rot;
