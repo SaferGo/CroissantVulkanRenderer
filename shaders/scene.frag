@@ -128,7 +128,6 @@ vec3 calculateSpotLight(
 );
 float filterPCF(vec4 shadowCoords);
 float calculateShadow(vec4 shadowCoords, vec2 off);
-vec3 uncharted2Tonemap(vec3 color);
 vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo, Material material);
 float ambient = 0.3;
 
@@ -137,7 +136,6 @@ void main()
    vec3 normal = calculateNormal();
    vec3 view = normalize(vec3(ubo.cameraPos) - inPosition);
    vec3 reflection = -normalize(reflect(view, normal));
-   reflection.y *= -1.0f;
 
    Material material;
    {
@@ -198,7 +196,10 @@ void main()
    IBLinfo iblInfo;
    {
       // HDR textures are already linear
-      iblInfo.diffuseLight = texture(irradianceMapSampler, normal).rgb;
+      iblInfo.diffuseLight = texture(
+            irradianceMapSampler,
+            normal
+      ).rgb;
 
       vec2 brdfSamplePoint = clamp(
             vec2(
@@ -283,22 +284,6 @@ vec3 getIBLcontribution(PBRinfo pbrInfo, IBLinfo iblInfo, Material material)
    );
 
    return diffuse + specular;
-}
-
-vec3 uncharted2Tonemap(vec3 color)
-{
-   float A = 0.15;
-   float B = 0.50;
-   float C = 0.10;
-   float D = 0.20;
-   float E = 0.02;
-   float F = 0.30;
-   float W = 11.2;
-
-   return (
-         (color * (A * color + C * B) + D * E) /
-         (color * (A * color + B) + D * F)
-   ) - E / F;
 }
 
 vec3 calculateNormal()

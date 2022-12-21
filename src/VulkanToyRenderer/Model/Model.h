@@ -70,7 +70,7 @@ public:
    const glm::fvec4& getPos() const;
    const glm::fvec3& getRot() const;
    const glm::fvec3& getSize() const;
-   const bool isHided() const;
+   const bool isHidden() const;
    void setPos(const glm::fvec4& newPos);
    void setRot(const glm::fvec3& newRot);
    void setSize(const glm::fvec3& newSize);

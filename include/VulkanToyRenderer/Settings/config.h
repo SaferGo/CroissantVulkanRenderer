@@ -13,7 +13,7 @@ namespace config
    inline const uint16_t RESOLUTION_W = 1366;
    inline const uint16_t RESOLUTION_H = 768;
 
-   inline const char* WINDOW_TITLE = "Hello Vulkan";
+   inline const char* WINDOW_TITLE = "Croissant";
 
    // Graphic's settings
    inline const int MAX_FRAMES_IN_FLIGHT = 2;

@@ -459,7 +459,7 @@ void GUI::displayLightModels(
          glm::fvec3 newSize = model.get()->getSize();
          glm::fvec4 color = model.get()->getColor();
          float intensity = model.get()->getIntensity();
-         bool isHided = model.get()->isHided();
+         bool isHidden = model.get()->isHidden();
    
          if (ImGui::TreeNode(modelName.c_str()))
          {
@@ -468,7 +468,7 @@ void GUI::displayLightModels(
                &(color.x)
             );
    
-            ImGui::Checkbox("Hide", &isHided);
+            ImGui::Checkbox("Hide", &isHidden);
    
             createTransformationsInfo(
                   newPos,
@@ -516,7 +516,7 @@ void GUI::displayLightModels(
         model.get()->setSize(newSize);
         model.get()->setIntensity(intensity);
         model.get()->setColor(color);
-        model.get()->setHideStatus(isHided);
+        model.get()->setHideStatus(isHidden);
       }
    }
 }
@@ -565,11 +565,11 @@ void GUI::createModelsWindow(
             glm::fvec4 newPos = model.get()->getPos();
             glm::fvec3 newRot = model.get()->getRot();
             glm::fvec3 newSize = model.get()->getSize();
-            bool isHided = model.get()->isHided();
+            bool isHidden = model.get()->isHidden();
 
             if (ImGui::TreeNode(modelName.c_str()))
             {
-	            ImGui::Checkbox("Hide", &isHided);
+	            ImGui::Checkbox("Hide", &isHidden);
 
                createTransformationsInfo(
                      newPos,
@@ -585,7 +585,7 @@ void GUI::createModelsWindow(
             model.get()->setPos(newPos);
             model.get()->setRot(newRot);
             model.get()->setSize(newSize);
-            model.get()->setHideStatus(isHided);
+            model.get()->setHideStatus(isHidden);
          }
       }
 

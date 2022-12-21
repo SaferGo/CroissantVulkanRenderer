@@ -43,7 +43,7 @@ const ModelType& Model::getType() const
    return m_type;
 }
 
-const bool Model::isHided() const
+const bool Model::isHidden() const
 {
    return m_hideStatus;
 }

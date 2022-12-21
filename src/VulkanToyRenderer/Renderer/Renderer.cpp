@@ -545,11 +545,14 @@ void Renderer::recordCommandBuffer(
             {
                auto& model = m_scene.getModel(i);
 
-               model->bindData(
-                     graphicsPipeline,
-                     commandBuffer,
-                     currentFrame
-               );
+               if (model->isHidden() == false)
+               {
+                  model->bindData(
+                        graphicsPipeline,
+                        commandBuffer,
+                        currentFrame
+                  );
+               }
 
             }
       }
