@@ -1,5 +1,11 @@
-build/
+build/CMakeFiles/
+build/libs/
+build/shaders/
+build/cmake_install.cmake
+build/CMakeCache.txt
+build/imgui.ini
+build/libimgui.a
+build/libimguid.a
+build/Makefile
 bin/
 docs/
-output/
-assets/
