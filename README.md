@@ -176,6 +176,13 @@ Input        | Action
 RMB drag     | Rotate camera
 Scroll wheel | Zoom in/out
 
+## Dependencies
+- cmake >= 3.9.1
+- gcc >= 9.4.0
+- vulkan-validationlayers-dev
+- spirv-tools
+- glslc
+
 ## Building on Linux
 ```diff
 $ git clone --recurse-submodules https://github.com/SaferGo/CroissantRenderer.git
