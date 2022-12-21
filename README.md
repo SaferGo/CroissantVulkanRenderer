@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/platforms-Linux-brightgreen">
   <img src="https://img.shields.io/github/license/inexorgame/vulkan-renderer?color=brightgreen">
 </p>
-<p align="center"> Real-time, Physically based renderer built with Vulkan and modern C++20.</p>
+<p align="center"> Real-time, Physically based renderer built with Vulkan and modern C++17.</p>
 
 
 ## About
