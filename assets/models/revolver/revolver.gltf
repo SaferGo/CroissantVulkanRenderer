@@ -1,0 +1,1286 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 100,
+      "max": [
+        1.2343719005584717,
+        0.07725590467453003,
+        -0.35892587900161743
+      ],
+      "min": [
+        -0.07742917537689209,
+        -0.15309113264083862,
+        -0.48401787877082825
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 1200,
+      "componentType": 5126,
+      "count": 100,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -0.9894712567329407,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 100,
+      "max": [
+        1.0,
+        0.1388980746269226,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.10366076976060867,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 100,
+      "max": [
+        0.9966250061988831,
+        0.8780949711799622
+      ],
+      "min": [
+        0.019849000498652458,
+        0.050429001450538635
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 276,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 2400,
+      "componentType": 5126,
+      "count": 639,
+      "max": [
+        1.3865671157836914,
+        0.7749180793762207,
+        -0.17885388433933258
+      ],
+      "min": [
+        -0.07509088516235352,
+        -0.07860386371612549,
+        -0.3523448705673218
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 10068,
+      "componentType": 5126,
+      "count": 639,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 1600,
+      "componentType": 5126,
+      "count": 639,
+      "max": [
+        1.0,
+        0.9983570575714111,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.9909281730651855,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 800,
+      "componentType": 5126,
+      "count": 639,
+      "max": [
+        0.9967309832572937,
+        0.9967700242996216
+      ],
+      "min": [
+        0.0016090000281110406,
+        0.008584000170230865
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 1104,
+      "componentType": 5125,
+      "count": 1746,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 17736,
+      "componentType": 5126,
+      "count": 1685,
+      "max": [
+        0.4246341586112976,
+        1.233751893043518,
+        -0.21145586669445038
+      ],
+      "min": [
+        -0.3510919213294983,
+        -0.0848381519317627,
+        -0.7760868668556213
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 37956,
+      "componentType": 5126,
+      "count": 1685,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 11824,
+      "componentType": 5126,
+      "count": 1685,
+      "max": [
+        1.0,
+        0.9861530065536499,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.9862435460090637,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 5912,
+      "componentType": 5126,
+      "count": 1685,
+      "max": [
+        0.9964309930801392,
+        0.9964020252227783
+      ],
+      "min": [
+        0.0016090000281110406,
+        0.011265000328421593
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 8088,
+      "componentType": 5125,
+      "count": 5316,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 58176,
+      "componentType": 5126,
+      "count": 247,
+      "max": [
+        1.9088430404663086,
+        0.13574032485485077,
+        0.13592001795768738
+      ],
+      "min": [
+        -1.818208932876587,
+        -0.1309046894311905,
+        -0.1307239830493927
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 61140,
+      "componentType": 5126,
+      "count": 247,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 38784,
+      "componentType": 5126,
+      "count": 247,
+      "max": [
+        1.0,
+        0.5332299470901489,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.15037553012371063,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 19392,
+      "componentType": 5126,
+      "count": 247,
+      "max": [
+        0.8777539730072021,
+        0.8965280055999756
+      ],
+      "min": [
+        0.009120999835431576,
+        0.0793989971280098
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 29352,
+      "componentType": 5125,
+      "count": 756,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 64104,
+      "componentType": 5126,
+      "count": 400,
+      "max": [
+        0.28265082836151123,
+        -0.09829406440258026,
+        0.10139402002096176
+      ],
+      "min": [
+        -0.13034820556640625,
+        -0.8901680707931519,
+        -0.0961969792842865
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 68904,
+      "componentType": 5126,
+      "count": 400,
+      "max": [
+        0.9998158812522888,
+        0.9999922513961792,
+        1.0
+      ],
+      "min": [
+        -0.9999418258666992,
+        -0.937691330909729,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 42736,
+      "componentType": 5126,
+      "count": 400,
+      "max": [
+        0.9999991059303284,
+        0.9998158812522888,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -0.9999977946281433,
+        -0.9998158812522888,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 21368,
+      "componentType": 5126,
+      "count": 400,
+      "max": [
+        0.9963809847831726,
+        0.9965220093727112
+      ],
+      "min": [
+        0.0016090000281110406,
+        0.008584000170230865
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 32376,
+      "componentType": 5125,
+      "count": 1338,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 73704,
+      "componentType": 5126,
+      "count": 2532,
+      "max": [
+        0.2054917812347412,
+        1.2182064056396484,
+        0.24101689457893372
+      ],
+      "min": [
+        -0.784625232219696,
+        -0.2163306176662445,
+        -0.15951007604599
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 104088,
+      "componentType": 5126,
+      "count": 2532,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 49136,
+      "componentType": 5126,
+      "count": 2532,
+      "max": [
+        0.9999796748161316,
+        0.9998909831047058,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -0.9999962449073792,
+        -0.9823023676872253,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 24568,
+      "componentType": 5126,
+      "count": 2532,
+      "max": [
+        0.996766984462738,
+        0.9893479943275452
+      ],
+      "min": [
+        0.0016090000281110406,
+        0.0016090000281110406
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 37728,
+      "componentType": 5125,
+      "count": 9288,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 134472,
+      "componentType": 5126,
+      "count": 332,
+      "max": [
+        0.6150079965591431,
+        0.7709090113639832,
+        0.5305699706077576
+      ],
+      "min": [
+        0.27615299820899963,
+        -0.29060301184654236,
+        -0.5309420228004456
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 138456,
+      "componentType": 5126,
+      "count": 332,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 89648,
+      "componentType": 5126,
+      "count": 332,
+      "max": [
+        0.007316645234823227,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -0.8163310885429382,
+        -1.0,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 44824,
+      "componentType": 5126,
+      "count": 332,
+      "max": [
+        0.9972689747810364,
+        0.9976890087127686
+      ],
+      "min": [
+        0.0018319999799132347,
+        0.0018319999799132347
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 74880,
+      "componentType": 5125,
+      "count": 948,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 142440,
+      "componentType": 5126,
+      "count": 1836,
+      "max": [
+        0.41754499077796936,
+        0.7392140030860901,
+        0.4988749921321869
+      ],
+      "min": [
+        -0.8536810278892517,
+        -0.2589080035686493,
+        -0.4992470145225525
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 164472,
+      "componentType": 5126,
+      "count": 1836,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 94960,
+      "componentType": 5126,
+      "count": 1836,
+      "max": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 47480,
+      "componentType": 5126,
+      "count": 1836,
+      "max": [
+        0.9975950121879578,
+        0.9976739883422852
+      ],
+      "min": [
+        0.0018319999799132347,
+        0.12505699694156647
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 78672,
+      "componentType": 5125,
+      "count": 7104,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 186504,
+      "componentType": 5126,
+      "count": 5533,
+      "max": [
+        4.9048261642456055,
+        1.0359840393066406,
+        0.7137603759765625
+      ],
+      "min": [
+        -4.94124698638916,
+        -2.0013580322265625,
+        -0.7085635662078857
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 252900,
+      "componentType": 5126,
+      "count": 5533,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 124336,
+      "componentType": 5126,
+      "count": 5533,
+      "max": [
+        1.0,
+        0.9999971389770508,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.9998542666435242,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 62168,
+      "componentType": 5126,
+      "count": 5533,
+      "max": [
+        1.9967290163040161,
+        0.9967160224914551
+      ],
+      "min": [
+        0.0016090000281110406,
+        0.0016090000281110406
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 107088,
+      "componentType": 5125,
+      "count": 19956,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Artem Goyko (https://sketchfab.com/Artem.Goyko)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/collier-flintlock-revolver-fdd591a165ed4329a4d801d9d00d1889",
+      "title": "Collier Flintlock Revolver"
+    },
+    "generator": "Sketchfab-14.54.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 186912,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 106432,
+      "byteOffset": 186912,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 319296,
+      "byteOffset": 293344,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 212864,
+      "byteOffset": 612640,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 825504,
+      "uri": "revolver.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Collier_Flintlock_Revolver_baseColor.png"
+    },
+    {
+      "uri": "textures/Collier_Flintlock_Revolver_metallicRoughness.png"
+    },
+    {
+      "uri": "textures/Collier_Flintlock_Revolver_normal.png"
+    },
+    {
+      "uri": "textures/Collier_Flintlock_Revolver_mag_baseColor.png"
+    },
+    {
+      "uri": "textures/Collier_Flintlock_Revolver_mag_metallicRoughness.png"
+    },
+    {
+      "uri": "textures/Collier_Flintlock_Revolver_mag_normal.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Collier_Flintlock_Revolver",
+      "normalTexture": {
+        "index": 2
+      },
+      "occlusionTexture": {
+        "index": 1
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 1
+        }
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Collier_Flintlock_Revolver_mag",
+      "normalTexture": {
+        "index": 5
+      },
+      "occlusionTexture": {
+        "index": 4
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 3
+        },
+        "metallicRoughnessTexture": {
+          "index": 4
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.008_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.007_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 6,
+            "POSITION": 5,
+            "TANGENT": 7,
+            "TEXCOORD_0": 8
+          },
+          "indices": 9,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.006_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 11,
+            "POSITION": 10,
+            "TANGENT": 12,
+            "TEXCOORD_0": 13
+          },
+          "indices": 14,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.005_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 16,
+            "POSITION": 15,
+            "TANGENT": 17,
+            "TEXCOORD_0": 18
+          },
+          "indices": 19,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.004_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 21,
+            "POSITION": 20,
+            "TANGENT": 22,
+            "TEXCOORD_0": 23
+          },
+          "indices": 24,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.003_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 26,
+            "POSITION": 25,
+            "TANGENT": 27,
+            "TEXCOORD_0": 28
+          },
+          "indices": 29,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_012_low.001_Collier Flintlock Revolver_mag_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 31,
+            "POSITION": 30,
+            "TANGENT": 32,
+            "TEXCOORD_0": 33
+          },
+          "indices": 34,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_011_low.001_Collier Flintlock Revolver_mag_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 36,
+            "POSITION": 35,
+            "TANGENT": 37,
+            "TEXCOORD_0": 38
+          },
+          "indices": 39,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Collier_Flintlock_Revolver_05_low.001_Collier Flintlock Revolver_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 41,
+            "POSITION": 40,
+            "TANGENT": 42,
+            "TEXCOORD_0": 43
+          },
+          "indices": 44,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.009999999776482582,
+        0.0,
+        0.0,
+        -0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "85d557a69ffc42f6b0beba2ff74a0de6.fbx"
+    },
+    {
+      "children": [
+        3,
+        5,
+        7,
+        9,
+        11,
+        13,
+        15,
+        17,
+        19
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4
+      ],
+      "matrix": [
+        99.96215272703091,
+        2.7510038490972373,
+        -9.416285529084689e-08,
+        0.0,
+        -2.7510038490971853,
+        99.96215272702958,
+        1.6294659133109167e-05,
+        0.0,
+        5.423939171670759e-07,
+        -1.6285901625214208e-05,
+        99.99999999999866,
+        0.0,
+        -120.5888900756836,
+        87.21440887451172,
+        2.985222408824484e-06,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.008"
+    },
+    {
+      "mesh": 0,
+      "name": "Collier_Flintlock_Revolver_05_low.008_Collier Flintlock Revolver_0"
+    },
+    {
+      "children": [
+        6
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        99.99999999999866,
+        1.6292067073209114e-05,
+        0.0,
+        0.0,
+        -1.6292067073209114e-05,
+        99.99999999999866,
+        0.0,
+        -120.81880187988281,
+        87.27738952636719,
+        2.9924983664386673e-06,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.007"
+    },
+    {
+      "mesh": 1,
+      "name": "Collier_Flintlock_Revolver_05_low.007_Collier Flintlock Revolver_0"
+    },
+    {
+      "children": [
+        8
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        99.99999999999866,
+        1.6292067073209114e-05,
+        0.0,
+        0.0,
+        -1.6292067073209114e-05,
+        99.99999999999866,
+        0.0,
+        -11.238927841186523,
+        88.48041534423828,
+        1.2650775715883356e-06,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.006"
+    },
+    {
+      "mesh": 2,
+      "name": "Collier_Flintlock_Revolver_05_low.006_Collier Flintlock Revolver_0"
+    },
+    {
+      "children": [
+        10
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        99.99999999999866,
+        1.6292067073209114e-05,
+        0.0,
+        0.0,
+        -1.6292067073209114e-05,
+        99.99999999999866,
+        0.0,
+        -303.1976013183594,
+        14.885668754577637,
+        5.095147912470566e-07,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.005"
+    },
+    {
+      "mesh": 3,
+      "name": "Collier_Flintlock_Revolver_05_low.005_Collier Flintlock Revolver_0"
+    },
+    {
+      "children": [
+        12
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        99.99999999999866,
+        1.6292067073209114e-05,
+        0.0,
+        0.0,
+        -1.6292067073209114e-05,
+        99.99999999999866,
+        0.0,
+        177.27511596679688,
+        16.322006225585938,
+        5.586784936895128e-07,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.004"
+    },
+    {
+      "mesh": 4,
+      "name": "Collier_Flintlock_Revolver_05_low.004_Collier Flintlock Revolver_0"
+    },
+    {
+      "children": [
+        14
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        99.99999999999866,
+        1.6292067073209114e-05,
+        0.0,
+        0.0,
+        -1.6292067073209114e-05,
+        99.99999999999866,
+        0.0,
+        125.97942352294922,
+        71.44557189941406,
+        -60.829681396484375,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.003"
+    },
+    {
+      "mesh": 5,
+      "name": "Collier_Flintlock_Revolver_05_low.003_Collier Flintlock Revolver_0"
+    },
+    {
+      "children": [
+        16
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        109.99999999999854,
+        1.7921276906918067e-05,
+        0.0,
+        0.0,
+        -1.7921276906918067e-05,
+        109.99999999999854,
+        0.0,
+        0.0,
+        -4.570781230926514,
+        0.3065354824066162,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_012_low.001"
+    },
+    {
+      "mesh": 6,
+      "name": "Collier_Flintlock_Revolver_012_low.001_Collier Flintlock Revolver_mag_0"
+    },
+    {
+      "children": [
+        18
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        109.99999999999854,
+        1.7921276906918067e-05,
+        0.0,
+        0.0,
+        -1.7921276906918067e-05,
+        109.99999999999854,
+        0.0,
+        0.0,
+        -4.570781230926514,
+        0.3065354824066162,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_011_low.001"
+    },
+    {
+      "mesh": 7,
+      "name": "Collier_Flintlock_Revolver_011_low.001_Collier Flintlock Revolver_mag_0"
+    },
+    {
+      "children": [
+        20
+      ],
+      "matrix": [
+        100.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        99.99999999999866,
+        1.6292067073209114e-05,
+        0.0,
+        0.0,
+        -1.6292067073209114e-05,
+        99.99999999999866,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Collier_Flintlock_Revolver_05_low.001"
+    },
+    {
+      "mesh": 8,
+      "name": "Collier_Flintlock_Revolver_05_low.001_Collier Flintlock Revolver_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    },
+    {
+      "sampler": 0,
+      "source": 3
+    },
+    {
+      "sampler": 0,
+      "source": 4
+    },
+    {
+      "sampler": 0,
+      "source": 5
+    }
+  ]
+}
