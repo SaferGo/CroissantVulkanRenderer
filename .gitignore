@@ -6,3 +6,7 @@ bin/
 docs/
 *.ktx
 **/Irradiance.hdr
+
+assets/skybox/Apartment/
+assets/skybox/PowerPlant/
+assets/skybox/WinterForest/
