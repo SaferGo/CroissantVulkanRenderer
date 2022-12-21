@@ -2,18 +2,46 @@
   <img src="https://user-images.githubusercontent.com/19228971/208704463-5fc58dc3-59a2-4814-b315-0f5835a4a155.png">
 </p>
 <h1 align="center"> Croissant - Real-Time Vulkan Renderer</h1>
+<p align="center">
+  <img src="https://img.shields.io/badge/language-C%2B%2B20-brightgreen">
+  <img src="https://img.shields.io/badge/platforms-Linux-brightgreen">
+  <img src="https://img.shields.io/github/license/inexorgame/vulkan-renderer?color=brightgreen">
+</p>
 <p align="center"> Real-time, Physically based renderer built with Vulkan and modern C++20.</p>
 
 
 ## About
 The aim of this project was to build a proper render graph to be able to play and learn vulkan and at the same time learn graphics techniques.
 
-## Warning
+## Disclaimer
 This project is under development, expect API changes and missing features.
 
 ## Render Samples
 ![1gg](https://user-images.githubusercontent.com/19228971/208722571-807d33d1-5da5-4118-9529-bf0ed000291f.png)
 ![3c](https://user-images.githubusercontent.com/19228971/208724316-87dfa63a-009f-4d35-baeb-b79d53ebc0b4.png)
+
+## Features
+**Renderer**
+<ul>
+  <li> Physically based rendering(Cook–Torrance BRDF) </li>
+  <li> Image based lighting </li>
+  <li> Forward rendering </li>
+  <li> Multisample anti-aliasing (MSAA) </li>
+  <li> HDRI skymap loading </li>
+  <li> Compute shaders </li>
+  <li> Shadow mapping </li>
+  <li> Normal mapping </li>
+  <li> Different light types (directional, point and spot lights) </li>
+  <li> Texture mipmaps </li>
+  <li> Arcball camera </li>
+  <li> GUI </li>
+</ul>
+
+**Other Features**
+<ul>
+  <li> Multi-threaded texture asset importing </li> 
+  <li> Model loading </li>
+</ul>
 
 ## Repository structure
 
@@ -77,13 +105,85 @@ Here's the list of the libraries included in the project:
 * [GLFW](https://github.com/glfw/glfw): A multi-platform library for window and input.
 * [GLI](https://github.com/g-truc/gli): Image library(used to generate the BRDFlut texture).
 * [GLM](https://github.com/g-truc/glm): Mathematics library for graphics software.
-* [Dear ImGui,](https://github.com/ocornut/imgui): GUI.
+* [ImGui](https://github.com/ocornut/imgui): GUI.
 * [stb_image](https://github.com/nothings/stb): Image loading/decoding.
 * [Tracy](https://github.com/wolfpld/tracy): Frame profiler.
 * [Vulkan-Loader](https://github.com/KhronosGroup/Vulkan-Loader)
 * [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools): Validation Layers.
 
-# Tested toolchains
+
+## Usage
+
+#### Warning
+You need to add one skybox, one directional light and at least one model to start the renderer.
+
+```cpp
+/* Commands:
+*   
+*   - addSkybox(fileName, folderName);
+*   - addObjectPBR(name, folderName, fileName, position, rotation, size);
+*   - addDirectionalLight(name, folderName, fileName, color, position, targetPosition, size);
+*   - addSpotLight(name, folderName, fileName, color, position, targetPosition, rotation, size);
+*   - addPointLight(name, folderName, fileName, color, position, size);
+*/
+
+int main()
+{
+   Renderer app;
+
+   try
+   {
+      // Scene
+      {
+         app.addSkybox("fileName.hdr", "folderName");
+         app.addObjectPBR(
+               "name",
+               "folderName",
+               "fileName",
+               glm::fvec3(0.0f), // Position
+               glm::fvec3(0.0f), // Rotation
+               glm::fvec3(1.0f)  // Size
+         );
+         app.addDirectionalLight(
+               "name",
+               "folderName",
+               "fileName",
+               glm::fvec3(1.0f), // Color
+               glm::fvec3(0.0f), // Position
+               glm::fvec3(1.0f), // Target Position
+               glm::fvec3(1.0f)  // Size
+         );
+      }
+
+      app.run();
+
+   } catch (const std::exception& e)
+   {
+      std::cerr << e.what() << "\n";
+
+      return 0;
+   }
+
+   return 0;
+}
+```
+
+## Controls
+
+Input        | Action
+-------------|-------
+RMB drag     | Rotate camera
+Scroll wheel | Zoom in/out
+
+## Building on Linux
+```diff
+$ git clone https://github.com/SaferGo/CroissantRenderer.git
+$ cd CroissantRenderer/build
+$ bash buildReleaseMode.sh
+// or buildDebugMode.sh
+```
+
+## Tested toolchains
 
 | Compiler            | Operating System                     | Architecture |
 |---------------------|--------------------------------------|--------------|
@@ -93,5 +193,14 @@ Here's the list of the libraries included in the project:
 ## Included assets
 The following assets are bundled with the project:
 
-- "Cerberus" gun model by [Andrew Maximov](http://artisaverb.info).
-- HDR environment map by [Bob Groothuis](http://www.bobgroothuis.com/blog/) obtained from [HDRLabs sIBL archive](http://www.hdrlabs.com/sibl/archive.html) (distributed under [CC-BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)).
+### - HDRs
+- Winter Forest and Apartment from [ihdri](https://www.ihdri.com/).
+- Country Club, Farm Field, Neon Photostudio, Peppermint Powerplant 2 and Shangai Bund from [PolyHaven](https://polyhaven.com/) (distributed under [CC0](https://polyhaven.com/license)).
+- Arches PineTree from [HdrLabs](http://www.hdrlabs.com/) (distributed under [Creative Commons Attribution-Noncommercial-Share Alike 3.0 License](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)).
+### - Models
+- Cube from [Cesium](https://cesium.com/) (distributed under [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/)).
+- Damaged Helmet from [theblueturtle_](https://sketchfab.com/theblueturtle_) (distributed under [Creative Commons Attribution-Noncommercial-Share Alike 3.0 License](https://creativecommons.org/licenses/by-nc-sa/3.0/us/)).
+- Sponza from [alexandre-pestana](https://www.alexandre-pestana.com/).
+- Metal Rough Spheres from Analytical Graphics (distributed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
+- AK 47 Tactical Upgrade from [Mateusz Woliński](https://sketchfab.com/jeandiz) (distributed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
+- Collier Flintlock Revolver from [Artem Goyko](https://sketchfab.com/Artem.Goyko) (distributed under [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/)).
