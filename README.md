@@ -45,8 +45,9 @@ This project is under development, expect API changes and missing features.
 
 ## Repository structure
 
-```bash
+```c++
 Croissant
+|
 |-- assets              
 |   |-- models              # Meshes and textures
 |   `-- skybox              # HDR files with their generated irradiance and BRDFlut textures
