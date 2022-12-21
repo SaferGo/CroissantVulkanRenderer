@@ -11,7 +11,7 @@
 
 
 ## About
-The aim of this project was to build a proper render graph to be able to play and learn vulkan and at the same time learn graphics techniques.
+The aim of this project was to create a properly functioning render graph that would allow me to learn and experiment with Vulkan, as well as provide an opportunity to learn graphics techniques.
 
 ## Disclaimer
 This project is under development, expect API changes and missing features.
@@ -116,7 +116,8 @@ Here's the list of the libraries included in the project:
 ## Usage
 
 #### Warning
-You need to add one skybox, one directional light and at least one model to start the renderer.
+- The renderer currently only works with a dedicated graphics card, but I will add compatibility with integrated GPUs in the future.
+- To start the renderer, you need to add one skybox, one directional light, and at least one model.
 
 ```cpp
 /* Commands:
@@ -126,6 +127,13 @@ You need to add one skybox, one directional light and at least one model to star
 *   - addDirectionalLight(name, folderName, fileName, color, position, targetPosition, size);
 *   - addSpotLight(name, folderName, fileName, color, position, targetPosition, rotation, size);
 *   - addPointLight(name, folderName, fileName, color, position, size);
+*
+*   - demo1(); // Damaged Helmet
+*   - demo2(); // AK 47
+*   - demo3(); // Collier Flintlock Revolver
+*   - demo4(); // Sponza day
+*   - demo5(); // Sponza night
+*   - demo6(); // Metal Rough Spheres
 */
 
 int main()
