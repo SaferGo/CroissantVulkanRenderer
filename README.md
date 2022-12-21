@@ -183,6 +183,8 @@ $ cd CroissantRenderer/build
 $ bash buildReleaseMode.sh
 // or buildDebugMode.sh
 ```
+After successful build the resulting executable can be found in the bin directory.
+
 
 ## Tested toolchains
 
