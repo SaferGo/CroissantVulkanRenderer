@@ -178,7 +178,7 @@ Scroll wheel | Zoom in/out
 
 ## Building on Linux
 ```diff
-$ git clone https://github.com/SaferGo/CroissantRenderer.git
+$ git clone --recurse-submodules https://github.com/SaferGo/CroissantRenderer.git
 $ cd CroissantRenderer/build
 $ bash buildReleaseMode.sh
 // or buildDebugMode.sh
@@ -192,6 +192,8 @@ After successful build the resulting executable can be found in the bin director
 |---------------------|--------------------------------------|--------------|
 | GCC 9.4.0           | Linux Ubuntu 20.04.4 with kernel 5.8.0-53 | x64 |
 | ?           | Windows 11 (will be added soon) | x64 |
+
+## References
 
 ## Included assets
 The following assets are bundled with the project:
