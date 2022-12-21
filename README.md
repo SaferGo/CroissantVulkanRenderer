@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/platforms-Linux-brightgreen">
   <img src="https://img.shields.io/github/license/inexorgame/vulkan-renderer?color=brightgreen">
 </p>
-<p align="center"> Real-time, Physically based renderer built with Vulkan and modern C++20.</p>
+<p align="center"> Real-time, Physically based renderer built with Vulkan and modern C++17.</p>
 
 
 ## About
@@ -176,6 +176,13 @@ Input        | Action
 RMB drag     | Rotate camera
 Scroll wheel | Zoom in/out
 
+## Dependencies
+- cmake >= 3.9.1
+- gcc >= 9.4.0
+- vulkan-validationlayers-dev
+- spirv-tools
+- glslc
+
 ## Building on Linux
 ```diff
 $ git clone --recurse-submodules https://github.com/SaferGo/CroissantRenderer.git
@@ -194,6 +201,13 @@ After successful build the resulting executable can be found in the bin director
 | ?           | Windows 11 (will be added soon) | x64 |
 
 ## References
+- [Vulkan Tutorial](https://vulkan-tutorial.com/)
+- [3D Graphics Rendering Cookbook: A comprehensive guide to exploring rendering algorithms in modern OpenGL and Vulkan](https://amzn.eu/d/hpsSViV)
+- [Vulkan Cookbook: Solutions to next gen 3D graphics API](https://amzn.eu/d/hZXOS0R)
+- [Hybrid Rendering Engine by Angelo1211](https://github.com/Angelo1211/HybridRenderingEngine)
+- [Vulkan physically-Based Rendering by SaschaWillems](https://github.com/SaschaWillems/Vulkan-glTF-PBR)
+- [Shadow Mapping in Vulkan by igalia](https://blogs.igalia.com/itoral/2017/07/30/working-with-lights-and-shadows-part-ii-the-shadow-map/)
+- [Integrating Dear ImGui in a custom Vulkan renderer](https://frguthmann.github.io/posts/vulkan_imgui/)
 
 ## Included assets
 The following assets are bundled with the project:
