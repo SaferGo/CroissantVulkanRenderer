@@ -61,18 +61,6 @@ void Renderer::run()
    ZoneScoped;
 #endif
 
-   // TODO: Improve this!
-   // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
-   m_clearValues.resize(2);
-   m_clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-   m_clearValues[1].color = {1.0f, 0.0f};
-
-   m_clearValuesShadowMap.resize(2);
-   m_clearValuesShadowMap[0].depthStencil.depth = 1.0f;
-   m_clearValuesShadowMap[1].depthStencil.depth = 1.0f;
-   m_clearValuesShadowMap[0].depthStencil.stencil = 0.0f;
-   m_clearValuesShadowMap[1].depthStencil.stencil = 0.0f;
-
    m_window = std::make_shared<Window>(
          config::RESOLUTION_W,
          config::RESOLUTION_H,
@@ -470,6 +458,18 @@ void Renderer::initVK()
 
    createSyncObjects();
 
+   //---------------------------------ClearValues------------------------------
+
+   // NUMBER OF VK_ATTACHMENT_LOAD_OP_CLEAR == CLEAR_VALUES
+   m_clearValues.resize(2);
+   m_clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+   m_clearValues[1].color = {1.0f, 0.0f};
+
+   m_clearValuesShadowMap.resize(2);
+   m_clearValuesShadowMap[0].depthStencil.depth = 1.0f;
+   m_clearValuesShadowMap[1].depthStencil.depth = 1.0f;
+   m_clearValuesShadowMap[0].depthStencil.stencil = 0.0f;
+   m_clearValuesShadowMap[1].depthStencil.stencil = 0.0f;
 }
 
 void Renderer::recordCommandBuffer(
@@ -943,4 +943,169 @@ void Renderer::cleanup()
 
    // GLFW
    m_window->destroy();
+}
+
+void Renderer::demo1()
+{
+   addSkybox("neonStudio.hdr", "NeonStudio");
+   addObjectPBR(
+         "DamagedHelmet",
+         "damagedHelmet",
+         "DamagedHelmet.gltf",
+         glm::fvec3(0.0f),
+         glm::fvec3(0.0f),
+         glm::fvec3(1.0f)
+   );
+   addDirectionalLight(
+         "Sun",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(1.0f, 87.0f, -49.0f),
+         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
+}
+
+void Renderer::demo2()
+{
+   addSkybox("desert.hdr", "Desert");
+   addObjectPBR(
+         "Gun",
+         "gun",
+         "gun.gltf",
+         glm::fvec3(0.0f),
+         glm::fvec3(0.047f, 0.0f, 0.0f),
+         glm::fvec3(1.0f)
+   );
+   addDirectionalLight(
+         "Sun",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(1.0f, 87.0f, -49.0f),
+         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
+}
+
+void Renderer::demo3()
+{
+   addSkybox("countryClub.hdr", "CountryClub");
+   addObjectPBR(
+         "Revolver",
+         "revolver",
+         "revolver.gltf",
+         glm::fvec3(0.0f),
+         glm::fvec3(-0.739f, 1.559f, 1.0f),
+         glm::fvec3(0.863f)
+   );
+   addDirectionalLight(
+         "Sun",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(1.0f, 87.0f, -49.0f),
+         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
+}
+
+void Renderer::demo4()
+{
+   addSkybox("sky.hdr", "DaySky");
+   addObjectPBR(
+         "Sponza",
+         "sponza",
+         "Sponza.gltf",
+         glm::fvec3(0.0f),
+         glm::fvec3(1.0f, -1.555, 1.0f),
+         glm::fvec3(1.0f)
+   );
+   //app.addPointLight(
+   //      "Point",
+   //      "lightSphere.obj",
+   //      glm::fvec3(1.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.125f)
+   //);
+   //app.addSpotLight(
+   //      "Spot1",
+   //      "lightSphereDefault",
+   //      "lightSphere.obj",
+   //      glm::fvec3(1.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.125f)
+   //);
+   addDirectionalLight(
+         "Sun",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(1.0f, 87.0f, -49.0f),
+         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
+}
+
+void Renderer::demo5()
+{
+   addSkybox("sky.hdr", "DaySky");
+   addObjectPBR(
+         "Sponza",
+         "sponza",
+         "Sponza.gltf",
+         glm::fvec3(0.0f),
+         glm::fvec3(1.0f, -1.555, 1.0f),
+         glm::fvec3(1.0f)
+   );
+   //app.addPointLight(
+   //      "Point",
+   //      "lightSphere.obj",
+   //      glm::fvec3(1.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.125f)
+   //);
+   //app.addSpotLight(
+   //      "Spot1",
+   //      "lightSphereDefault",
+   //      "lightSphere.obj",
+   //      glm::fvec3(1.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.0f),
+   //      glm::fvec3(0.125f)
+   //);
+   addDirectionalLight(
+         "Sun",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(1.0f, 87.0f, -49.0f),
+         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
+}
+void Renderer::demo6()
+{
+   addSkybox("shangai.hdr", "Shangai");
+   addObjectPBR(
+         "MetalRoughSpheres",
+         "MetalRoughSpheres",
+         "MetalRoughSpheres.gltf",
+         glm::fvec3(0.0f),
+         glm::fvec3(0.278f, 0.193f, -0.056f),
+         glm::fvec3(1.0f)
+   );
+   addDirectionalLight(
+         "Sun",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(1.0f, 87.0f, -49.0f),
+         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
 }

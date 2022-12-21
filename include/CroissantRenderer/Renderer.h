@@ -75,6 +75,12 @@ public:
          const std::string& fileName,
          const std::string& textureFolderName
    );
+   void demo1();
+   void demo2();
+   void demo3();
+   void demo4();
+   void demo5();
+   void demo6();
 
 private:
 
