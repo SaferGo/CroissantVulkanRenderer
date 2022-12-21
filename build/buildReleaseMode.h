@@ -1,8 +1,8 @@
 #!/bin/bash
 
-rm -r shaders
-rm Makefile
-mkdir ../bin/
+rm -f -r shaders
+rm -f Makefile
+mkdir -f ../bin
 cmake -DCMAKE_BUILD_TYPE=Release .. &&
 make -j4 &&
 ./../bin/Croissant
