@@ -19,6 +19,12 @@ This project is under development, expect API changes, bugs and missing features
 ## Render Samples
 ![1gg](https://user-images.githubusercontent.com/19228971/208722571-807d33d1-5da5-4118-9529-bf0ed000291f.png)
 ![3c](https://user-images.githubusercontent.com/19228971/208724316-87dfa63a-009f-4d35-baeb-b79d53ebc0b4.png)
+![t2](https://user-images.githubusercontent.com/19228971/209079610-2f5d3d81-85b4-43af-8cb9-ee51745c7f61.png)
+![t4](https://user-images.githubusercontent.com/19228971/209081243-e1d92ca5-ac58-4e63-a99f-31d1dc48c97e.png)
+![t5](https://user-images.githubusercontent.com/19228971/209082602-83f74c8c-82e8-473e-ab07-cc3728794cad.png)
+![t6](https://user-images.githubusercontent.com/19228971/209096509-659410ea-839a-4508-a0bd-b3f551afb9a8.png)
+
+
 
 ## Features
 **Renderer**
