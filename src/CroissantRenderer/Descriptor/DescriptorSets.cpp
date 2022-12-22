@@ -75,11 +75,6 @@ DescriptorSets::DescriptorSets(
       if (additionalTextures != nullptr)
       {
          descriptorTypesUtils::createDescriptorImageInfo(
-               additionalTextures->envMap->getImageView(),
-               additionalTextures->envMap->getSampler(),
-               imageInfos[samplersInfo.size() - 5]
-         );
-         descriptorTypesUtils::createDescriptorImageInfo(
                additionalTextures->irradianceMap->getImageView(),
                additionalTextures->irradianceMap->getSampler(),
                imageInfos[samplersInfo.size() - 4]
@@ -94,7 +89,6 @@ DescriptorSets::DescriptorSets(
                additionalTextures->prefilteredEnvMap->getSampler(),
                imageInfos[samplersInfo.size() - 2]
          );
-
 
          descriptorTypesUtils::createDescriptorImageInfo(
                *(additionalTextures->shadowMapView),

@@ -371,7 +371,9 @@ void Renderer::initVK()
             {
                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                // framesInFlight * #allmeshes
-               m_modelsToLoadInfo.size() * config::MAX_FRAMES_IN_FLIGHT * 100
+               static_cast<uint32_t>(m_modelsToLoadInfo.size()) *
+               config::MAX_FRAMES_IN_FLIGHT *
+               100
             },
             { 
                VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

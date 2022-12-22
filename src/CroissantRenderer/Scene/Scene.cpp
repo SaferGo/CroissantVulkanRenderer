@@ -343,8 +343,7 @@ void Scene::loadModel(
       
             break;
       
-         }
-         case ModelType::NORMAL_PBR:
+         } case ModelType::NORMAL_PBR:
          {
             m_models.push_back(std::make_shared<NormalPBR>(modelInfo));
             m_objectModelIndices.push_back(m_models.size() - 1);
@@ -355,8 +354,7 @@ void Scene::loadModel(
       
             break;
       
-         }
-         case ModelType::LIGHT:
+         } case ModelType::LIGHT:
          {
             m_models.push_back(std::make_shared<Light>(modelInfo));
             m_lightModelIndices.push_back(m_models.size() - 1);
@@ -370,7 +368,6 @@ void Scene::loadModel(
                
                m_directionalLightIndex = m_models.size() - 1;
             }
-
 
             break;
          }
@@ -416,7 +413,7 @@ void Scene::updateUBO(
       camera->getViewM(),
       camera->getProjectionM(),
       lightSpace,
-      m_lightModelIndices.size(),
+      static_cast<uint32_t>(m_lightModelIndices.size()),
       extent
    };
 
@@ -500,9 +497,9 @@ void Scene::upload(
       );
    }
 
+   // TODO: Improve this.
    VkDescriptorSetLayout descriptorSetLayout;
    DescriptorSetInfo descriptorSetInfo = {
-      &(*m_skybox->getEnvMap()),
       &(*m_skybox->getIrradianceMap()),
       &(*m_BRDFlut),
       &(shadowMap->getShadowMapView()),

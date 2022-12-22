@@ -21,7 +21,6 @@
 
 enum class ModelType
 {
-   NONE = 0,
    NORMAL_PBR = 1,
    LIGHT  = 2,
    SKYBOX = 3

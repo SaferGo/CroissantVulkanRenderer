@@ -39,12 +39,11 @@ layout(binding = 5) uniform sampler2D   AOsampler;
 layout(binding = 6) uniform sampler2D   normalSampler;
 
 // IBL Samplers
-layout(binding = 7) uniform samplerCube envMapSampler;
-layout(binding = 8) uniform samplerCube irradianceMapSampler;
-layout(binding = 9) uniform sampler2D   BRDFlutSampler;
-layout(binding = 10) uniform samplerCube prefilteredEnvMapSampler;
+layout(binding = 7) uniform samplerCube irradianceMapSampler;
+layout(binding = 8) uniform sampler2D   BRDFlutSampler;
+layout(binding = 9) uniform samplerCube prefilteredEnvMapSampler;
 
-layout(binding = 11) uniform sampler2D   shadowMapSampler;
+layout(binding = 10) uniform sampler2D   shadowMapSampler;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;

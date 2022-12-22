@@ -62,9 +62,9 @@ protected:
          const std::vector<VkPushConstantRange>& pushConstantRanges
    );
 
-   PipelineType            m_type;
-
    VkDevice                m_logicalDevice;
+
+   PipelineType            m_type;
 
    VkPipeline              m_pipeline;
    VkPipelineLayout        m_pipelineLayout;

@@ -8,6 +8,6 @@ struct UBOinfo
    const glm::mat4& view;
    const glm::mat4& proj;
    const glm::mat4& lightSpace;
-   const int& lightsCount;
+   const uint32_t& lightsCount;
    const VkExtent2D& extent;
 };

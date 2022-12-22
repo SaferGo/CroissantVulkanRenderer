@@ -76,8 +76,10 @@ void PrefilteredEnvMap<T>::recordCommandBuffer(
    const VkQueue& graphicsQueue,
    const std::vector<Mesh<T>>& meshes
 ) {
+
    VkClearValue clearValues;
 	clearValues.color = { { 0.0f, 0.0f, 0.2f, 0.0f } };
+
    std::vector<glm::mat4> matrices = {
       glm::rotate(
             glm::rotate(
@@ -179,8 +181,8 @@ void PrefilteredEnvMap<T>::recordCommandBuffer(
                   0.0f,
                   0.0f,
                   {
-                     viewportDim,
-                     viewportDim
+                     static_cast<uint32_t>(viewportDim),
+                     static_cast<uint32_t>(viewportDim)
                   },
                   0.0f,
                   1.0f,
@@ -351,45 +353,45 @@ void PrefilteredEnvMap<T>::recordCommandBuffer(
 
    }
 
-      {
-         commandPool->resetCommandBuffer(0);
-         commandPool->beginCommandBuffer(0, commandBuffer);
+   {
+      commandPool->resetCommandBuffer(0);
+      commandPool->beginCommandBuffer(0, commandBuffer);
 
-         VkImageMemoryBarrier imgMemoryBarrier{};
-         VkPipelineStageFlags sourceStage, destinationStage;
-         imageManager::createImageMemoryBarrier(
-               m_mipLevels,
-               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-               true,
-               m_targetImage.get(),
-               imgMemoryBarrier,
-               sourceStage,
-               destinationStage
-         );
+      VkImageMemoryBarrier imgMemoryBarrier{};
+      VkPipelineStageFlags sourceStage, destinationStage;
+      imageManager::createImageMemoryBarrier(
+            m_mipLevels,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            true,
+            m_targetImage.get(),
+            imgMemoryBarrier,
+            sourceStage,
+            destinationStage
+      );
 
-         commandManager::synchronization::recordPipelineBarrier(
-               sourceStage,
-               destinationStage,
-               0,
-               commandBuffer,
-               {},
-               {},
-               {imgMemoryBarrier}
-         );
+      commandManager::synchronization::recordPipelineBarrier(
+            sourceStage,
+            destinationStage,
+            0,
+            commandBuffer,
+            {},
+            {},
+            {imgMemoryBarrier}
+      );
 
-         commandPool->endCommandBuffer(commandBuffer);
-         commandPool->submitCommandBuffer(
-               graphicsQueue,
-               {commandBuffer},
-               true,
-               {},
-               std::nullopt,
-               {},
-               std::nullopt
-         );
+      commandPool->endCommandBuffer(commandBuffer);
+      commandPool->submitCommandBuffer(
+            graphicsQueue,
+            {commandBuffer},
+            true,
+            {},
+            std::nullopt,
+            {},
+            std::nullopt
+      );
 
-      }
+   }
 }
 
 template<typename T>

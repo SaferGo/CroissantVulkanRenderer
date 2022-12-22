@@ -11,7 +11,6 @@
 
 struct DescriptorSetInfo
 {
-   const Texture*               envMap;
    const Texture*               irradianceMap;
    const Texture*               BRDFlut;
    const VkImageView*           shadowMapView;
