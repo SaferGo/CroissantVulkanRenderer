@@ -14,7 +14,7 @@
 The aim of this project was to create a properly functioning render graph that would allow me to learn and experiment with Vulkan, as well as provide an opportunity to learn graphics techniques.
 
 ## Disclaimer
-This project is under development, expect API changes and missing features.
+This project is under development, expect API changes, bugs and missing features.
 
 ## Render Samples
 ![1gg](https://user-images.githubusercontent.com/19228971/208722571-807d33d1-5da5-4118-9529-bf0ed000291f.png)
@@ -98,6 +98,13 @@ Croissant
 |   
 `-- CMakeLists.txt          # CMake build script
 ```
+
+## Render Graph
+![Render Graph (4)](https://user-images.githubusercontent.com/19228971/209050565-20111caf-0f03-41cc-bb38-84bdc6eff573.png)
+![Render Graph (3)](https://user-images.githubusercontent.com/19228971/209050462-5cfd7289-164b-41ef-a67a-2e6db4fa8f37.png)
+
+
+
 
 ## Third party libraries
 Here's the list of the libraries included in the project:
