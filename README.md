@@ -50,7 +50,7 @@ Croissant
 |
 |-- assets              
 |   |-- models              # Meshes and textures
-|   `-- skybox              # HDR files with their generated irradiance and BRDFlut textures
+|   `-- skybox              # HDR files with their generated irradiance, prefiltered env. and BRDFlut textures
 |
 |-- bin                     # Contains the executable files
 |
@@ -99,13 +99,6 @@ Croissant
 `-- CMakeLists.txt          # CMake build script
 ```
 
-## Render Graph
-![Render Graph (4)](https://user-images.githubusercontent.com/19228971/209050565-20111caf-0f03-41cc-bb38-84bdc6eff573.png)
-![Render Graph (3)](https://user-images.githubusercontent.com/19228971/209050462-5cfd7289-164b-41ef-a67a-2e6db4fa8f37.png)
-
-
-
-
 ## Third party libraries
 Here's the list of the libraries included in the project:
 
@@ -119,12 +112,16 @@ Here's the list of the libraries included in the project:
 * [Vulkan-Loader](https://github.com/KhronosGroup/Vulkan-Loader)
 * [Vulkan-Tools](https://github.com/KhronosGroup/Vulkan-Tools): Validation Layers.
 
+## Render Graph
+![Render Graph (5)](https://user-images.githubusercontent.com/19228971/209051311-cfe64c87-710d-4b91-aeb9-86c881e39406.png)
+![Render Graph (6)](https://user-images.githubusercontent.com/19228971/209051351-86eb79c7-b32f-44f4-b185-132790dc7297.png)
 
 ## Usage
 
 #### Warning
 - The renderer currently only works with a dedicated graphics card, but I will add compatibility with integrated GPUs in the future.
 - To start the renderer, you need to add one skybox, one directional light, and at least one model.
+- To add a model or skybox to the render, add the folder in 'assets'.
 
 ```cpp
 /* Commands:
@@ -205,8 +202,7 @@ $ cd CroissantRenderer/build
 $ bash buildReleaseMode.sh
 // or buildDebugMode.sh
 ```
-After successful build the resulting executable can be found in the bin directory.
-
+After a successful build, the resulting executable can be found in the bin directory.
 
 ## Tested toolchains
 
