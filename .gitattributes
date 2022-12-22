@@ -1,3 +1,3 @@
 *.html linguist-detectable=false
 *.js linguist-detectable=false
-*.c linguist-language=C++
+*.c linguist-detectable=false
