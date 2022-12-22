@@ -3,7 +3,7 @@
 </p>
 <h1 align="center"> Croissant - Real-Time Vulkan Renderer</h1>
 <p align="center">
-  <img src="https://img.shields.io/badge/language-C%2B%2B20-brightgreen">
+  <img src="https://img.shields.io/badge/language-C%2B%2B17-brightgreen">
   <img src="https://img.shields.io/badge/platforms-Linux-brightgreen">
   <img src="https://img.shields.io/github/license/inexorgame/vulkan-renderer?color=brightgreen">
 </p>
