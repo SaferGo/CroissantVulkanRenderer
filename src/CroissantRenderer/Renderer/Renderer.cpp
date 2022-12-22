@@ -999,7 +999,7 @@ void Renderer::demo3()
          "revolver",
          "revolver.gltf",
          glm::fvec3(0.0f),
-         glm::fvec3(-0.739f, 1.559f, 1.0f),
+         glm::fvec3(-0.156f, 2.205f, -0.341f),
          glm::fvec3(0.863f)
    );
    addDirectionalLight(
@@ -1024,30 +1024,13 @@ void Renderer::demo4()
          glm::fvec3(1.0f, -1.555, 1.0f),
          glm::fvec3(1.0f)
    );
-   //app.addPointLight(
-   //      "Point",
-   //      "lightSphere.obj",
-   //      glm::fvec3(1.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.125f)
-   //);
-   //app.addSpotLight(
-   //      "Spot1",
-   //      "lightSphereDefault",
-   //      "lightSphere.obj",
-   //      glm::fvec3(1.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.125f)
-   //);
    addDirectionalLight(
          "Sun",
          "lightSphereDefault",
          "lightSphere.obj",
          glm::fvec3(1.0f),
-         glm::fvec3(1.0f, 87.0f, -49.0f),
-         glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(2.242f, 13.700f, -0.533f),
+         glm::fvec3(1.461f, 8.831f, 0.314f),
          glm::fvec3(0.125f)
    );
 }
@@ -1063,23 +1046,6 @@ void Renderer::demo5()
          glm::fvec3(1.0f, -1.555, 1.0f),
          glm::fvec3(1.0f)
    );
-   //app.addPointLight(
-   //      "Point",
-   //      "lightSphere.obj",
-   //      glm::fvec3(1.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.125f)
-   //);
-   //app.addSpotLight(
-   //      "Spot1",
-   //      "lightSphereDefault",
-   //      "lightSphere.obj",
-   //      glm::fvec3(1.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.0f),
-   //      glm::fvec3(0.125f)
-   //);
    addDirectionalLight(
          "Sun",
          "lightSphereDefault",
@@ -1087,6 +1053,32 @@ void Renderer::demo5()
          glm::fvec3(1.0f),
          glm::fvec3(1.0f, 87.0f, -49.0f),
          glm::fvec3(1.461f, 2.619f, 57.457f),
+         glm::fvec3(0.125f)
+   );
+   addSpotLight(
+         "Spot1",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f),
+         glm::fvec3(0.2f, 4.969f, -3.106f),
+         glm::fvec3(0.0f, -2.484f, -19.876f),
+         glm::fvec3(0.0f),
+         glm::fvec3(0.125f)
+   );
+   addPointLight(
+         "Point1",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(0.0f, 0.0f, 1.0f),
+         glm::fvec3(3.564f, 1.242f, 0.0f),
+         glm::fvec3(0.125f)
+   );
+   addPointLight(
+         "Point2",
+         "lightSphereDefault",
+         "lightSphere.obj",
+         glm::fvec3(1.0f, 0.0f, 0.0f),
+         glm::fvec3(-2.484f, 1.242f, 0.0f),
          glm::fvec3(0.125f)
    );
 }

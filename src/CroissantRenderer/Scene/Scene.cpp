@@ -282,7 +282,7 @@ void Scene::loadModels(const std::vector<ModelInfo>& modelsToLoadInfo)
    {
       if (i == threadsCount - 1 && maxThreadsCount < modelsToLoadInfo.size())
       {
-         chunckSize = (
+         chunckSize += (
                modelsToLoadInfo.size() - (threadsCount * chunckSize)
          );
       }
