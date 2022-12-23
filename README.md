@@ -204,7 +204,7 @@ Scroll wheel | Zoom in/out
 ## Building on Linux
 ```diff
 $ git clone --recurse-submodules https://github.com/SaferGo/CroissantVulkanRenderer.git
-$ cd CroissantRenderer/build
+$ cd CroissantVulkanRenderer/build
 $ bash buildReleaseMode.sh
 // or buildDebugMode.sh
 ```
