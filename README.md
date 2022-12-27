@@ -128,6 +128,8 @@ Here's the list of the libraries included in the project:
 - The renderer currently only works with a dedicated graphics card, but I will add compatibility with integrated GPUs in the future.
 - To start the renderer, you need to add one skybox, one directional light, and at least one model.
 - To add a model or skybox to the render, add the folder in 'assets'.
+- Modify the config.h file in 'Settings' to change a lot of parameters.
+
 
 ```cpp
 /* Commands:
