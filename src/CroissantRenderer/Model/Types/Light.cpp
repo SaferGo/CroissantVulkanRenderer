@@ -87,7 +87,7 @@ void Light::processMesh(aiMesh* mesh, const aiScene* scene)
          mesh->mTextureCoords[0][i].y,
       };
 
-      newMesh.vertices.push_back(vertex);
+      newMesh.vertices.emplace_back(vertex);
 
    }
 
@@ -95,10 +95,10 @@ void Light::processMesh(aiMesh* mesh, const aiScene* scene)
    {
       auto face = mesh->mFaces[i];
       for (size_t j = 0; j < face.mNumIndices; j++)
-         newMesh.indices.push_back(face.mIndices[j]);
+         newMesh.indices.emplace_back(face.mIndices[j]);
    }
 
-   m_meshes.push_back(newMesh);
+   m_meshes.emplace_back(newMesh);
 }
 
 void Light::createUniformBuffers(

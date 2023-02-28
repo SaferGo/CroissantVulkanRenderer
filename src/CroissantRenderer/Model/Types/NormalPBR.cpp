@@ -150,7 +150,7 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
 
       vertex.posInLightSpace = glm::fvec4(1.0f);
       
-      newMesh.vertices.push_back(vertex);
+      newMesh.vertices.emplace_back(vertex);
 
    }
 
@@ -158,7 +158,7 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
    {
       auto face = mesh->mFaces[i];
       for (size_t j = 0; j < face.mNumIndices; j++)
-         newMesh.indices.push_back(face.mIndices[j]);
+         newMesh.indices.emplace_back(face.mIndices[j]);
    }
 
 
@@ -243,12 +243,12 @@ void NormalPBR::processMesh(aiMesh* mesh, const aiScene* scene)
          info.format = m.format;
          info.desiredChannels = m.desiredChannels;
          
-         newMesh.texturesToLoadInfo.push_back(info);
+         newMesh.texturesToLoadInfo.emplace_back(info);
       }
 
    }
 
-   m_meshes.push_back(newMesh);
+   m_meshes.emplace_back(newMesh);
 }
 
 void NormalPBR::createUniformBuffers(

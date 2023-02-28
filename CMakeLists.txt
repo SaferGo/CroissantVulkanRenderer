@@ -131,7 +131,6 @@ add_executable(${PROJECT_NAME}
    "${PROJECT_SOURCE_DIR}/CroissantRenderer/Descriptor/Types/UBO/UBO.cpp"
    "${PROJECT_SOURCE_DIR}/CroissantRenderer/Descriptor/Types/UBO/UBOutils.cpp"
    "${PROJECT_SOURCE_DIR}/CroissantRenderer/Descriptor/Types/Sampler/Sampler.cpp"
-   "${PROJECT_SOURCE_DIR}/CroissantRenderer/Descriptor/Types/descriptorTypesUtils.cpp"
    "${PROJECT_SOURCE_DIR}/CroissantRenderer/Descriptor/descriptorSetLayoutManager.cpp"
    "${PROJECT_SOURCE_DIR}/CroissantRenderer/Image/imageManager.cpp"
    "${PROJECT_SOURCE_DIR}/CroissantRenderer/Image/Image.cpp"

@@ -75,7 +75,7 @@ void Skybox::processMesh(aiMesh* mesh, const aiScene* scene)
          mesh->mVertices[i].z
       };
    
-      newMesh.vertices.push_back(vertex);
+      newMesh.vertices.emplace_back(vertex);
    }
    
    for (size_t i = 0; i < mesh->mNumFaces; i++)
@@ -83,10 +83,10 @@ void Skybox::processMesh(aiMesh* mesh, const aiScene* scene)
       auto face = mesh->mFaces[i];
 
       for (size_t j = 0; j < face.mNumIndices; j++)
-         newMesh.indices.push_back(face.mIndices[j]);
+         newMesh.indices.emplace_back(face.mIndices[j]);
    }
 
-   m_meshes.push_back(newMesh);
+   m_meshes.emplace_back(newMesh);
 }
 
 Skybox::~Skybox() {}

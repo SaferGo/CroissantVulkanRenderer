@@ -365,6 +365,7 @@ vec3 calculateDirLight(
    float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
    float G = geometricOcclusion(pbrInfo);
 
+   // Energy conservation
    // Specular and Diffuse
    vec3 kS = F;
    vec3 kD = vec3(1.0) - kS;
@@ -409,6 +410,7 @@ vec3 calculatePointLight(
    float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
    float G = geometricOcclusion(pbrInfo);
 
+   // Energy conservation
    // Specular and Diffuse
    vec3 kS = F;
    vec3 kD = vec3(1.0) - kS;
@@ -472,6 +474,7 @@ vec3 calculateSpotLight(
    float D = distributionGGX(pbrInfo.NdotH, material.roughnessFactor);
    float G = geometricOcclusion(pbrInfo);
 
+   // Energy conservation
    // Specular and Diffuse
    vec3 kS = F;
    vec3 kD = vec3(1.0) - kS;

@@ -7,10 +7,29 @@
 
 #include <CroissantRenderer/Descriptor/DescriptorInfo.h>
 #include <CroissantRenderer/Descriptor/DescriptorPool.h>
-#include <CroissantRenderer/Descriptor/Types/descriptorTypesUtils.h>
 #include <CroissantRenderer/Features/ShadowMap.h>
 #include <CroissantRenderer/Settings/config.h>
 
+////////////////////////////////Helper functions///////////////////////////////
+inline static void createDescriptorBufferInfo(
+      const VkBuffer& buffer,
+      VkDescriptorBufferInfo& bufferInfo
+) {
+   bufferInfo.buffer = buffer;
+   bufferInfo.offset = 0;
+   bufferInfo.range = VK_WHOLE_SIZE;
+}
+
+inline static void createDescriptorImageInfo(
+      const VkImageView& imageView,
+      const VkSampler& sampler,
+      VkDescriptorImageInfo& imageInfo
+) {
+   imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+   imageInfo.imageView = imageView;
+   imageInfo.sampler = sampler;
+}
+///////////////////////////////////////////////////////////////////////////////
 
 DescriptorSets::DescriptorSets() {}
 
@@ -54,7 +73,7 @@ DescriptorSets::DescriptorSets(
       std::vector<VkDescriptorBufferInfo> bufferInfos(UBOs.size());
       for (size_t j = 0; j < UBOs.size(); j++)
       {
-         descriptorTypesUtils::createDescriptorBufferInfo(
+         createDescriptorBufferInfo(
                UBOs[j]->get(i),
                bufferInfos[j]
          );
@@ -65,7 +84,7 @@ DescriptorSets::DescriptorSets(
       // Samplers of textures
       for (size_t j = 0; j < textures.size(); j++)
       {
-         descriptorTypesUtils::createDescriptorImageInfo(
+         createDescriptorImageInfo(
                textures[j]->getImageView(),
                textures[j]->getSampler(),
                imageInfos[j]
@@ -74,23 +93,23 @@ DescriptorSets::DescriptorSets(
 
       if (additionalTextures != nullptr)
       {
-         descriptorTypesUtils::createDescriptorImageInfo(
+         createDescriptorImageInfo(
                additionalTextures->irradianceMap->getImageView(),
                additionalTextures->irradianceMap->getSampler(),
                imageInfos[samplersInfo.size() - 4]
          );
-         descriptorTypesUtils::createDescriptorImageInfo(
+         createDescriptorImageInfo(
                additionalTextures->BRDFlut->getImageView(),
                additionalTextures->BRDFlut->getSampler(),
                imageInfos[samplersInfo.size() - 3]
          );
-         descriptorTypesUtils::createDescriptorImageInfo(
+         createDescriptorImageInfo(
                additionalTextures->prefilteredEnvMap->getImageView(),
                additionalTextures->prefilteredEnvMap->getSampler(),
                imageInfos[samplersInfo.size() - 2]
          );
 
-         descriptorTypesUtils::createDescriptorImageInfo(
+         createDescriptorImageInfo(
                *(additionalTextures->shadowMapView),
                *(additionalTextures->shadowMapSampler),
                imageInfos[samplersInfo.size() - 1]
@@ -166,7 +185,7 @@ DescriptorSets::DescriptorSets(
    std::vector<VkDescriptorBufferInfo> descriptorBufferInfos(buffers.size());
    for (size_t i = 0; i < buffers.size(); i++)
    {
-      descriptorTypesUtils::createDescriptorBufferInfo(
+      createDescriptorBufferInfo(
             buffers[i],
             descriptorBufferInfos[i]
       );

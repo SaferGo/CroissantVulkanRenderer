@@ -214,12 +214,10 @@ void bufferManager::allocBuffer(
 
    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
    allocInfo.allocationSize =  memRequirements.size;
-   allocInfo.memoryTypeIndex = (
-         bufferUtils::findMemoryType(
+   allocInfo.memoryTypeIndex = bufferUtils::findMemoryType(
             physicalDevice,
             memRequirements.memoryTypeBits,
             memoryProperties
-         )
    );
 
    auto status = vkAllocateMemory(
